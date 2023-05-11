@@ -1,7 +1,7 @@
-﻿<!DOCTYPE HTML>
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
-    <meta name="description" content="tar1090 - ADS-B plane tracking interface">
+    <meta name="description" content="ADS-B Exchange - track aircraft live - aircraft flight history">
 
     <meta charset="utf-8"/>
     <meta name="mobile-web-app-capable" content="yes">
@@ -9,6 +9,38 @@
 
     <meta name="viewport" content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui" />
 
+    <!-- freestar header -->
+    <link rel="stylesheet" href="https://a.pub.network/core/pubfig/cls.css">
+    <script data-cfasync="false" type="text/javascript">
+      var freestar = freestar || {};
+      freestar.queue = freestar.queue || [];
+      freestar.config = freestar.config || {};
+      freestar.config.enabled_slots = [];
+      freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+      <!-- Page Specific -->
+      freestar.config.disabledProducts = {
+        stickyFooter: true,
+        googleInterstitial: true
+      };
+      let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
+      let hide_freestar = () => {
+        for (let id of ['adsbexchange_mobile_pushdown-pushdown-cls', 'tracking_leaderboard_container', 'FreeStarVideoAdContainer_mw', 'FreeStarVideoAdContainer_dt', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2']) { hideById(id);};
+      };
+      let load_freestar = () => {
+        let ca = decodeURIComponent(document.cookie).split(';');
+        for(let i = 0; i < ca.length; i++) {
+          let c = ca[i];
+          while (c.charAt(0) == ' ') { c = c.substring(1); };
+          if (c.indexOf('adsbx_subscriber=') == 0) { hide_freestar(); return; };
+        }
+  
+        let w=window.top,head=w.document.getElementsByTagName('head')[0];
+        let js=w.document.createElement('script'); js.type = 'text/javascript';
+        js.src='https://a.pub.network/adsbexchange-com/pubfig.min.js';js.id='freestarjs';
+        head.appendChild(js, head);
+      };
+    </script>
+    <!-- end freestar -->
     <!-- HEAD_ANCHOR -->
 
     <!-- CSS_ANCHOR -->
@@ -17,12 +49,16 @@
     <link rel="stylesheet" href="libs/ol-layerswitcher-3.8.3.css" type="text/css"/>
     <link rel="stylesheet" href="style.css" type="text/css" />
 
-    <link rel="icon" type="image/png" href="images/tar1090-favicon.png">
+    <link rel="icon" href="images/cropped-Stealth-1-32x32.png" sizes="32x32" />
+    <link rel="icon" href="images/cropped-Stealth-1-192x192.png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="images/apple-touch.png" />
+    <meta name="msapplication-TileImage" content="images/cropped-Stealth-1-270x270.png" />
 
-    <title>tar1090</title>
+    <title>ADS-B Exchange - track aircraft live</title>
   </head>
 
   <body>
+    <div align="center" data-freestar-ad="__320x50" id="adsbexchange_mobile_pushdown-pushdown-cls"></div>
     <!-- BODY_ANCHOR -->
     <div id="layout_container">
 
@@ -727,6 +763,16 @@
       </div> <!-- selected_infoblock -->
 
       <div id="map_container" style="background-color:#D2D2D2;">
+        <div class="banner-adv" id="tracking_leaderboard_container" style="position: absolute; bottom: calc( 90px * var(--SCALE)); right: calc( 45px * var(--SCALE)); border: calc( 2px * var(--SCALE)); height: 127px; width: 970px; z-index: 99;">
+          <div title="Close" style="z-indx:99; position: absolute; top: 0px; right: 2px; cursor: pointer;display: block;height: 17px;width: 44px;line-height: 17px;color: white;font-family: Arial;text-shadow: black 2px 1px 1px;font-size: 12px;text-align: center;opacity: 1;white-space: nowrap;border-top-left-radius: 4px;border-top-right-radius: 4px;background-color: grey;"><span style="display: inline-block; line-height: normal; height: 17px;" onclick="jQuery('#tracking_leaderboard_container').css('display','none');freestar.deleteAdSlots('adsbexchange_tracking_leaderboard');">Close</span></div>
+          <div style="position: absolute; bottom: 0; right: 0; height: 110px; width: 970px">
+            <div data-freestar-ad="__970x90" id="adsbexchange_tracking_leaderboard" style="justify-content: right; align-items: start">
+              <script data-cfasync="false" type="text/javascript">
+                freestar.config.enabled_slots.push({ placementName: "adsbexchange_tracking_leaderboard", slotId: "adsbexchange_tracking_leaderboard" });
+              </script>
+            </div>
+          </div>
+        </div>
         <!-- MAP_CONTAINER_ANCHOR -->
         <div id="map_canvas" style="background-color:#D2D2D2;">
           <div id="loader">
@@ -888,7 +934,7 @@
                       <td id="dump1090_message_rate_td"><span class="infoBlockTitleText">Messages:</span> <span id="dump1090_message_rate">n/a</span>/sec</td>
                     </tr>
                     <tr class="infoblock_body">
-                      <td style="width: 50%"><span id="with_positions" class="infoBlockTitleText">With Position:</span> <span id="dump1090_total_ac_positions">n/a</span></td>
+                      <td style="width: 50%"><span id="with_positions" class="infoBlockTitleText">With Positions:</span> <span id="dump1090_total_ac_positions">n/a</span></td>
                       <td id="dump1090_total_history_td"><span class="infoBlockTitleText">History:</span> <span id="dump1090_total_history">n/a</span> positions</td>
                     </tr>
                   </table>
@@ -896,7 +942,25 @@
               </tr>
             </table>
 
-            <!-- ABOVE_TABS_ANCHOR -->
+        <!-- Tag ID: adsbexchange_right_rail_1
+        <div align="center" data-freestar-ad="__336x280" id="adsbexchange_right_rail_1">
+        <script data-cfasync="false" type="text/javascript">
+        freestar.config.enabled_slots.push({ placementName: "adsbexchange_right_rail_1", slotId: "adsbexchange_right_rail_1" });
+        </script>
+        </div>
+        -->
+
+        <div id="FreeStarVideoAdContainer_dt">
+          <div id="freestar-video-parent-v2">
+            <div id="freestar-video-child"></div>
+          </div>
+        </div>
+        <div id="FreeStarVideoAdContainer_mw">
+          <div id="freestar-video-parent-v2">
+            <div id="freestar-video-child"></div>
+          </div>
+        </div>
+        <!-- ABOVE_TABS_ANCHOR -->
 
             <div id="tabs" style="min-height: 10px; overflow: auto">
               <ul>
@@ -1003,8 +1067,13 @@
             <div id="legend" class="legend">
             </div>
 
-            <!-- BELOW_LEGEND_ANCHOR -->
-          </div>
+        <div align="center" data-freestar-ad="__300x600" id="adsbexchange_right_rail_2">
+          <script data-cfasync="false" type="text/javascript">
+            freestar.config.enabled_slots.push({ placementName: "adsbexchange_right_rail_2", slotId: "adsbexchange_right_rail_2" });
+          </script>
+        </div>
+        <!-- BELOW_LEGEND_ANCHOR -->
+      </div>
 
         </div> <!-- sidebar_canvas -->
 
@@ -1055,7 +1124,16 @@
     <script src="planeObject.js"></script>
     <script src="script.js"></script>
 
-    <link rel="preload" as="image" crossOrigin="anonymous" href="images/sprites.png">
+    <!-- adsbexchange ads -->
 
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WMZZXH53QH"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+    
+      gtag('config', 'G-WMZZXH53QH');
+    </script>
   </body>
 </html>
