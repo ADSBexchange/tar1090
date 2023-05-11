@@ -1,0 +1,79 @@
+firstimpression.io, 8043, DIRECT, a960877e77e58dd6 #FI
+google.com, pub-3622156405313063, RESELLER, f08c47fec0942fa0 #FI - AdX
+google.com, pub-8828745213386627, RESELLER, f08c47fec0942fa0 #FI - AdX OB
+openx.com, 539819368, RESELLER, 6a698e2ec38604c6 #FI - OpenX PB
+openx.com, 556762037, RESELLER, 6a698e2ec38604c6 #FI - OpenX OB
+sovrn.com, 243408, RESELLER, fafdf38b16bf6b2b #FI - Sovrn PB
+lijit.com, 243408, RESELLER, fafdf38b16bf6b2b #FI - Sovrn PB
+lijit.com, 243408-eb, RESELLER, fafdf38b16bf6b2b #FI - Sovrn OB
+sovrn.com, 256420, RESELLER, fafdf38b16bf6b2b #FI - Sovrn HS
+lijit.com, 256420, RESELLER, fafdf38b16bf6b2b #FI - Sovrn HS
+appnexus.com, 1360, RESELLER, f5ab79cb980f11d1 #FI - Sovrn
+gumgum.com, 11645, RESELLER, ffdef49475d318a9 #FI - Sovrn
+openx.com, 538959099, RESELLER, 6a698e2ec38604c6 #FI - Sovrn
+openx.com, 539924617, RESELLER, 6a698e2ec38604c6 #FI - Sovrn
+pubmatic.com, 137711, RESELLER, 5d62403b186f2ace #FI - Sovrn
+pubmatic.com, 156212, RESELLER, 5d62403b186f2ace #FI - Sovrn
+pubmatic.com, 156700, RESELLER, 5d62403b186f2ace #FI - Sovrn
+rubiconproject.com, 17960, RESELLER, 0bfd66d529a55807 #FI - Sovrn
+adtech.com, 10297, RESELLER, e1a5b5b6e3255540 #FI - Verizon Media
+aolcloud.net, 10297, RESELLER, e1a5b5b6e3255540 #FI - Verizon Media
+yahoo.com, 56710, RESELLER, e1a5b5b6e3255540 #FI - Verizon Media
+contextweb.com, 558377, RESELLER, 89ff185a4c4e857c #FI - PulsePoint
+outbrain.com, 0043e7a761d92337b9269c2b10d9835c8d, RESELLER #FI - Outbrain
+appnexus.com, 7597, RESELLER, f5ab79cb980f11d1 #FI - Outbrain
+aps.amazon.com, 4cd01fd0-0780-4b33-a4da-c39467660185, RESELLER, 4582cc3fa09ce42f #FI - Amazon
+pubmatic.com, 157150, RESELLER, 5d62403b186f2ace #FI - Amazon
+openx.com, 540191398, RESELLER, 6a698e2ec38604c6 #FI - Amazon
+rubiconproject.com, 18020, RESELLER, 0bfd66d529a55807 #FI - Amazon
+appnexus.com, 1908, RESELLER, f5ab79cb980f11d1 #FI - Amazon
+adtech.com, 12068, RESELLER, e1a5b5b6e3255540 #FI - Amazon
+districtm.io, 100962, RESELLER, 3fd707be9c4527c3 #FI - Amazon
+rhythmone.com, 1654642120, RESELLER, a670c89d4a324e47 #FI - Amazon
+yahoo.com, 55029, RESELLER, e1a5b5b6e3255540 #FI - Amazon
+yieldmo.com, 2719019867620450718, RESELLER, 6a92c77cfc3d2258 #FI - Amazon
+smartadserver.com, 4125, RESELLER, 060d053dcf45cbf3 #FI - Amazon
+pubmatic.com, 160006, RESELLER, 5d62403b186f2ace #FI - Amazon
+pubmatic.com, 160096, RESELLER, 5d62403b186f2ace #FI - Amazon
+smaato.com, 1100044650, RESELLER, 07bcf65f187117b4 #FI - Amazon
+gumgum.com, 14141, RESELLER, ffdef49475d318a9 #FI - Amazon
+admanmedia.com, 726, RESELLER #FI - Amazon
+sharethrough.com, 7144eb80, RESELLER #FI - Amazon
+emxdgt.com, 2009, RESELLER, 1e1d41537f7cad7f #FI - Amazon
+appnexus.com, 1356, RESELLER, f5ab79cb980f11d1 #FI - Amazon
+contextweb.com, 562541, RESELLER, 89ff185a4c4e857c #FI - Amazon
+themediagrid.com, JTQKMP, RESELLER, 35d5010d7789b49d #FI - Amazon
+sovrn.com, 375328, RESELLER, fafdf38b16bf6b2b #FI - Amazon
+lijit.com, 375328, RESELLER, fafdf38b16bf6b2b #FI - Amazon
+pubmatic.com, 156888, RESELLER, 5d62403b186f2ace #FI - PubMatic PB
+pubmatic.com, 161564, RESELLER, 5d62403b186f2ace #FI - PubMatic OB
+rubiconproject.com, 18438, RESELLER, 0bfd66d529a55807 #FI - Rubicon Project PB
+rubiconproject.com, 22346, RESELLER, 0bfd66d529a55807 #FI - Rubicon Project OB
+appnexus.com, 10478, RESELLER, f5ab79cb980f11d1 #FI - Xandr
+indexexchange.com, 190494, RESELLER, 50b1c356f2c5c8fc #FI - Index Exchange PB
+indexexchange.com, 198176, RESELLER, 50b1c356f2c5c8fc #FI - Index Exchange OB
+emxdgt.com, 1312, RESELLER, 1e1d41537f7cad7f #FI - EMX
+appnexus.com, 1356, RESELLER, f5ab79cb980f11d1 #FI - EMX
+sharethrough.com, 2eb6a828, RESELLER, d53b998a7bd4ecd2 #FI - ShareThrough
+indexexchange.com, 186046, RESELLER, 50b1c356f2c5c8fc #FI - ShareThrough
+spotxchange.com, 212457, RESELLER, 7842df1d2fe2db34 #FI - ShareThrough
+spotx.tv, 212457, RESELLER, 7842df1d2fe2db34 #FI - ShareThrough
+pubmatic.com, 156557, RESELLER, 5d62403b186f2ace #FI - ShareThrough
+pubmatic.com, 158723, RESELLER, 5d62403b186f2ace #FI - ShareThrough
+rubiconproject.com, 18694, RESELLER, 0bfd66d529a55807 #FI - ShareThrough
+openx.com, 540274407, RESELLER, 6a698e2ec38604c6 #FI - ShareThrough
+33across.com, 0013300001kQj2HAAS, RESELLER, bbea06d9c4d2853c #FI - ShareThrough
+152media.info, 152M22, RESELLER #FI - 152 Media
+appnexus.com, 3153, RESELLER, f5ab79cb980f11d1 #FI - 152 Media
+rhythmone.com, 850878425, RESELLER, a670c89d4a324e47 #FI - Unruly PB
+video.unrulymedia.com, 850878425, RESELLER #FI - Unruly PB
+rhythmone.com, 1473127594, RESELLER, a670c89d4a324e47 #FI - Unruly OB
+video.unrulymedia.com, 1473127594, RESELLER #FI - Unruly OB
+criteo.com, B-059167, RESELLER, 9fac4a4a87c2a44f #FI - Criteo
+themediagrid.com, Y7VE4B, RESELLER, 35d5010d7789b49d #FI - Criteo
+media.net, 8CUQSS075, RESELLER, 818f58666cabc936 #FI - Media.net
+onetag.com, 7693a4abcb3d024, RESELLER #FI - OneTag
+onetag.com, 7693a4abcb3d024-OB, RESELLER #FI - OneTag
+appnexus.com, 13099, RESELLER #FI - OneTag
+yahoo.com, 58905, RESELLER #FI - OneTag
+google.com, pub-3605257360853185, RESELLER, f08c47fec0942fa0
