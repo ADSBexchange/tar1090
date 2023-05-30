@@ -269,7 +269,7 @@ let tempTrailsTimeout = 90;
 let squareMania = false;
 
 // Columns that have a // in front of them are shown.
-let HideCols = HideCols = ["#registration", "#squawk", "#vert_rate", "#track", "#msgs", "#seen", "#rssi", "#lat", "#lon", "#data_source", "#military"]
+let HideCols = ["#registration", "#squawk", "#vert_rate", "#track", "#msgs", "#seen", "#rssi", "#lat", "#lon", "#data_source", "#military"]
 
 
 // show aircraft pictures
