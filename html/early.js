@@ -14,7 +14,7 @@ let g = {};
 let Dump1090Version = "unknown version";
 let RefreshInterval = 1000;
 let globeSimLoad = 6;
-let adsbexchange = false;
+let adsbexchange = true;
 let enable_uat = false;
 let enable_pf_data = false;
 let HistoryChunks = false;
@@ -26,6 +26,7 @@ var receiverJson;
 let deferHistory = [];
 let historyLoaded = jQuery.Deferred();
 let configureReceiver = jQuery.Deferred();
+let dynGlobeRate = false;
 let historyTimeout = 60;
 let globeIndex = 0;
 let globeIndexGrid = 0;
@@ -443,6 +444,17 @@ if (!heatmap) {
     loadHeatChunk();
 }
 
+function globeRateUpdate() {
+    if (adsbexchange) {
+        dynGlobeRate = !0;
+        const cookieExp = getCookie("adsbx_sid").split("_")[0], ts = (new Date).getTime();
+        (!cookieExp || cookieExp < ts + 36e5) && setCookie("adsbx_sid", ts + 1728e5 + "_" + Math.random().toString(36).substring(2, 15), 2)
+    }
+    return dynGlobeRate ? jQuery.ajax({url: "/globeRates.json", cache: !1, dataType: "json"}).done((function (data) {
+        null != data.simload && (globeSimLoad = data.simload), null != data.refresh && globeIndex && (RefreshInterval = data.refresh)
+    })) : jQuery.Deferred().resolve()
+}
+
 init_zstddec();
 
 function historyQueued() {
@@ -614,6 +626,7 @@ function setCookie(cname, cvalue, exdays) {
     document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
 }
 
+globeRateUpdate();
 
 const toggles = {};
 

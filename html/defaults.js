@@ -61,7 +61,7 @@ let actual_range_outline_dash = null; // null - solid line, [5, 5] - dashed line
 let actual_range_show = true;
 
 // which map is displayed to new visitors
-let MapType_tar1090 = "osm";
+let MapType_tar1090 = "osm_adsbx";
 let defaultOverlays = [];
 let dwdLayers = 'dwd:RX-Produkt';
 
@@ -193,7 +193,7 @@ let SiteCirclesColors = ['#000000', '#000000', '#000000'];
 let SiteCirclesLineDash = null; // null - solid line, [5, 5] - dashed line with 5 pixel lines and spaces in between
 
 // Controls page title, righthand pane when nothing is selected
-let PageName = "tar1090";
+let PageName = "ADS-B Exchange - track aircraft live";
 
 // Show country flags by ICAO addresses?
 let ShowFlags = true;
@@ -269,27 +269,7 @@ let tempTrailsTimeout = 90;
 let squareMania = false;
 
 // Columns that have a // in front of them are shown.
-let HideCols = [
-	"#icao",
-//	"#flag",
-//	"#flight",
-//	"#route",
-	"#registration",
-//	"#aircraft_type",
-//	"#squawk",
-//	"#altitude",
-//	"#speed",
-	"#vert_rate",
-//	"#distance",
-	"#track",
-	"#msgs",
-	"#seen",
-//	"#rssi",
-	"#lat",
-	"#lon",
-	"#data_source",
-	"#military",
-]
+let HideCols = HideCols = ["#registration", "#squawk", "#vert_rate", "#track", "#msgs", "#seen", "#rssi", "#lat", "#lon", "#data_source", "#military"]
 
 
 // show aircraft pictures
@@ -308,7 +288,7 @@ let routeApiUrl = "https://api.adsb.lol/api/0/routeset";
 // show a link to jetphotos, only works if planespottersAPI is disabled
 let jetphotoLinks = false;
 
-let showSil = false;
+let showSil = true;
 // this shows small pictures in the details but they need to be provided by the user in the folder /usr/local/share/tar1090/aircraft_sil
 // showPictures needs to be enabled as well
 // to only get these pictures disable the planespottersAPI
@@ -338,8 +318,8 @@ let filterMaxRange = 1e8; // 100 000 km should include all planes on earth ;)
 
 let jaeroTimeout = 35 * 60; // in seconds
 
-let seenTimeout = 58; // in seconds
-let seenTimeoutMlat = 58; // in seconds
+let seenTimeout = 45; // in seconds
+let seenTimeoutMlat = 60; // in seconds
 
 let darkModeDefault = true; // turn on dark mode by default (change in browser possible)
 

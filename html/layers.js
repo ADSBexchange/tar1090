@@ -115,7 +115,7 @@ function createBaseLayers() {
         }));
     }
 
-    if (false && adsbexchange) {
+    if (adsbexchange && getCookie("adsbx_subscriber")) {
         jQuery('#premium_text').updateText('Premium active!');
         world.push(new ol.layer.Tile({
             source: new ol.source.XYZ({
@@ -154,7 +154,7 @@ function createBaseLayers() {
             type: 'base',
         }));
     }
-    if (0 && adsbexchange) {
+    if (adsbexchange) {
         world.push(new ol.layer.Tile({
             source: new ol.source.XYZ({
                 url: "https://api.maptiler.com/maps/256/{z}/{x}/{y}.png?key=HyIQ6A88uTDdX4n4MNVY",
