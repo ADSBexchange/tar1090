@@ -9,7 +9,8 @@ g.planes        = {};
 g.planesOrdered = [];
 g.route_cache = [];
 g.route_check_array = [];
-g.route_cache_timer = new Date().getTime() / 1000 + 5; // 5 seconds from now
+g.route_check_in_flight = false;
+g.route_cache_timer = new Date().getTime() / 1000 + 1; // one second from now
 
 // Define our global variables
 let tabHidden = false;
