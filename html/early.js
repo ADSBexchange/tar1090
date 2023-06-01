@@ -355,7 +355,7 @@ let test_chunk_defer;
 const hostname = window.location.hostname;
 if (uuid) {
     // don't need receiver / chunks json
-} else if (adsbexchange && (hostname.startsWith('globe.') || hostname.startsWith('globe-'))) {
+} else if (adsbexchange) {
     console.log("Using adsbexchange fast-path load!");
     let data = {"zstd":true,"reapi":true,"refresh":1600,"history":1,"dbServer":true,"binCraft":true,"globeIndexGrid":3,"globeIndexSpecialTiles":[],"version":"adsbexchange backend"};
     get_receiver_defer = jQuery.Deferred().resolve(data);
