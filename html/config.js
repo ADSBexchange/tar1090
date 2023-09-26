@@ -27,6 +27,9 @@
 // The google maps zoom level, 0 - 16, lower is further out
 //DefaultZoomLvl   = 7;
 
+// specify lat lon that the 'auto-select plane' feature will choose the closest plane to
+// autoselectCoords = [42, 21];
+
 // Center marker. If dump1090 provides a receiver location,
 // that location is used and these settings are ignored.
 
@@ -40,6 +43,7 @@
 
 // Color controls for the range outline
 //range_outline_color = '#0000DD';
+//range_outline_alpha = 1.0;
 //range_outline_width = 1.7;
 //range_outline_colored_by_altitude = false;
 //range_outline_dash = [5, 5]; // null - solid line, [5, 5] - dashed line with 5 pixel lines and spaces in between
@@ -221,6 +225,14 @@ BingMapsAPIKey = null;
 
 // Don't display any TIS-B planes
 // filterTISB = false;
+
+// image configuration link (back to a webUI for feeder setup)
+// if the link is supposed to point to the same host that tar1090
+// is running on the token 'HOSTNAME' (without quotes) in the Link
+// text will be replaced with the current hostname at runtime
+//
+// imageConfigLink = "";
+// imageConfigText = "";
 
 //flightawareLinks = false;
 //shareBaseUrl = 'https://globe.adsbexchange.com/';
