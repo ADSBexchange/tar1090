@@ -12,33 +12,35 @@
     <!-- freestar header -->
     <link rel="stylesheet" href="https://a.pub.network/core/pubfig/cls.css">
     <script data-cfasync="false" type="text/javascript">
-      var freestar = freestar || {};
-      freestar.queue = freestar.queue || [];
-      freestar.config = freestar.config || {};
-      freestar.config.enabled_slots = [];
-      freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
-      <!-- Page Specific -->
-      freestar.config.disabledProducts = {
-        stickyFooter: true,
-        googleInterstitial: true
-      };
-      let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
-      let hide_freestar = () => {
-        for (let id of ['adsbexchange_mobile_pushdown-pushdown-cls', 'tracking_leaderboard_container', 'FreeStarVideoAdContainer_mw', 'FreeStarVideoAdContainer_dt', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2']) { hideById(id);};
-      };
-      let load_freestar = () => {
-        let ca = decodeURIComponent(document.cookie).split(';');
-        for(let i = 0; i < ca.length; i++) {
-          let c = ca[i];
-          while (c.charAt(0) == ' ') { c = c.substring(1); };
-          if (c.indexOf('adsbx_subscriber=') == 0) { hide_freestar(); return; };
-        }
-  
-        let w=window.top,head=w.document.getElementsByTagName('head')[0];
-        let js=w.document.createElement('script'); js.type = 'text/javascript';
-        js.src='https://a.pub.network/adsbexchange-com/pubfig.min.js';js.id='freestarjs';
-        head.appendChild(js, head);
-      };
+    var freestar = freestar || {};
+    freestar.queue = freestar.queue || [];
+    freestar.config = freestar.config || {};
+    freestar.config.enabled_slots = [];
+    freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+    <!-- Page Specific -->
+    freestar.config.disabledProducts = {
+    stickyFooter: true,
+    googleInterstitial: true
+    }; 
+    let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
+    let hide_freestar = () => {
+    for (let id of ['adsbexchange_mobile_pushdown-pushdown-cls', 'tracking_leaderboard_container', 'FreeStarVideoAdContainer_2', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2']) { hideById(id);};
+    };
+    let load_freestar = () => {
+    let ca = decodeURIComponent(document.cookie).split(';');
+    for(let i = 0; i < ca.length; i++) { 
+    let c = ca[i];
+    while (c.charAt(0) == ' ') { c = c.substring(1); };
+    if (c.indexOf('adsbx_subscriber=') == 0) { hide_freestar(); return; };
+    }
+
+    let w=window.top,head=w.document.getElementsByTagName('head')[0];
+    let js=w.document.createElement('script'); js.type = 'text/javascript';
+    js.src='https://a.pub.network/adsbexchange-com/pubfig.min.js';js.id='freestarjs';
+    head.appendChild(js, head);
+    };
+    </script>
+
     </script>
     <!-- end freestar -->
     <!-- HEAD_ANCHOR -->
@@ -48,6 +50,7 @@
     <link rel="stylesheet" href="libs/ol-6.14.1.css" type="text/css" />
     <link rel="stylesheet" href="libs/ol-layerswitcher-3.8.3.css" type="text/css"/>
     <link rel="stylesheet" href="style.css" type="text/css" />
+    <link rel="stylesheet" href="flight-activity/styles.css" type="text/css" />
 
     <link rel="icon" href="images/cropped-Stealth-1-32x32.png" sizes="32x32" />
     <link rel="icon" href="images/cropped-Stealth-1-192x192.png" sizes="192x192" />
@@ -103,6 +106,10 @@
         </div>
       </div>
 
+      <div id="full_details_window" style="display: none">
+        <img src="/images/close.svg" title="Close Full Details" id="close_full_details" class="pointer closeButton">
+        <iframe id="full_details_iframe" width="100%" height="100%"></iframe>
+      </div>
 
       <div id="selected_infoblock" style="display: none">
         <div id="infoblock_close" class="infoblockCloseBox"></div>
@@ -244,7 +251,7 @@
                   </div>
                 </td>
               </tr>
-              <tr id="routeRow" class="hidden">
+              <!-- <tr id="routeRow" class="hidden">
                 <td>
                   <div class="infoHeading">
                     <span title="Reported flight origin and destination according to adsbdb.com">Route</span>:
@@ -253,7 +260,7 @@
                     <span id="selected_route"></span>
                   </div>
                 </td>
-              </tr>
+              </tr> -->
               <tr id="photoLinkRow" class="hidden">
                 <td>
                   <div class="infoHeading">
@@ -263,6 +270,36 @@
               </tr>
             </table>
           </div>
+          <!-- START TAKEOFF/LANDINGS -->
+          <div id="feature_landings">
+            <div class="sectionTitle">
+                <div class="badgeContainer full_detail">
+                    <div><img src="images/BadgeComing.svg" alt="Coming Feature" width="40" height="14" class="svg badgeComing" /></div><a id="show_detail" 
+                    title="Full Details Window" class="pointer">Full Details</a>
+                    <div class="icon"><a id="show_detail_icon"><img
+                                src="images/NewBrowserTab.svg" title="Full Details Window" class="iconNew" /></a></div>
+                </div>
+            </div>
+            <div class="sectionTitle pointer" onclick="toggleAPICall();">
+                <div class="section-title-content badgeContainer">
+                    <div><img src="images/BadgeBeta.svg" alt="Beta Feature" width="25" height="14" class="svg" /></div>
+                    <div>FLIGHT ACTIVITY</div>
+                    <div id="flight_activity_expand" class="icon icon_down"><img src="images/Chevron.svg" alt="Expand"
+                            width="10"></div>
+                </div>
+            </div>
+
+            <div class='spinner-container' style="display:none;">
+                <div class="lds-ring">
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                    <div></div>
+                </div>
+            </div>
+            <div id="takeoff_landings_block" class="home" style='display:none;'></div>
+          </div>
+          <!--End TAKEOFF/LANDINGS-->
           <button id="show_trace" type="button" class="greyButton">History</button>
           <div id="history_collapse" class="infoBlockSection" style="display: none">
             <div class="identSmall" id="trace_date">UTC day:
@@ -919,13 +956,13 @@
                   </div>
                 </td>
               </tr>
-              <tr id="imageConfigHeader" class="infoblock_row hidden">
+              <!-- <tr id="imageConfigHeader" class="infoblock_row hidden">
                 <td style="text-align: center">
                   <div>
                     <span class="largeText"><a id="imageConfigLink" class="largeText" target="_blank" href="/">ADSB Feeder Image Config</a></span>
                   </div>
                 </td>
-              </tr>
+              </tr> -->
 
               <tr class="infoblock_heading">
                 <td style="text-align: right" class=link>
@@ -959,14 +996,9 @@
         </div>
         -->
 
-        <div id="FreeStarVideoAdContainer_dt">
-          <div id="freestar-video-parent-v2">
-            <div id="freestar-video-child"></div>
-          </div>
-        </div>
-        <div id="FreeStarVideoAdContainer_mw">
-          <div id="freestar-video-parent-v2">
-            <div id="freestar-video-child"></div>
+        <div id="FreeStarVideoAdContainer_2">
+          <div id="freestar-video-parent-2">
+              <div id="freestar-video-child"></div>
           </div>
         </div>
         <!-- ABOVE_TABS_ANCHOR -->
@@ -1084,6 +1116,12 @@
         <!-- BELOW_LEGEND_ANCHOR -->
       </div>
 
+      <!-- RECAPTCHA T&C -->
+      <p class='captchaText'>This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy">Privacy Policy</a> and <a href="https://policies.google.com/terms">Terms of Service</a> apply.
+      <!-- END RECAPTCHA T&C -->
+
+    </p>
+
         </div> <!-- sidebar_canvas -->
 
       </div> <!-- sidebar_container -->
@@ -1107,7 +1145,7 @@
     <div id="js_error" class="hidden"></div>
     <div id="container_splitter"></div>
 
-    <script>let databaseFolder = "db2";</script>
+    <script>let databaseFolder = "db-a48cb81";</script>
     <!-- JS_ANCHOR1 -->
     <script src="libs/jquery-3.6.1.min.js"></script>
     <script src="libs/elm-pep-01.js"></script>
@@ -1118,7 +1156,6 @@
 
     <!-- JS_ANCHOR2 -->
     <script src="early.js"></script>
-
     <script src="defaults.js"></script>
     <script src="config.js"></script>
     <script src="dbloader.js"></script>
@@ -1133,6 +1170,9 @@
     <script src="planeObject.js"></script>
     <script src="script.js"></script>
 
+    <script src="flight-activity/api.js"></script>
+    <script src="flight-activity/home-block.functions.js"></script>
+    <script src="flight-activity/home-block.init.js"></script>
     <!-- adsbexchange ads -->
 
     <!-- Google tag (gtag.js) -->

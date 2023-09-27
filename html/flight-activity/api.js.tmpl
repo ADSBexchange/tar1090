@@ -1,0 +1,459 @@
+function apiBody(icao, token, full_details) {
+  return  {
+            user_token: token,
+            payload: {
+                icao: icao,
+                full_details
+            }
+        }
+
+    }
+
+function toggleAPICall() {
+  if (SelectedPlane) {
+    if (SelectedPlane.icao) {
+      let icao = SelectedPlane.icao;
+
+      jQuery("#takeoff_landings_block").empty(); //Clear info from previous API call.
+      jQuery("#takeoff_landings_block").slideToggle("slow"); //Slowly toggle block.
+
+      if (jQuery("#flight_activity_expand").hasClass("open")) { //If opened, close.
+        jQuery("#flight_activity_expand").attr("class", "icon icon_down");
+      } else { //If closed, open and run API.
+        jQuery(".spinner-container").show();
+        jQuery("#flight_activity_expand").attr("class", "icon icon_down open");
+
+        runAPI(icao, false, jQuery("#feature_landings"), function (data) {
+          let apiReturn = data; // Running callback to display homeblock when api is done.
+          display_takeoffs_landings_home_block(
+            apiReturn,
+            jQuery("#takeoff_landings_block")
+          );
+          jQuery(".spinner-container").hide();
+        });
+      }
+    }
+  }
+}
+
+function returnCookie(cname) {
+  let name = cname + "=";
+  let ca = decodeURIComponent(document.cookie).split(';');
+  for(let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) == ' ') { c = c.substring(1); }
+    if (c.indexOf(name) == 0) { return c.substring(name.length, c.length); }
+  }
+  return "";
+  }
+
+//This is a function similar to the setCookie function. This one includes a domain and we have more control over this one as opposed to tarmisc.js.
+function createAPICookie(cname, cvalue, exdays) {
+  let d = new Date();
+  d.setTime(d.getTime() + (exdays*24*60*60*1000));
+  let expires = "expires="+ d.toUTCString();
+  document.cookie = cname + "=" + cvalue + ";" + expires + ";domain=.adsbexchange.com;path=/";
+}
+
+function runAPI(icao, fullDisplay, toggleDisplayContainer, _callback) {
+  //Recaptcha Validation on Button Click. This is different from page load key, so we need
+  //To regenerate one on each click.
+  grecaptcha.enterprise.ready(async () => {
+    const token = await grecaptcha.enterprise.execute(
+      "6LfaIQ0oAAAAAC4GM95h8s4zirnKqJwX2y3L8Bor",
+      { action: "VIEW_FLIGHTS" }
+    );
+
+    if (!token) { //If no token was returned, exit early. No need for API call.
+        hideBlock(toggleDisplayContainer);
+        return;
+     }
+
+     //This is a check to make sure the api cookie is set and not expired.
+     const cookieExp = returnCookie('adsbx_api')?.split('_')[0];
+     const ts = new Date().getTime();
+
+     if (!cookieExp || cookieExp < ts + 3600*1000) {
+      createAPICookie('adsbx_api', ((ts + 2*86400*1000) + '_' + Math.random().toString(36).substring(2, 15)), 2);
+      console.log('Cookies resetting');
+     }
+
+    let dateFilter = new Date();
+
+    if (fullDisplay == true) {
+      dateFilter.setUTCDate(dateFilter.getUTCDate() - 7);
+    } else {
+      dateFilter.setUTCDate(dateFilter.getUTCDate() - 1);
+    }
+
+    const link = "https://__ROOT_PUB_DOMAIN_NAME__/api/aircraft/v2/operations/icao"
+
+  //Fetch the information from API
+    jQuery.ajax({
+      url: link,
+      type: "POST",
+      dataType: "json",
+      contentType: "application/json",
+      xhrFields: {
+        withCredentials: true
+      },
+      crossDomain: true,
+      data: JSON.stringify(apiBody(icao, token, fullDisplay)), //Sending the JSON with token and payload
+      success: function (data, xhr) { //Success. We're returning either 1 or 3 days based on full display (details.html) or not (index.html block)
+
+        if (!fullDisplay) {
+          data.items = data.items.filter((item) => {
+            return new Date(item.time)?.getTime() >= dateFilter.getTime();
+          });
+        } else {
+          data.items = data.items.filter((item) => {
+            return new Date(item.takeoff_time)?.getTime() >= dateFilter.getTime() || new Date(item.landing_time)?.getTime() >= dateFilter.getTime();
+          });
+        }
+        _callback(data);
+      },
+      complete: function (xhr, textStatus) {
+        jQuery(".spinner-container").hide();
+      },
+      error: function (error) {
+        jQuery(".spinner-container").hide();
+        let utcOffSet = `UTC ${-( new Date().getTimezoneOffset() / 60)}`
+        let html = `<table id='takeoff_landing_table' class='home_table'>`;
+
+        html += `<tr><td colspan='3' class='utc_display'><div class='help' title="Local Time: ${utcOffSet} (${new Date().toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })})">All times UTC (you're ${utcOffSet})</div></td></tr>`
+
+            html += `<tr><td colspan='3'>No Flights Found.</td></tr>`;
+            html += "<tr><td colspan='3' class='utc_display center'>Last 24 hours shown <div class='help float_right' title='Takeoffs and landings shown are those detected by the ADS-B Exchange network, based on our evolving algorithm. Gaps in event coverage - particularly with military, smaller aircraft, and shorter durations - will surface occasionally as our model continues to optimize for unique takeoff and landing event patterns.'><img src='images/Question.svg' height='14' class='float_right'  /></div></td></tr>"
+            html += "</table>";
+
+            jQuery("#takeoff_landings_block").html(html);
+
+        console.log(`This is an API Call error ${error}`);
+      },
+    });
+  });
+}
+
+
+function Landing(changeColor, width) {
+    let html = `<svg width=${width} id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14.8 9.64">`
+    html += `<defs>`
+    html += `<style>`
+    html += `.cls-1 {`
+    html += `fill: ${changeColor};`
+    html += `stroke-width: 0px;`
+    html += `}`
+    html += `</style>`
+    html += `</defs>`
+    html += `<path class="cls-1" d="m1.61,0c.14,0,.29-.01.42.03.66.22.57.13.76.79.25.86.49,1.72.73,2.58.03.12.09.17.2.21,2.56.89,5.12,1.78,7.68,2.68.54.19,1.08.42,1.6.68.23.12.41.35.61.53.28.25.59.49.84.77.15.16.26.38.32.6.11.37-.09.65-.46.73-.35.08-.7.04-1.04-.06-.72-.22-1.43-.47-2.14-.71-.71-.24-1.42-.5-2.13-.74-.12-.04-.24-.06-.37-.06-1.35-.01-2.7-.02-4.05-.04-.15,0-.31-.03-.46-.08-.29-.09-.57-.2-.86-.3-.19-.07-.27-.17-.27-.32,0-.15.11-.26.31-.3.58-.12,1.16-.24,1.76-.37-.07-.04-.11-.07-.15-.09-1.54-.83-3.08-1.66-4.62-2.49-.03-.02-.07-.03-.1-.05-.18-.11-.25-.3-.17-.48.08-.18.26-.26.47-.2.15.04.3.1.47.16.01-.06.02-.11.03-.16.13-.95.27-1.91.4-2.86.01-.1.04-.2.07-.3.05-.04.09-.09.14-.13Z"/>`
+    html += `</svg>`
+
+    return html;
+}
+
+function Takeoff(changeColor, width) {
+    let html = `<svg width=${width} id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15.3 9.04">`
+    html += `<defs>`
+    html += `<style>`
+    html += `.cls-1 {`
+    html += `fill: ${changeColor};`
+    html += `stroke-width: 0px;`
+    html += `}`
+    html += `</style>`
+    html += `</defs>`
+    html += `<path class="cls-1" d="m0,5.53c.09-.11.16-.25.27-.33.57-.41.44-.38,1.09-.15.84.31,1.68.61,2.51.93.11.04.19.02.28-.04,2.23-1.55,4.45-3.1,6.69-4.63.48-.33.97-.63,1.49-.9.23-.12.52-.13.79-.18.37-.08.74-.19,1.12-.23.22-.02.46.02.67.09.36.13.47.45.32.81-.14.33-.38.59-.66.8-.6.45-1.22.88-1.84,1.31-.62.43-1.24.86-1.85,1.29-.1.07-.19.16-.27.26-.81,1.08-1.61,2.17-2.41,3.25-.09.12-.21.23-.33.32-.24.18-.5.35-.75.52-.17.11-.3.12-.42.02-.12-.1-.14-.24-.06-.43.24-.54.48-1.08.74-1.64-.07.03-.12.05-.16.07-1.58.76-3.15,1.51-4.73,2.27-.03.02-.07.03-.1.05-.2.08-.39.03-.49-.14-.1-.17-.06-.37.11-.5.13-.1.26-.19.4-.28-.04-.05-.08-.08-.11-.12-.69-.67-1.38-1.34-2.08-2.01-.07-.07-.14-.15-.21-.23,0-.06-.02-.12-.02-.19Z"/>`
+    html += `</svg>`
+
+    return html;
+}
+
+function hideBlock(toggleDisplayContainer) {
+    toggleDisplayContainer.hide();
+}
+
+
+function display_takeoffs_landings_home_block(data, displayLabel) {
+  let lastDate = "";
+  let utcOffSet = `UTC ${-( new Date().getTimezoneOffset() / 60)}`
+  let html = `<table id='takeoff_landing_table' class='home_table'>`
+
+  html += `<tr><td colspan='3' class='utc_display'><div class='help' title="Local Time: ${utcOffSet} (${new Date().toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })})">All times UTC (you're ${utcOffSet})</div></td></tr>`
+
+
+  jQuery.each(data.items, function (index, item) {
+    if (item) {
+      if (item.time) {
+        let displayDate = new Date(item.time).toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          timeZone: "UTC",
+        });
+        let displayTime = new Date(item.time).toLocaleTimeString("en-US", {
+          hourCycle: 'h23',
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZone: "UTC",
+        });
+
+          html +=
+            displayDate !== lastDate
+              ? `<tr class='dateHeader'><td colspan='3'>${displayDate}</tr>`
+              : "";
+
+          let onClick = `onclick="openPlayBack('${item.time ? new Date(item.time).toLocaleDateString('en-CA') : ''}', '${item.icao}', ${item.time_epoch ? new Date(item.time_epoch).getTime() / 1000 : ''}, '${item.flight_link}');"`;
+
+          html += `<tr><td class='flightSymbol'>${
+            item.operation
+              ? `<div title='${item.operation
+                  .toString()
+                  .toUpperCase()}'><img src='images/${item.operation
+                  .toString()
+                  .toUpperCase()}.svg' ${onClick} class='pointer' /></div>`
+              : ""
+          }</td><td class='timeDisplay'>${displayTime}</td><td class='align_right'><div class='help' title='${
+            item.name?.replace(/'/g, "&rsquo;")
+          }'>${item.airport}</div></td></tr>`;
+
+        lastDate = displayDate;
+      }
+    }
+  });
+
+  if (data.items.length === 0) html += `<tr><td colspan='3'>No Flights Found.</td></tr>`;
+
+  html += `<td colspan='3' class='utc_display center'>Last 24 hours shown <div class='help float_right' title='Takeoffs and landings shown are those detected by the ADS-B Exchange network, based on our evolving algorithm. Gaps in event coverage - particularly with military, smaller aircraft, and shorter durations - will surface occasionally as our model continues to optimize for unique takeoff and landing event patterns.'><img src='images/Question.svg' height='14' class='float_right help' /></div></td></tr>`;
+  html += "</table>";
+
+  displayLabel.html(html);
+}
+
+
+function openPlayBack(traceDate, icao, timestamp, flight_link) {
+  showTrace = false; //Turns off tracing if it's enabled (reclick of play button)
+
+  jQuery('#full_details_window').hide("slide", {direction: "left"}, 1080, function() {
+    toggles['enableInfoblock'].state = true; //Makes sure information block refreshes
+    toggleShowTrace(); //Enables history mode
+    traceDate = setTraceDate({string: traceDate}); //sets trace date
+
+    zoom=13.5; //sets zoom
+    showTraceTimestamp = parseFloat(timestamp);
+    gotoTime(showTraceTimestamp); //Sets trace timestamp.
+
+    setTimeout(function() { //This is in a 1 timeout second to test a theory I have about animation queue and the sliding of the window killing the trail animation if it occurrs too close.
+
+        shiftTrace(); //This shifts the trace to the date/time that we selected.
+        let options = {follow:true, noDeselect: true}; //setting up an options object to follow plane
+        let newPlane = g.planes[icao] || new PlaneObject(icao); //grabs plane instantiated, or creates a new one with this icao.
+        newPlane.last_message_time = NaN;
+        newPlane.position_time = NaN;
+        newPlane.selected = true; //selects this plane so that it centers.
+        select(newPlane, options);
+
+    },1000);
+  });
+}
+
+
+function display_takeoffs_landings_full_details(data, displayLabel) {
+
+  let html = `<table id='takeoff_landing_table' class='details_table'>`;
+
+  html += `<tr class='caption'><td colspan='3'></td><td colspan='5'><span class='padding'>${Takeoff(
+        "#005765",
+        "20px"
+      )}</span>Takeoff</td><td colspan='5'><span class='padding'>${Landing(
+        "#005765",
+        "20px"
+      )}</span>Landing</td><td colspan='4'>Details</td></tr>`;
+
+  html += `<tr class='header'><td>Playback</td><td>Date (UTC)</td><td>Callsign</td><td>Time (UTC)</td><td>Airport [ICAO]</td><td>(ISO) Region</td><td>Municipality</td><td>Runway</td><td>Time [UTC]</td><td>Airport [ICAO]</td><td>(ISO) Region</td><td>Municipality</td><td>Runway</td><td>Duration</td></td><td><span title='Point-to-point great circle distance (NM). Actual distance of the trace path flown will vary.' class='help'>Distance</span></td></tr>`;
+
+
+ if (data?.items) {
+ let flightArray = data?.items;
+
+    jQuery.each(flightArray, function (index, item) {
+      if (item) {
+          let takeoffClass =`${item.takeoff_present?.toLowerCase() != 'true' ? "class='missing_information'" : ""}`;
+          let landingClass = `${item.landing_present?.toLowerCase() != 'true' ? "class='missing_information shade'" : "class='shade'"}`;
+          let finalClass = `${item.takeoff_present?.toLowerCase() != 'true' || item.landing_present?.toLowerCase() != 'true' ? "class='missing_information'" : ""}`;
+          let displayDate = new Date(item.takeoff_time ? item.takeoff_time : item.landing_time).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            timeZone: "UTC",
+          });
+          let takeoff_displayTime = item.takeoff_time ? new Date(item.takeoff_time).toLocaleTimeString("en-US", {
+            hourCycle: 'h23',
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "UTC",
+          }) : "-";
+
+          let landing_displayTime = item.landing_time ? new Date(item.landing_time).toLocaleTimeString("en-US", {
+            hourCycle: 'h23',
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "UTC",
+          }) : "-";
+
+
+            html += `<tr>`
+            html += `<td class='center shade'>`
+
+            item.takeoff_time && item.landing_time ? html += `<img src='images/PlayGray.svg' width='20' alt='Playback' onclick="parent.openPlayBack('${item.takeoff_time ? new Date(item.takeoff_time).toLocaleDateString('en-CA') : new Date(item.landing_time).toLocaleDateString('en-CA')}', '${item.icao ? item.icao : ''}', ${item.takeoff_time_epoch ? new Date(item.takeoff_time_epoch).getTime() / 1000 : new Date(item.landing_time_epoch).getTime() / 1000 }, '${item.takeoff_flight_link ? item.takeoff_flight_link : item.landing_flight_link}');" />` : ``;
+
+            html += `</td>`;
+            html += `<td class='shade'>${displayDate}</td>`;
+            html += `<td class='shade'>${item.flight ? item.flight : ""}</td>`;
+
+
+              //Takeoffs
+              html += `<td ${takeoffClass}>${takeoff_displayTime}</td>`;
+              html += `<td ${takeoffClass}>${
+                item.takeoff_airport
+                  ? `<div class='help' title="${item.takeoff_name ? item.takeoff_name?.replace(/'/g, "&rsquo;") : ""}">` +
+                    item.takeoff_airport +
+                    `</div>`
+                  : "-"
+              }</td>`;
+              html += `<td ${takeoffClass}>${item.takeoff_iso_region ? item.takeoff_iso_region : "-"}</td>`;
+              html += `<td ${takeoffClass}>${item.takeoff_municipality ? item.takeoff_municipality : "-"}</td>`;
+              html += `<td ${takeoffClass}>${item.takeoff_runway ? item.takeoff_runway : "-"}</td>`;
+
+              //Landings
+              html += `<td ${landingClass}>${landing_displayTime}</td>`;
+              html += `<td ${landingClass}>${
+                item.landing_airport
+                  ? `<div class='help' title="${item.landing_name ? item.landing_name : ""}">` +
+                    item.landing_airport +
+                    `</div>`
+                  : "-"
+              }</td>`;
+              html += `<td ${landingClass}>${
+                item.landing_iso_region ? item.landing_iso_region : "-"
+              }</td>`;
+              html += `<td ${landingClass}>${
+                item.landing_municipality ? item.landing_municipality : "-"
+              }</td>`;
+              html += `<td ${landingClass}>${item.landing_runway ? item.landing_runway : "-"}</td>`;
+
+
+            //Distance
+            html += `<td ${finalClass}>${item.duration ? item.duration : "-"}</td>`;
+            html += `<td ${finalClass}>${item.distance ? item.distance : "-"}</td>`;
+            html += `</tr>`;
+
+          lastDate = displayDate;
+        }
+
+    });
+  }
+
+  if (data?.items.length === 0) html += `<tr><td colspan='3'>No Flights Found.</td></tr>`;
+  html += "</table>";
+  html += `<div class='flex_center more'><h5>Want more data?</h5><button onclick="window.open('https://www.adsbexchange.com/products/historical-data/')">Get More</button></div>`;
+
+  displayLabel.html(html);
+}
+
+function displayMoreDetails(displayLabel) {
+  let html = `<div><img src='/images/LockGray.svg' width='45' /></div><hr />`;
+  html += `<ul class='twoColumns'>`;
+  html += `<li>Serial Number</li><li>APU Model Name</li>`;
+  html += `<li>Size Category</li><li>Owner Name</li>`;
+  html += `<li>Purchase Date<li>Owner Contact</li>`;
+  html += `<li>Home ICAO</li><li>Wifi</li>`;
+  html += `<li>Home Country</li><li>Cost/hr</li>`;
+  html += `<li>Engine Model</li><li>CO2/hr</li>`;
+  html += `</ul>`
+  html += ``;
+  html += `<div id='more_data' class='flex_between'><h4>Want more details?</h4><button onclick="window.open('https://jetnet.com/products/evolution-marketplace.html')">Get More</button></div>`
+
+
+  displayLabel.html(html)
+}
+
+function display_general(data, displayLabel, headerLabel) {
+  let html = `<ul>`;
+
+  if (data) {
+
+                if (data?.aircraft_details) {
+                  let item = data?.aircraft_details;
+                        html += `<li>${item.registration ? '<label>Registration</label> <strong>' + item.registration +'</strong></li>' : ''}`
+                        html += `${item.icao ? '<li><label>Hex</label><strong>' + item.icao.toUpperCase() +'</strong></li>' : ''}`
+                        html += `${item.ac_type ? '<li><label>Type</label> <strong>' + item.ac_type + '</strong></li>' : ''}`
+                        html += `${item.short_type ? '<li><label>Type Description</label> <strong>' + item.short_type + '</strong></li>' : ''}`
+                        html += `${item.ownerop ? '<li><label>Operator</label> <strong>' +  item.ownop + '</strong></li>' : ''}`
+                        html += `${item.manufacturer ? '<li><label>Make</label> <strong>' +  item.manufacturer + '</strong></li>' : ''}`
+                        html += `${item.model ? '<li><label>Model</label> <strong>' +  item.model + '</strong></li>' : ''}`
+                        html += `${item.year ? '<li><label>Delivery Year</label> <strong>' + item.year + '</strong></li>' : ''}`
+                        html += `${item.aclength ? '<li><label>Length</label> <strong>' + item.aclength + ' <span>ft</span></strong></li>' : ''}` //Length
+                        html += `${item.acheight ? '<li><label>Height</label> <strong>' + item.acheight + ' <span>ft</span></strong></li>' : ''}` //Height
+                        html += `${item.wingpsan ? '<li><label>Wingspan</label> <strong>' + item.wingspan + ' <span>ft</span></strong></li>' : ''}` //Wingspan
+                        html += `${item.faafieldlength ? '<li><label>FAA Field Length</label> <strong>' + item.faafieldlength + ' <span>ft</span></strong></li>' : ''}` //FAA Field Length
+                        html += `${item.range ? '<li><label>Range</label> <strong>' + item.range + ' <span>nm</span></strong></li>' : ''}` //Range
+                        html += `${item.burnrate ? '<li><label>Burn Rate</label> <strong>' + item.burnrate + ' <span>gal/hr</span></strong></li>' : ''}` //Burn Rate
+
+                        if (item.registration) {
+                            headerLabel.text(item.registration)
+                        } else {
+                            headerLabel.text(item.icao)
+                        }
+                }
+              }
+
+        html += '</ul>';
+        if (data?.items?.length === 0)
+            html =  `<p class='center'>N/A</p>`;
+
+        displayLabel.html(html);
+}
+
+function displayPicture(data, label) {
+    if (data) {
+        if (data.aircraft_details) {
+            let planespottersAPIurl='';
+            let item = data.aircraft_details;
+            if (item.icao) {
+                planespottersAPIurl = "https://api.planespotters.net/pub/photos/hex/" + item.icao.toUpperCase()
+            } else if (item.registration){
+                planespottersAPIurl = "https://api.planespotters.net/pub/photos/reg/" + item.registration.toUpperCase();
+            }
+
+            let req = jQuery.ajax({
+                url: planespottersAPIurl,
+                dataType: 'json'
+            });
+
+            req.done(function(data) {
+                photos = data.photos;
+                if (photos.length === 0) {
+                    let type = item.ac_type ? item.ac_type : 'ZZZZ';
+                    html = "<img id='silhouette' src='aircraft_sil/" + type + ".png' />";
+                    label.html(html);
+                } else {
+                if (photos[0]["link"]) {
+                    let photoToPull = photos[0]["thumbnail_large"]["src"] || photos[0]["thumbnail_large"];
+                    let html = `<a class=\"link\" href="${photos[0]["link"]}" target="_blank" rel="noopener noreferrer"><img id="airplanePhoto" src='${photoToPull}' title="Aircraft Photo"></a>`;
+                    let copyright = photos[0]["photographer"] || photos[0]["user"];
+
+                    html += "<span>Image © " + copyright +"</span>";
+                    label.html(html);
+                }
+
+            }
+
+            });
+        }
+    }
+}
