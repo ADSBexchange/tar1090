@@ -9,6 +9,13 @@
 
     <meta name="viewport" content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui" />
 
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+      new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+      j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+      'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+      })(window,document,'script','dataLayer','GTM-TL4V9RN');</script>
+    <!-- End Google Tag Manager -->
     <!--Google Recaptcha Script-->
     <script src="https://www.google.com/recaptcha/enterprise.js?render=6LfaIQ0oAAAAAC4GM95h8s4zirnKqJwX2y3L8Bor"></script>
 
@@ -27,7 +34,7 @@
     }; 
     let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
     let hide_freestar = () => {
-    for (let id of ['adsbexchange_mobile_pushdown-pushdown-cls', 'tracking_leaderboard_container', 'FreeStarVideoAdContainer_2', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2']) { hideById(id);};
+    for (let id of ['adsbexchange_mobile_pushdown-pushdown-cls', 'tracking_leaderboard_container', 'FreeStarVideoAdContainer', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2']) { hideById(id);};
     };
     let load_freestar = () => {
     let ca = decodeURIComponent(document.cookie).split(';');
@@ -64,6 +71,11 @@
   </head>
 
   <body>
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TL4V9RN"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+
     <div align="center" data-freestar-ad="__320x50" id="adsbexchange_mobile_pushdown-pushdown-cls"></div>
     <!-- BODY_ANCHOR -->
     <div id="layout_container">
@@ -998,10 +1010,9 @@
         </script>
         </div>
         -->
-
-        <div id="FreeStarVideoAdContainer_2">
-          <div id="freestar-video-parent-2">
-              <div id="freestar-video-child"></div>
+        <div id="FreeStarVideoAdContainer">
+          <div id="freestar-video-parent">
+          <div id="freestar-video-child"></div>
           </div>
         </div>
         <!-- ABOVE_TABS_ANCHOR -->
