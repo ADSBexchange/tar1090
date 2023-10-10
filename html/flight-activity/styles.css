@@ -4,7 +4,7 @@
   --MID: #eeeeee;
   --SHADE: #cccccc;
   --DARK: #888888;
-  --ACCENT: #28cf8a;
+  --ACCENT: #003f4b;
   --BADGE: #9d1edd;
   --ATTENTION: #28CF8A;
   --FONTSMALL: calc(10px * var(--SCALE));
@@ -20,26 +20,33 @@
   cursor: help;
 }
 
-.help  {
+.help {
   position: relative;
 }
 
-ul.twoColumns {
+ul.threeColumns {
   list-style-type: none;
   color: var(--TXTMED);
 }
- 
-ul.twoColumns li {
-  float:left; 
-  width:45%;
-  padding:.25em;
+
+ul.threeColumns li {
+  float: left;
+  width: 31%;
+  padding: .25em;
+  font-size: 17px;;
+}
+
+#plane_information li .small {
+  font-weight: 100;
+  margin-left: .5em;
 }
 
 .pointer {
   cursor: pointer;
 }
 
-.disabled {
+.disabled,
+.disabled * {
   cursor: not-allowed;
 }
 
@@ -51,8 +58,24 @@ ul.twoColumns li {
   float: right;
 }
 
-.flex_between {display:flex;justify-content: space-between;align-items: center;}
-.flex_center{display:flex;justify-content: center;align-items: center;}
+.space_evenly {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+}
+
+.flex_between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.flex_center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .loadingContainer {
   text-align: center;
   background-color: #fffffffa;
@@ -94,16 +117,16 @@ ul.twoColumns li {
 .icon.icon_down {
   transform: rotate(-90deg) !important;
   -webkit-transition-duration: 1s;
- -moz-transition-duration: .25s;
- -o-transition-duration: .25s;
+  -moz-transition-duration: .25s;
+  -o-transition-duration: .25s;
   transition-duration: .25s;
 }
 
 .icon.icon_down.open {
-  transform: rotate(0deg) !important; 
+  transform: rotate(0deg) !important;
   -webkit-transition-duration: .25s;
- -moz-transition-duration: .25s;
- -o-transition-duration: .25s;
+  -moz-transition-duration: .25s;
+  -o-transition-duration: .25s;
   transition-duration: .25s;
 }
 
@@ -113,10 +136,22 @@ ul.twoColumns li {
   background-color: var(--BGCOLOR1);
   font: 14px;
   box-shadow: 0 0 7px black;
+    white-space: pre-line;
 }
 
-.full_details_page .ui-tooltip{background-color:#313131;color:#eee;}
-body.full_details_page{background-color:#404040;}
+.full_details_page .ui-tooltip {
+  background-color: #313131;
+  color: #eee;
+}
+
+body.full_details_page {
+  background-color: #404040;
+  background-image: url("/images/background_repeat.jpg");
+  background-position: left top;
+  background-size: auto;
+  background-repeat: repeat;
+  background-attachment: scroll;
+}
 
 div#feature_landings .sectionTitle:first-child {
   border-bottom: 3px solid #313131;
@@ -184,7 +219,7 @@ div#feature_landings .sectionTitle:first-child {
 
 #takeoff_landing_table .utc_display {
   font-size: x-small;
-  line-height:14px;
+  line-height: 14px;
 }
 
 
@@ -192,29 +227,86 @@ div#feature_landings .sectionTitle:first-child {
 .scroll {
   overflow: auto;
 }
+
 .missing_information {
-  color:#BFBFBF;
+  color: #BFBFBF;
   font-style: italic;
 }
+
 #plane_information ul li strong span {
   font-weight: normal;
   color: #626262;
   font-size: 0.9em;
 }
-#more_details{justify-content: center;}
-#more_details div {width:70%;}
-#more_details ul {width:75%;}
-#more_details div, #more_details ul {margin-right:auto;margin-left: auto;text-align: center;padding-top:1em;}
-#more_details hr {width:65%;border-bottom:1px solid #404040;border-style:solid;}
-#more_details ul.twoColumns li{text-align: left;}
-#more_details h4{font-size:1.1em;margin:0;}
-.more h5{font-size:1.5em;margin:1em;}
-#more_details button, .more button{background-color: var(--ACCENT);color:var(--TXTLIGHT);padding:0.5em 1.2em .5em 1.2em;font-size: 1em;border:1px solid #24c382;border-radius: .5em;}
-#more_details button:hover, .more button:hover{background-color: #1e9d69;border:1px solid #1c9262;}
-#more_details .flex_between{padding-top: 1em;padding-bottom:1em;}
+
+#more_details {
+  justify-content: center;
+}
+
+#more_details div {
+  width: 95%;
+  max-width:350px;
+}
+
+#more_details ul {
+  width: 95%;
+  max-width: 500px;
+}
+
+#more_details div,
+#more_details ul {
+  margin-right: auto;
+  margin-left: auto;
+  text-align: center;
+  padding-top: 1em;
+  clear:both;
+}
+
+#more_details hr {
+  width: 87%;
+  border-bottom: 1px solid #404040;
+  border-style: solid;
+  margin-right: 18px;
+}
+
+#more_details ul.threeColumns li {
+  text-align: left;
+}
+
+#more_details h4 {
+  font-size: 1.1em;
+  margin: 0;
+}
+
+.more h5 {
+  font-size: 1.5em;
+  margin: 1em;
+}
+
+#more_details button,
+.more button {
+  background-color: var(--ATTENTION);
+  color: var(--TXTLIGHT);
+  padding: 0.5em 1.2em .5em 1.2em;
+  font-size: 1em;
+  border: 1px solid #24c382;
+  border-radius: .5em;
+  cursor: pointer;
+}
+
+#more_details button:hover,
+.more button:hover {
+  background-color: #1e9d69;
+  border: 1px solid #1c9262;
+}
+
+#more_details .space_evenly {
+  padding-top: 2em;
+  padding-bottom: 1em;
+}
+
 #container {
   margin: 15px;
-  background-color:white;
 }
 
 
@@ -245,7 +337,21 @@ div#feature_landings .sectionTitle:first-child {
   font-size: medium;
 }
 
-#more_data {width:75%;}
+#more_data {
+  width: 75%;
+}
+
+.playbackButton {
+  background: url('/images/PlayGray.svg');
+  width: 21px;
+  height: 21px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.playbackButton:hover {
+  background: url('/images/PlayGray_hover.svg');
+}
+
 #general_block {
   display: flex;
   flex-direction: row;
@@ -273,7 +379,7 @@ div#feature_landings .sectionTitle:first-child {
 #plane_information ul li strong {
   width: calc(60% * var(--SCALE));
   display: inline-block;
-  color:var(--TXTMED);
+  color: var(--TXTMED);
 }
 
 #plane_information ul li label {
@@ -291,19 +397,46 @@ div#feature_landings .sectionTitle:first-child {
 
 #airplane_picture {
   position: relative;
-  margin-bottom:-4px;
+  justify-content: center;
+  background-color: #666;
+  align-items: stretch;
+  color: #bfbfbf;
+}
+
+#airplane_picture .justify_silouette {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  height: 100%;
+}
+
+#airplane_picture .link {
+  position: relative;
 }
 
 #airplane_picture img {
   width: calc(100% * var(--SCALE));
+  margin-bottom: -4px;
 }
 
 #airplane_picture span {
   float: right;
   text-align: right;
-  margin-top: -30px;
   padding-right: 7px;
-  color:var(--TXTLIGHT);
+  color: var(--TXTLIGHT);
+  line-height: 1.2em;
+  z-index: 1000;
+  position: absolute;
+  bottom: 5px;
+  right: 0px;
+}
+
+#airplane_picture span.float_right {
+  float: right;
+  text-align: left;
+  padding-left: 7px;
 }
 
 
@@ -312,7 +445,7 @@ div#feature_landings .sectionTitle:first-child {
   color: #b6b6b6;
   font-size: 3em;
   padding: 0.5em;
-  margin:0;
+  margin: 0;
 }
 
 .header-title strong {
@@ -336,6 +469,7 @@ div#feature_landings .sectionTitle:first-child {
 .sectionBreak.logo img {
   padding-top: 2.5em;
   padding-bottom: 2.5em;
+  width:430px;
 }
 
 
@@ -343,6 +477,28 @@ div#feature_landings .sectionTitle:first-child {
 #takeoff_landing_table.home_table {
   min-height: auto;
   background-color: var(--BGCOLOR1);
+}
+
+.ui-widget-content a {
+  color: var(--TXTLIGHT)
+}
+
+.full_detail {
+  cursor: pointer;
+}
+
+.ui-widget-content a:hover {
+  color: var(--ATTENTION) !important
+}
+
+.mapNavigationLinks {
+  display: flex;
+  justify-content: space-evenly;
+  margin-top: .5em;
+}
+
+.mapNavigationLinks a {
+  font-size: var(--FS2);
 }
 
 .full_detail {
@@ -358,9 +514,9 @@ div#feature_landings .sectionTitle:first-child {
 #show_detail {
   color: var(--TXTLIGHT);
   text-decoration: none;
-  width:118px;
-  text-align:left;
-  text-indent:10px;
+  width: 118px;
+  text-align: left;
+  text-indent: 10px;
 }
 
 a#show_detail_icon {
@@ -368,20 +524,21 @@ a#show_detail_icon {
 }
 
 #badgeComing {
-  width:45px;
+  width: 45px;
 }
 
 #iconNew {
-  width:12px;
+  width: 12px;
 }
+
 .section-title-content.badgeContainer,
 .badgeContainer {
   padding-left: 0px;
-  padding-right:0px;
+  padding-right: 0px;
 }
 
 
-.badgeContainer .svg{
+.badgeContainer .svg {
   padding-left: calc(5px * var(--SCALE));
 }
 
@@ -406,27 +563,30 @@ a#show_detail_icon {
 #more_details {
   width: calc(100% * var(--SCALE));
 }
+
 #full_details_window {
   position: absolute;
   left: 0px;
   bottom: 0px;
-  width:  calc(100% * var(--SCALE));
+  width: calc(90% * var(--SCALE));
   height: 100%;
-  z-index: 1000;
+  z-index: 10000;
   background-color: var(--BGCOLOR1);
 }
 
 .closeButton {
-  font-size: 4em;
   position: absolute;
-  color: black;
-  padding: .25em;
-  right: .5em;
-  top:.2em;
-  font-weight: bold;
-  width: 1em;
+  right: calc( 30px * var(--SCALE));
+  top: calc( 10px * var(--SCALE));
+  background-image: url('/images/close-settings.png');
+  background-size: cover;
+  width: calc( 40px * var(--SCALE));
+  height: calc( 40px * var(--SCALE));
+  cursor: pointer;
+  z-index: 99;
+  filter: grayscale(1);
+  opacity: .7;
 }
-
 @media only screen and (max-width: 988px) {
   #general_block {
     flex-direction: column;
@@ -447,12 +607,14 @@ a#show_detail_icon {
   padding: 20px;
   overflow: hidden;
 }
+
 .lds-ring {
   display: inline-block;
   position: relative;
   width: 80px;
   height: 80px;
 }
+
 .lds-ring div {
   box-sizing: border-box;
   display: block;
@@ -463,25 +625,38 @@ a#show_detail_icon {
   border: 8px solid #16a6c3;
   border-radius: 50%;
   animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-  border-color:#16a6c3 transparent transparent transparent;
+  border-color: #16a6c3 transparent transparent transparent;
 }
+
 .lds-ring div:nth-child(1) {
   animation-delay: -0.45s;
 }
+
 .lds-ring div:nth-child(2) {
   animation-delay: -0.3s;
 }
+
 .lds-ring div:nth-child(3) {
   animation-delay: -0.15s;
 }
+
 @keyframes lds-ring {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
 }
 
-.grecaptcha-badge { visibility: hidden; }
-.captchaText, .captchaText a{font-size:xx-small;color:var(--TXTCOLOR2);text-align:center;}
+.grecaptcha-badge {
+  visibility: hidden;
+}
+
+.captchaText,
+.captchaText a {
+  font-size: xx-small;
+  color: var(--TXTCOLOR2);
+  text-align: center;
+}

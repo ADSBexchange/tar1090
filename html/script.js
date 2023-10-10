@@ -1609,6 +1609,7 @@ jQuery('#selected_altitude_geom1')
             window.top.location.href = "https://www.adsbexchange.com/";
             return;
         }
+
     }
     if (imageConfigLink != "") {
         let host = window.location.hostname;
@@ -2268,7 +2269,7 @@ function ol_map_init() {
         let trailHex = null;
         let trailTS = null;
         let planeHex = null;
-
+ 
         let features = webgl ? webglFeatures : PlaneIconFeatures;
         let evtCoords = evt.map.getCoordinateFromPixel(evt.pixel);
         let feature = features.getClosestFeatureToCoordinate(evtCoords);

@@ -41,3 +41,10 @@ try {
     },
   };
 }
+
+function SubscriberDataRedirect() {
+  if (!returnCookie("adsbx_subscriber") || !returnCookie("adsbx_subscriber_exp")) { 
+    window.location.href = "/index.html"
+  }
+
+}

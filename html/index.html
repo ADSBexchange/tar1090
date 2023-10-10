@@ -27,7 +27,7 @@
     }; 
     let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
     let hide_freestar = () => {
-    for (let id of ['adsbexchange_mobile_pushdown-pushdown-cls', 'tracking_leaderboard_container', 'FreeStarVideoAdContainer_2', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2']) { hideById(id);};
+    for (let id of ['adsbexchange_mobile_pushdown-pushdown-cls', 'tracking_leaderboard_container', 'FreeStarVideoAdContainer', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2']) { hideById(id);};
     };
     let load_freestar = () => {
     let ca = decodeURIComponent(document.cookie).split(';');
@@ -110,7 +110,7 @@
       </div>
 
       <div id="full_details_window" style="display: none">
-        <img src="/images/close.svg" title="Close Full Details" id="close_full_details" class="pointer closeButton">
+        <div id="close_full_details" class="pointer closeButton"></div>
         <iframe id="full_details_iframe" width="100%" height="100%"></iframe>
       </div>
 
@@ -277,7 +277,7 @@
           <div id="feature_landings">
             <div class="sectionTitle">
                 <div class="badgeContainer full_detail">
-                    <div><img src="images/BadgeComing.svg" alt="Coming Feature" width="40" height="14" class="svg badgeComing" /></div><a id="show_detail" 
+                    <div><img src="images/BadgeAlpha.svg" alt="Alpha Feature" width="38" height="14" class="svg badgeComing" /></div><a id="show_detail" 
                     title="Full Details Window" class="pointer">Full Details</a>
                     <div class="icon"><a id="show_detail_icon"><img
                                 src="images/NewBrowserTab.svg" title="Full Details Window" class="iconNew" /></a></div>
@@ -949,10 +949,10 @@
                   </div>
                   <div class="rSpacer"></div>
                   <div>
-                    <span class="largeText">
+                    <span class="largeText mapNavigationLinks">
                       <a class="largeText" target="_blank" href="https://adsbexchange.com/faq/">FAQ</a>
-                      &emsp;&emsp;
                       <a class="largeText" target="_blank" href="https://adsbexchange.com/map-help/">Map Help</a>
+                      <a class="largeText" target="_blank" href="https://discord.com/invite/ad8SSMpWvH">Join Discord</a>
                     </span>
                   </div>
                   <div class="rSpacer">
@@ -998,10 +998,9 @@
         </script>
         </div>
         -->
-
-        <div id="FreeStarVideoAdContainer_2">
-          <div id="freestar-video-parent-2">
-              <div id="freestar-video-child"></div>
+        <div id="FreeStarVideoAdContainer">
+          <div id="freestar-video-parent">
+            <div id="freestar-video-child"></div>
           </div>
         </div>
         <!-- ABOVE_TABS_ANCHOR -->
