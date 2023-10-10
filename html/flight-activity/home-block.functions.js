@@ -15,6 +15,15 @@ function resetFunction() {
     }
   }
 }
+function returnGlobalCache() {
+  return g;
+}
+function setPlaneSpottingAPI() {
+  return planespottingAPI;
+}
+function setPlaneSpottersAPI() {
+  return planespottersAPI;
+}
 
 //Closes flight activity panel to reset user view.
 function resetFlightPanel() {
@@ -26,23 +35,28 @@ function resetFlightPanel() {
 
 //Full details button click. This checks for selected plane and then updates details iframe accordingly. 
 //Also sets fullDetails to true so that when the reset function is clicked, it will open the sliding panel.
-jQuery("#show_detail, #show_detail_icon").on("click", function () { 
-  if (SelectedPlane) {
-    if (SelectedPlane.icao) {
-      let icao = SelectedPlane.icao;
-
-      jQuery("#full_details_iframe").attr("src", "details.html?icao=" + icao);
-      jQuery("#selected_infoblock").hide(
-        "slide",
-        { direction: "left", queue: false },
-        500,
-        function () {
-          fullDetails = true;
-          toggles["enableInfoblock"].state = false;
-        }
-      );
+jQuery(".full_detail").on("click", function () { 
+if (returnCookie("adsbx_subscriber") && returnCookie("adsbx_subscriber_exp")) {
+    if (SelectedPlane) {
+      if (SelectedPlane.icao) {
+        let icao = SelectedPlane.icao;
+  
+        jQuery("#full_details_iframe").attr("src", "details.html?icao=" + icao);
+        jQuery("#selected_infoblock").hide(
+          "slide",
+          { direction: "left", queue: false },
+          500,
+          function () {
+            fullDetails = true;
+            toggles["enableInfoblock"].state = false;
+          }
+        );
+      }
     }
-  }
+ } else {
+   event.preventDefault();
+ }
+
 });
 
 //This is triggered from the close button for the full details page. It resets the iframe src and toggles state of infoblock to false.
@@ -50,7 +64,7 @@ jQuery("#close_full_details").on("click", function () {
   jQuery("#full_details_window").hide(
     "slide",
     { direction: "left" },
-    1000,
+    500,
     function () {
       jQuery("#full_details_iframe").attr("src", "");
       toggles["enableInfoblock"].state = true;
