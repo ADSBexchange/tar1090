@@ -6,7 +6,7 @@
 "use strict";
 // -- Title Settings --------------------------------------
 // Show number of aircraft and/or messages per second in the page title
-//PlaneCountInTitle = false;
+PlaneCountInTitle = false;
 //MessageRateInTitle = false;
 
 // -- Output Settings -------------------------------------
@@ -27,6 +27,9 @@
 // The google maps zoom level, 0 - 16, lower is further out
 //DefaultZoomLvl   = 7;
 
+// specify lat lon that the 'auto-select plane' feature will choose the closest plane to
+// autoselectCoords = [42, 21];
+
 // Center marker. If dump1090 provides a receiver location,
 // that location is used and these settings are ignored.
 
@@ -40,6 +43,7 @@
 
 // Color controls for the range outline
 //range_outline_color = '#0000DD';
+//range_outline_alpha = 1.0;
 //range_outline_width = 1.7;
 //range_outline_colored_by_altitude = false;
 //range_outline_dash = [5, 5]; // null - solid line, [5, 5] - dashed line with 5 pixel lines and spaces in between
@@ -54,7 +58,7 @@
 // actual_range_show = true;
 
 // which map is displayed to new visitors
-// MapType_tar1090 = "carto_light_all";
+MapType_tar1090 = "osm_adsbx";
 //
 // valid values for the above setting:
 // osm
@@ -184,7 +188,7 @@ ColorByAlt = {
 //SiteCirclesLineDash = [5, 5]; // null - solid line, [5, 5] - dashed line with 5 pixel lines and spaces in between
 
 // Controls page title, righthand pane when nothing is selected
-//PageName = "tar1090";
+PageName = "ADS-B Exchange - track aircraft live";
 
 // Show country flags by ICAO addresses?
 //ShowFlags = true;
@@ -222,6 +226,14 @@ BingMapsAPIKey = null;
 // Don't display any TIS-B planes
 // filterTISB = false;
 
+// image configuration link (back to a webUI for feeder setup)
+// if the link is supposed to point to the same host that tar1090
+// is running on the token 'HOSTNAME' (without quotes) in the Link
+// text will be replaced with the current hostname at runtime
+//
+// imageConfigLink = "";
+// imageConfigText = "";
+
 //flightawareLinks = false;
 //shareBaseUrl = 'https://globe.adsbexchange.com/';
 // planespottersLinks = false;
@@ -255,13 +267,13 @@ BingMapsAPIKey = null;
 // Columns that have a // in front of them are shown.
 /* // remove this line to mofify columns (and the one at the end)
 HideCols = [
-	"#icao",
+//	"#icao",
 //	"#flag",
 //	"#flight",
-//	"#route",
+	"#route",
 	"#registration",
 //	"#aircraft_type",
-//	"#squawk",
+	"#squawk",
 //	"#altitude",
 //	"#speed",
 	"#vert_rate",
@@ -269,17 +281,17 @@ HideCols = [
 	"#track",
 	"#msgs",
 	"#seen",
-//	"#rssi",
+	"#rssi",
 	"#lat",
 	"#lon",
 	"#data_source",
 ]
 */ // remove this line to modify columns (and the one at the start)
-
+adsbexchange = true;
 // show aircraft pictures
-// showPictures = true;
+showPictures = true;
 // get pictures from planespotters.net
-// planespottersAPI = true;
+planespottersAPI = true;
 // get pictures from planespotting.be
 // planespottingAPI = true;
 
@@ -291,7 +303,7 @@ HideCols = [
 // show a link to jetphotos, only works if planespottersAPI is disabled
 // jetphotoLinks = false;
 
-// showSil = false;
+showSil = true;
 // this shows small pictures in the details but they need to be provided by the user in the folder /usr/local/share/tar1090/aircraft_sil
 // showPictures needs to be enabled as well
 // to only get these pictures disable the planespottersAPI
@@ -325,8 +337,8 @@ HideCols = [
 //
 //jaeroTimeout = 35 * 60; // in seconds
 
-//seenTimeout = 58; // in seconds
-//seenTimeoutMlat = 58; // in seconds
+seenTimeout = 45; // in seconds
+seenTimeoutMlat = 60; // in seconds
 
 //tableInView = false; // only show aircraft in current view (V button)
 

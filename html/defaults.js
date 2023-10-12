@@ -34,6 +34,8 @@ let DefaultCenterLon = -73.66
 // The google maps zoom level, 0 - 16, lower is further out
 let DefaultZoomLvl   = 9;
 
+let autoselectCoords = null;
+
 let showGrid = false;
 
 // Center marker. If dump1090 provides a receiver location,
@@ -49,6 +51,7 @@ let updateLocation = false;
 
 // Color controls for the range outline
 let range_outline_color = '#0000DD';
+let range_outline_alpha = 1.0;
 let range_outline_width = 1.7;
 let range_outline_colored_by_altitude = false;
 let range_outline_dash = null; // null - solid line, [5, 5] - dashed line with 5 pixel lines and spaces in between
@@ -89,7 +92,7 @@ let lineWidth = 1.15;
 let OutlineADSBColor = '#000000';
 
 // Outline width for aircraft icons
-let outlineWidth = 1;
+let outlineWidth = 0.90;
 
 // constant html color for markers / tracks
 let monochromeMarkers = null;
@@ -237,6 +240,10 @@ let uatNoTISB = false;
 
 // Don't display any TIS-B planes
 let filterTISB = false;
+
+// image configuration link (back to a webUI for feeder setup)
+let imageConfigLink = "";
+let imageConfigText = "";
 
 let flightawareLinks = false;
 let shareBaseUrl = false;

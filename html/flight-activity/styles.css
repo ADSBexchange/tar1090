@@ -1,0 +1,662 @@
+:root {
+  --SCALE: 1;
+  --LIGHT: #f8f8f8;
+  --MID: #eeeeee;
+  --SHADE: #cccccc;
+  --DARK: #888888;
+  --ACCENT: #003f4b;
+  --BADGE: #9d1edd;
+  --ATTENTION: #28CF8A;
+  --FONTSMALL: calc(10px * var(--SCALE));
+  --FONTMED: calc(13px * var(--SCALE));
+  --FONTLARGE: calc(17px * var(--SCALE));
+  --TXTDARK: #003f4b;
+  --TXTMED: #3f3f3f;
+  --TXTLIGHT: #ffffff;
+}
+
+/*General Helper Styles*/
+.help {
+  cursor: help;
+}
+
+.help {
+  position: relative;
+}
+
+ul.threeColumns {
+  list-style-type: none;
+  color: var(--TXTMED);
+}
+
+ul.threeColumns li {
+  float: left;
+  width: 31%;
+  padding: .25em;
+  font-size: 17px;;
+}
+
+#plane_information li .small {
+  font-weight: 100;
+  margin-left: .5em;
+}
+
+.pointer {
+  cursor: pointer;
+}
+
+.disabled,
+.disabled * {
+  cursor: not-allowed;
+}
+
+.center {
+  text-align: center;
+}
+
+.float_right {
+  float: right;
+}
+
+.space_evenly {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+}
+
+.flex_between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.flex_center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loadingContainer {
+  text-align: center;
+  background-color: #fffffffa;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  z-index: 900000;
+  margin-left: auto;
+  margin-right: auto;
+  left: 0px;
+  top: 0px;
+  opacity: 0.995;
+}
+
+.loader {
+  border: 16px solid #f3f3f3;
+  /* Light grey */
+  border-top: 16px solid var(--ACCENT);
+  /* Blue */
+  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  animation: spin 2s linear infinite;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 15%;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.icon.icon_down {
+  transform: rotate(-90deg) !important;
+  -webkit-transition-duration: 1s;
+  -moz-transition-duration: .25s;
+  -o-transition-duration: .25s;
+  transition-duration: .25s;
+}
+
+.icon.icon_down.open {
+  transform: rotate(0deg) !important;
+  -webkit-transition-duration: .25s;
+  -moz-transition-duration: .25s;
+  -o-transition-duration: .25s;
+  transition-duration: .25s;
+}
+
+.ui-tooltip {
+  padding: 10px 20px;
+  color: var(--TXTCOLOR2);
+  background-color: var(--BGCOLOR1);
+  font: 14px;
+  box-shadow: 0 0 7px black;
+    white-space: pre-line;
+}
+
+.full_details_page .ui-tooltip {
+  background-color: #313131;
+  color: #eee;
+}
+
+body.full_details_page {
+  background-color: #404040;
+  background-image: url("/images/background_repeat.jpg");
+  background-position: left top;
+  background-size: auto;
+  background-repeat: repeat;
+  background-attachment: scroll;
+}
+
+div#feature_landings .sectionTitle:first-child {
+  border-bottom: 3px solid #313131;
+}
+
+/*SharedFlight Activity Block Styles*/
+#takeoff_landings_block {
+  min-height: 318px;
+}
+
+#takeoff_landings_block.home {
+  min-height: auto;
+}
+
+#takeoff_landing_table {
+  border-spacing: calc(0px * var(--SCALE));
+  width: calc(100% * var(--SCALE));
+  padding: calc(0px * var(--SCALE));
+}
+
+#takeoff_landing_table.tr {
+  background-color: white;
+}
+
+#takeoff_landing_table td {
+  vertical-align: top;
+  padding: calc(5px * var(--SCALE));
+  text-align: left;
+}
+
+#takeoff_landing_table td.align_right {
+  text-align: right;
+  padding-right: calc(10px * var(--SCALE));
+}
+
+#takeoff_landing_table td.center {
+  text-align: center;
+}
+
+#takeoff_landing_table tr.dateHeader {
+  font-weight: bold;
+  background-color: #222222;
+  color: white;
+}
+
+#takeoff_landing_table .flightSymbol {
+  font-size: var(--FONTLARGE);
+  width: calc(25px * var(--SCALE));
+  padding: calc(4px * var(--SCALE));
+  padding-left: calc(10px * var(--SCALE));
+}
+
+#takeoff_landing_table .timeDisplay {
+  width: min-content;
+}
+
+#takeoff_landing_table tr.header {
+  background: var(--SHADE);
+}
+
+#takeoff_landing_table a {
+  color: var(--ACCENT);
+  float: right;
+}
+
+#takeoff_landing_table .utc_display {
+  font-size: x-small;
+  line-height: 14px;
+}
+
+
+/*Details Styles Specifically*/
+.scroll {
+  overflow: auto;
+}
+
+.missing_information {
+  color: #BFBFBF;
+  font-style: italic;
+}
+
+#plane_information ul li strong span {
+  font-weight: normal;
+  color: #626262;
+  font-size: 0.9em;
+}
+
+#more_details {
+  justify-content: center;
+}
+
+#more_details div {
+  width: 95%;
+  max-width:350px;
+}
+
+#more_details ul {
+  width: 95%;
+  max-width: 500px;
+}
+
+#more_details div,
+#more_details ul {
+  margin-right: auto;
+  margin-left: auto;
+  text-align: center;
+  padding-top: 1em;
+  clear:both;
+}
+
+#more_details hr {
+  width: 87%;
+  border-bottom: 1px solid #404040;
+  border-style: solid;
+  margin-right: 18px;
+}
+
+#more_details ul.threeColumns li {
+  text-align: left;
+}
+
+#more_details h4 {
+  font-size: 1.1em;
+  margin: 0;
+}
+
+.more h5 {
+  font-size: 1.5em;
+  margin: 1em;
+}
+
+#more_details button,
+.more button {
+  background-color: var(--ATTENTION);
+  color: var(--TXTLIGHT);
+  padding: 0.5em 1.2em .5em 1.2em;
+  font-size: 1em;
+  border: 1px solid #24c382;
+  border-radius: .5em;
+  cursor: pointer;
+}
+
+#more_details button:hover,
+.more button:hover {
+  background-color: #1e9d69;
+  border: 1px solid #1c9262;
+}
+
+#more_details .space_evenly {
+  padding-top: 2em;
+  padding-bottom: 1em;
+}
+
+#container {
+  margin: 15px;
+}
+
+
+#takeoff_landing_table.details_table td {
+  padding: calc(5px * var(--SCALE));
+  vertical-align: middle;
+}
+
+#takeoff_landing_table.details_table td.shade {
+  background-color: var(--MID);
+}
+
+#takeoff_landing_table.details_table tr.caption td {
+  color: #045b6f;
+  font-size: large;
+  text-align: center;
+}
+
+#takeoff_landing_table.details_table tr.caption td span.padding {
+  padding-right: calc(5px * var(--SCALE));
+}
+
+#takeoff_landing_table.details_table tr.header td {
+  font-weight: normal;
+  background-color: #02596a;
+  color: white;
+  text-transform: capitalize;
+  font-size: medium;
+}
+
+#more_data {
+  width: 75%;
+}
+
+.playbackButton {
+  background: url('/images/PlayGray.svg');
+  width: 21px;
+  height: 21px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.playbackButton:hover {
+  background: url('/images/PlayGray_hover.svg');
+}
+
+#general_block {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  align-items: normal;
+  align-content: stretch;
+  padding: 0px calc(10px * var(--SCALE)) 0px calc(10px * var(--SCALE));
+  background-color: #bfbfbf;
+  min-height: calc(300px * var(--SCALE));
+  font-size: large;
+}
+
+#plane_information ul {
+  list-style-type: none;
+}
+
+#plane_information ul li {
+  margin: 10px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+#plane_information ul li strong {
+  width: calc(60% * var(--SCALE));
+  display: inline-block;
+  color: var(--TXTMED);
+}
+
+#plane_information ul li label {
+  width: calc(40% * var(--SCALE));
+  display: inline-block;
+  color: var(--TXTMED);
+}
+
+#airplane_picture,
+#plane_information {
+  display: flex;
+  flex-direction: column;
+  width: calc(100% * var(--SCALE));
+}
+
+#airplane_picture {
+  position: relative;
+  justify-content: center;
+  background-color: #666;
+  align-items: stretch;
+  color: #bfbfbf;
+}
+
+#airplane_picture .justify_silouette {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  height: 100%;
+}
+
+#airplane_picture .link {
+  position: relative;
+}
+
+#airplane_picture img {
+  width: calc(100% * var(--SCALE));
+  margin-bottom: -4px;
+}
+
+#airplane_picture span {
+  float: right;
+  text-align: right;
+  padding-right: 7px;
+  color: var(--TXTLIGHT);
+  line-height: 1.2em;
+  z-index: 1000;
+  position: absolute;
+  bottom: 5px;
+  right: 0px;
+}
+
+#airplane_picture span.float_right {
+  float: right;
+  text-align: left;
+  padding-left: 7px;
+}
+
+
+.header-title h1 {
+  background-color: #404040;
+  color: #b6b6b6;
+  font-size: 3em;
+  padding: 0.5em;
+  margin: 0;
+}
+
+.header-title strong {
+  color: white;
+}
+
+
+
+.sectionBreak {
+  display: flex;
+  justify-content: center;
+  min-height: calc(50px * var(--SCALE));
+}
+
+.sectionBreak.logo {
+  background-image: url("../images/background_repeat.jpg");
+  background-repeat: repeat;
+  min-height: auto;
+}
+
+.sectionBreak.logo img {
+  padding-top: 2.5em;
+  padding-bottom: 2.5em;
+  width:430px;
+}
+
+
+/*Home Styles Specifically*/
+#takeoff_landing_table.home_table {
+  min-height: auto;
+  background-color: var(--BGCOLOR1);
+}
+
+.ui-widget-content a {
+  color: var(--TXTLIGHT)
+}
+
+.full_detail {
+  cursor: pointer;
+}
+
+.ui-widget-content a:hover {
+  color: var(--ATTENTION) !important
+}
+
+.mapNavigationLinks {
+  display: flex;
+  justify-content: space-evenly;
+  margin-top: .5em;
+}
+
+.mapNavigationLinks a {
+  font-size: var(--FS2);
+}
+
+.full_detail {
+  background-color: var(--ATTENTION);
+  display: block;
+  font-size: var(--FS2);
+  text-transform: uppercase;
+  padding-top: calc(5px * var(--SCALE));
+  padding-bottom: calc(5px * var(--SCALE));
+  text-align: center;
+}
+
+#show_detail {
+  color: var(--TXTLIGHT);
+  text-decoration: none;
+  width: 118px;
+  text-align: left;
+  text-indent: 10px;
+}
+
+a#show_detail_icon {
+  margin-left: 1px;
+}
+
+#badgeComing {
+  width: 45px;
+}
+
+#iconNew {
+  width: 12px;
+}
+
+.section-title-content.badgeContainer,
+.badgeContainer {
+  padding-left: 0px;
+  padding-right: 0px;
+}
+
+
+.badgeContainer .svg {
+  padding-left: calc(5px * var(--SCALE));
+}
+
+
+.badgeContainer div {
+  align-self: center;
+}
+
+.badgeContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: calc(98% * var(--SCALE));
+}
+
+.icon {
+  width: 12px;
+  margin-right: 5px;
+}
+
+#more_details {
+  width: calc(100% * var(--SCALE));
+}
+
+#full_details_window {
+  position: absolute;
+  left: 0px;
+  bottom: 0px;
+  width: calc(90% * var(--SCALE));
+  height: 100%;
+  z-index: 10000;
+  background-color: var(--BGCOLOR1);
+}
+
+.closeButton {
+  position: absolute;
+  right: calc( 30px * var(--SCALE));
+  top: calc( 10px * var(--SCALE));
+  background-image: url('/images/close-settings.png');
+  background-size: cover;
+  width: calc( 40px * var(--SCALE));
+  height: calc( 40px * var(--SCALE));
+  cursor: pointer;
+  z-index: 99;
+  filter: grayscale(1);
+  opacity: .7;
+}
+@media only screen and (max-width: 988px) {
+  #general_block {
+    flex-direction: column;
+  }
+
+  #airplane_picture {
+    text-align: center;
+  }
+
+  #takeoff_landings_block {
+    overflow: scroll
+  }
+}
+
+/*Mini Spinner*/
+.spinner-container {
+  text-align: center;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.lds-ring {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.lds-ring div {
+  box-sizing: border-box;
+  display: block;
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  margin: 8px;
+  border: 8px solid #16a6c3;
+  border-radius: 50%;
+  animation: lds-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  border-color: #16a6c3 transparent transparent transparent;
+}
+
+.lds-ring div:nth-child(1) {
+  animation-delay: -0.45s;
+}
+
+.lds-ring div:nth-child(2) {
+  animation-delay: -0.3s;
+}
+
+.lds-ring div:nth-child(3) {
+  animation-delay: -0.15s;
+}
+
+@keyframes lds-ring {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.grecaptcha-badge {
+  visibility: hidden;
+}
+
+.captchaText,
+.captchaText a {
+  font-size: xx-small;
+  color: var(--TXTCOLOR2);
+  text-align: center;
+}
