@@ -15,27 +15,28 @@ jQuery(document).ready(function () {
         localStorage.removeItem("auto_play");
         $('#t1x').click();
       }
+    }
 
-      if (!returnCookie("adsbx_subscriber") || !returnCookie("adsbx_subscriber_exp")) {//If not a subscriber, disable the full details button and add a tooltip.
-        jQuery(".full_detail").addClass("disabled");
-        jQuery(".full_detail").tooltip({
-          content: function () {
-              return "We're excited to provide ADS-B Exchange's feeder network with early access to this new feature showing detailed aircraft and flight information.<br /><br />Don't want to wait? <a href='https://www.adsbexchange.com/ways-to-join-the-exchange/' target='_new'>Become a Feeder now</a>.";
-          },
-          show: null, 
-          close: function (event, ui) {
-              ui.tooltip.hover(
-              function () {
-                  $(this).stop(true).fadeTo(400, 1);
-              },    
-              function () {
-                  $(this).fadeOut("400", function () {
-                      $(this).remove();
-                  })
-              });
-          }
+    //If not a subscriber, disable the full details button and add a tooltip.
+    if (!returnCookie("adsbx_subscriber") || !returnCookie("adsbx_subscriber_exp")) {
+      jQuery(".full_detail").addClass("disabled");
+      jQuery(".full_detail").tooltip({
+        content: function () {
+            return "We're excited to provide ADS-B Exchange's feeder network with early access to this new feature showing detailed aircraft and flight information.<br /><br />Don't want to wait? <a href='https://www.adsbexchange.com/ways-to-join-the-exchange/' target='_new'>Become a Feeder now</a>.";
+        },
+        show: null, 
+        close: function (event, ui) {
+            ui.tooltip.hover(
+            function () {
+                $(this).stop(true).fadeTo(400, 1);
+            },    
+            function () {
+                $(this).fadeOut("400", function () {
+                    $(this).remove();
+                })
+            });
+        }
       }); //Init jquery tooltip on the full details button so that it shows a message to non-subscribers.
-      }
     }
   } else {
     jQuery("#feature_landings").hide();    //Close off features that need the API from sites not adsbexchange.
