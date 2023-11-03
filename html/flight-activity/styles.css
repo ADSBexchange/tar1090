@@ -531,6 +531,9 @@ a#show_detail_icon {
   width: 12px;
 }
 
+img.svg.badgeComing {
+  padding-right: calc(10px * var(--SCALE));
+}
 .section-title-content.badgeContainer,
 .badgeContainer {
   padding-left: 0px;

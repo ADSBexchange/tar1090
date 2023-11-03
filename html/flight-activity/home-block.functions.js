@@ -36,7 +36,6 @@ function resetFlightPanel() {
 //Full details button click. This checks for selected plane and then updates details iframe accordingly. 
 //Also sets fullDetails to true so that when the reset function is clicked, it will open the sliding panel.
 jQuery(".full_detail").on("click", function () { 
-if (returnCookie("adsbx_subscriber") && returnCookie("adsbx_subscriber_exp")) {
     if (SelectedPlane) {
       if (SelectedPlane.icao) {
         let icao = SelectedPlane.icao;
@@ -53,10 +52,6 @@ if (returnCookie("adsbx_subscriber") && returnCookie("adsbx_subscriber_exp")) {
         );
       }
     }
- } else {
-   event.preventDefault();
- }
-
 });
 
 //This is triggered from the close button for the full details page. It resets the iframe src and toggles state of infoblock to false.
