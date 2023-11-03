@@ -1,0 +1,123 @@
+/*Fixing scroll from default style*/
+.scroll {
+    overflow: auto;
+  }
+
+/*Adding padding to container*/
+#container {
+    margin: 15px;
+  }
+
+.sectionBreak {
+    display: flex;
+    justify-content: center;
+    min-height: calc(50px * var(--SCALE));
+  }
+  
+  /*Logo image padding*/
+  .sectionBreak.logo img {
+    padding-top: 2.5em;
+    padding-bottom: 2.5em;
+    width:430px;
+  }
+
+  /*Network Statistics Block container*/
+  .network-statistics-block{
+    background-color:#404040;
+    color:white;
+    padding:15px; 
+    font-size: 1em;
+    margin-bottom:4em;
+  }
+  
+
+/*Network statistics block data container, 6 columns*/
+.network-statistics-block .data-block{
+    display: grid; 
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr; 
+    gap: 0px 0px;
+    text-align: center;
+    margin-top:1em;
+    color:#a9a9a9;
+}
+
+/*vertical lines on network statistics blocks*/
+.network-statistics-block .data-block div {border-right:1px solid #a9a9a9;}
+
+/*last vertical line on network statistics blocks isn't visible*/
+.network-statistics-block .data-block div:last-child {
+    border-right:0px solid #404040;
+  } 
+
+/*Large numbers in network blocks*/
+.network-statistics-block .data-block div span {
+font-size: 2.5em;
+display:block;
+color:white;
+font-weight: bold;
+}
+
+/*Network statistics block titles*/
+.network-statistics-block h1{color:#a9a9a9;margin:0px;font-weight:normal;font-size: 2.5em;}
+
+
+/*Search block container*/
+.search-block {text-align: center;}
+.search-block .search-input p{color:#404040;font-weight: bold;font-size: 1.5em;} /*Search block text*/
+.search-block .search-hint {    /*Search block hint text container*/
+    width: 100%;
+    flex-grow: 2;
+    align-self: center;
+    color:#6e6e6e;
+}
+.search-block .search-hint div {    /*Search block hint text*/
+   width:150px;
+   font-size: 15px;
+}
+
+.search-block .search-input div{    /*Search block input input form*/
+    display: flex;
+    flex-direction: row;
+    justify-content: right;
+    height: 100%;
+    align-items: flex-end;
+}
+.search-block .search-input input[type="text"] { /*Search block input text*/
+    padding: 8px;
+    height: 22px;
+    border-color: #a9a9a9;
+    border-style: solid;
+    border-width: 1px;
+    color: #0983ec;
+    font-size: 1.5em;
+    width: 200px;
+    margin-top: 1px;
+}
+.search-block .search-input input[type="text"]:focus-visible { /*Search block input text focus*/
+    outline: 0;
+}
+.search-block .search-input input[type="text"]::placeholder {
+  color: rgb(203, 203, 203);
+  opacity: 1; /* Firefox */
+}
+
+.search-block .search-input input[type="text"]::-ms-input-placeholder { /* Edge 12 -18 */
+  color: rgb(203, 203, 203);
+}
+
+.search-block .search-input button { /*Search block input button*/
+    height: 30px;
+    background-color: #f67c13;
+    background-image: url('../images/search.svg');
+    background-repeat: no-repeat;
+    width: 30px;
+    filter: invert(1);
+    padding: 20px;
+    border-style: solid;
+    border-radius: 0px 20px 20px 0px;
+    background-position: center;
+    margin-left: -1px;
+    border-width: 0px;
+}
+
+.grid-block {margin-top:4em;}
