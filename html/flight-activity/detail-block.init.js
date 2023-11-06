@@ -1,7 +1,6 @@
 jQuery(document).ready(function () {
     jQuery(document).tooltip();
 
-    SubscriberDataRedirect(); 
     if (usp.has('icao')) {
         let icao = usp.get('icao');
         const icaorange = findICAORange(icao); //This is a function from the flags.js file. It returns the country and range for the icao.
