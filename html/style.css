@@ -485,16 +485,42 @@ select.error, textarea.error, input.error {
 }
 
 .settingsCog {
+    background-color: var(--ACCENT);
+    width: calc( 27px * var(--SCALE));
+    height: calc( 27px * var(--SCALE));
+    cursor: pointer;
+    background-image: url('images/cog-white.svg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    margin: calc( 2px * var(--SCALE));
+    border-radius: calc( 2px * var(--SCALE));
+    display: inline-block;
+}
+
+.settingsReplay {
+    background-color: var(--ACCENT);
+    width: calc( 27px * var(--SCALE));
+    height: calc( 27px * var(--SCALE));
+    cursor: pointer;
+    background-image: url('images/replay-white.svg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    margin: calc( 2px * var(--SCALE));
+    border-radius: calc( 2px * var(--SCALE));
+    display: inline-block;
+}
+
+/* .settingsCog {
     width: calc( 48px * var(--SCALE));
     height: calc( 48px * var(--SCALE));
     cursor: pointer;
-    background-image: url('images/settings-icon02.png');
+    background-image: url('images/cog-white.svg');
     background-size: cover;
     background-repeat: no-repeat;
     margin-top: calc( 6px * var(--SCALE));
     margin-bottom: calc( 6px * var(--SCALE));
     margin-left: calc( -12px * var(--SCALE));
-}
+} */
 
 #highlighted_infoblock {
     background-color: var(--BGCOLOR1);
