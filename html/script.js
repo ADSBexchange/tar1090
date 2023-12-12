@@ -7791,9 +7791,8 @@ function showReplayBar(){
 
     // On very first click, simulate automatic start
     if(replayShouldPlayOnFirstLoad){
-        console.log('Playing replay on first load.');
+        replay.playing = true;
         loadReplay(replay.ts);
-        playReplay(true);
     }
 
     // Indicate that we've already played once
