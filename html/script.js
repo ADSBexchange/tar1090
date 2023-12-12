@@ -7687,6 +7687,11 @@ function showReplayBar(){
     console.log('showReplayBar()');
     showingReplayBar = !showingReplayBar;
     if (!showingReplayBar){
+        // Force-stop playing
+        playReplay(false);
+        // Clear timers
+        playReplay(false);
+        // Hide bar
         jQuery("#RP").removeClass('settingsReplay-active');
         jQuery("#replayBar").hide();
         replay = null;
@@ -7780,11 +7785,16 @@ function showReplayBar(){
 
         jQuery("#selected_showTrace_hide").hide();
 
-        // On very first click, simulate automatic start
+        // Re-adjust sliders to reflect accurate time
         replayJump();
-        playReplay(replayShouldPlayOnFirstLoad);
     }
 
+    if(replayShouldPlayOnFirstLoad){
+        // On very first click, simulate automatic start
+        playReplay(true);
+    }
+
+    // Indicate that we've already played once
     replayShouldPlayOnFirstLoad = false;
 };
 
