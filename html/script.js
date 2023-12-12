@@ -7788,11 +7788,23 @@ function showReplayBar(){
         // Re-adjust sliders to reflect accurate time
         replayJump();
     }
-
+    // Function that will wait for replay to start playing
+    const waitForReplay = function(c, max) {
+        if(replay.playing) {
+            return;
+        }
+        playReplay(true);
+        if(!replay.playing && c < max) {
+            console.log(`[${c}] Wainting for replay to start playing...`);
+            setTimeout(waitForReplay, 500, c+1, max);
+        }
+    };
     // On very first click, simulate automatic start
-    if(replayShouldPlayOnFirstLoad){
-        replay.playing = true;
+    if(replayShouldPlayOnFirstLoad) {
+        // This starts loading data required to play replay
         loadReplay(replay.ts);
+        // This will start playing the replay once the data is loaded
+        waitForReplay(0, 20);
     }
 
     // Indicate that we've already played once
