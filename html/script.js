@@ -7699,7 +7699,9 @@ function showReplayBar(){
         jQuery('#sidebar_canvas').height('100%');
         jQuery("#selected_showTrace_hide").show();
         // Reset everything, as closing things is a bit of a mess
-        initialize();
+        const url = new URL(window.location.href);
+        url.searchParams.delete('replay');
+        window.location.reload();
     } else {
         jQuery("#RP").addClass('settingsReplay-active');
         jQuery("#replayBar").show();
