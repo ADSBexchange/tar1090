@@ -7705,8 +7705,7 @@ function showReplayBar(){
         jQuery('#replayBar').height('100px');
         jQuery('#map_canvas').height('calc(100% - 100px)');
         jQuery('#sidebar_canvas').height('calc(100% - 110px)');
-        if (!replay || replayShouldPlayOnFirstLoad) {
-            console.log('Playing replay on first load');
+        if (!replay) {
             replay = replayDefaults(new Date());
             replay.playing = false;
         }
@@ -7790,9 +7789,10 @@ function showReplayBar(){
         replayJump();
     }
 
+    // On very first click, simulate automatic start
     if(replayShouldPlayOnFirstLoad){
-        // On very first click, simulate automatic start
-        playReplay(false);
+        console.log('Playing replay on first load.');
+        loadReplay(replay.ts);
         playReplay(true);
     }
 
