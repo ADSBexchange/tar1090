@@ -7706,6 +7706,7 @@ function showReplayBar(){
         jQuery('#map_canvas').height('calc(100% - 100px)');
         jQuery('#sidebar_canvas').height('calc(100% - 110px)');
         if (!replay || replayShouldPlayOnFirstLoad) {
+            console.log('Playing replay on first load');
             replay = replayDefaults(new Date());
             replay.playing = false;
         }
@@ -7791,6 +7792,7 @@ function showReplayBar(){
 
     if(replayShouldPlayOnFirstLoad){
         // On very first click, simulate automatic start
+        playReplay(false);
         playReplay(true);
     }
 
