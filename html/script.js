@@ -7687,13 +7687,13 @@ function showReplayBar(){
     console.log('showReplayBar()');
     showingReplayBar = !showingReplayBar;
     if (!showingReplayBar){
-        // Force-stop playing
-        playReplay(false);
-        // Clear timers
-        playReplay(false);
         // Hide bar
         jQuery("#RP").removeClass('settingsReplay-active');
         jQuery("#replayBar").hide();
+        // Force-stop playing
+        playReplay(false);
+        // Clear timers
+        replayClear();
         replay = null;
         jQuery('#map_canvas').height('100%');
         jQuery('#sidebar_canvas').height('100%');
