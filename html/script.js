@@ -7698,6 +7698,8 @@ function showReplayBar(){
         jQuery('#map_canvas').height('100%');
         jQuery('#sidebar_canvas').height('100%');
         jQuery("#selected_showTrace_hide").show();
+        // Reset everything, as closing things is a bit of a mess
+        initialize();
     } else {
         jQuery("#RP").addClass('settingsReplay-active');
         jQuery("#replayBar").show();
@@ -7790,7 +7792,7 @@ function showReplayBar(){
     }
     // Function that will wait for replay to start playing
     const waitForReplay = function(c, max) {
-        if(replay.playing) {
+        if(!replay || replay.playing) {
             return;
         }
         playReplay(true);
