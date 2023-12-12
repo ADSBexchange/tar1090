@@ -1159,6 +1159,7 @@ function initPage() {
 
     jQuery('#settings_close').on('click', function() {
         jQuery('#settings_infoblock').hide();
+        $(this).removeClass('settingsCog-active');
     });
 
     jQuery('#groundvehicle_filter').on('click', function() {
