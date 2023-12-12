@@ -7686,6 +7686,16 @@ function playReplay(state){
 function showReplayBar(){
     console.log('showReplayBar()');
     showingReplayBar = !showingReplayBar;
+    // Function that will remove 'replay' token from address bar and reload window
+    const forceReloadWindow = function() {
+        let currentUrl = window.location.href;
+        let url = currentUrl.replace(/replay=[^&]+&?/, '');
+        // Update the URL without reloading the page
+        window.history.pushState({}, '', url);
+        // Reload the page
+        window.location.reload();
+    };
+
     if (!showingReplayBar){
         // Hide bar
         jQuery("#RP").removeClass('settingsReplay-active');
@@ -7699,9 +7709,7 @@ function showReplayBar(){
         jQuery('#sidebar_canvas').height('100%');
         jQuery("#selected_showTrace_hide").show();
         // Reset everything, as closing things is a bit of a mess
-        const url = new URL(window.location.href);
-        url.searchParams.delete('replay');
-        window.location.reload();
+        forceReloadWindow();
     } else {
         jQuery("#RP").addClass('settingsReplay-active');
         jQuery("#replayBar").show();
