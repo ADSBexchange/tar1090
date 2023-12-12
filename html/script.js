@@ -7766,14 +7766,16 @@ function showReplayBar(){
         jQuery('#replaySpeedHint').text('Speed: ' + replay.speed + 'x');
 
         jQuery("#selected_showTrace_hide").hide();
-
-        // On very first click, simulate automatic start
-        if(replayShouldPlayOnFirstLoad){
-            console.log('First click on replay button, simulating automatic start');
-            loadReplay(replay.ts);
-        }
-        replayShouldPlayOnFirstLoad=false;
     }
+
+    // On very first click, simulate automatic start
+    if(replayShouldPlayOnFirstLoad){
+        console.log('First click on replay button, simulating automatic start');
+        replay = replayDefaults(new Date());
+        loadReplay(replay.ts);
+        playReplay(true);
+    }
+    replayShouldPlayOnFirstLoad=false;
 };
 
 function timeoutFetch() {
