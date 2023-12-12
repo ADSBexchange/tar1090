@@ -492,7 +492,7 @@ select.error, textarea.error, input.error {
     background-image: url('images/cog-white.svg');
     background-size: cover;
     background-repeat: no-repeat;
-    margin: calc( 2px * var(--SCALE));
+    margin: calc(5px * var(--SCALE));
     border-radius: calc( 2px * var(--SCALE));
     display: inline-block;
 }
@@ -505,9 +505,17 @@ select.error, textarea.error, input.error {
     background-image: url('images/replay-white.svg');
     background-size: cover;
     background-repeat: no-repeat;
-    margin: calc( 2px * var(--SCALE));
+    margin: calc( 5px * var(--SCALE));
     border-radius: calc( 2px * var(--SCALE));
     display: inline-block;
+}
+
+.settingsCog-active {
+    background-image: url('images/cog-black.svg');
+}
+
+.settingsReplay-active {
+    background-image: url('images/replay-black.svg');
 }
 
 /* .settingsCog {

@@ -182,6 +182,7 @@ let badDot;
 let badDotMlat;
 
 let showingReplayBar = false;
+let replayShouldPlayOnFirstLoad = true;
 
 function processAircraft(ac, init, uat) {
     let isArray = Array.isArray(ac);
@@ -996,6 +997,7 @@ function initPage() {
         }
         console.log(ts);
         replay = replayDefaults(ts);
+        replayShouldPlayOnFirstLoad = false;
     }
 
     //Pulling filters from params
@@ -1152,6 +1154,7 @@ function initPage() {
 
     jQuery('#settingsCog').on('click', function() {
         jQuery('#settings_infoblock').toggle();
+        $(this).toggleClass('settingsCog-active');
     });
 
     jQuery('#settings_close').on('click', function() {
@@ -7682,12 +7685,14 @@ function showReplayBar(){
     console.log('showReplayBar()');
     showingReplayBar = !showingReplayBar;
     if (!showingReplayBar){
+        jQuery("#RP").removeClass('settingsReplay-active');
         jQuery("#replayBar").hide();
         replay = null;
         jQuery('#map_canvas').height('100%');
         jQuery('#sidebar_canvas').height('100%');
         jQuery("#selected_showTrace_hide").show();
     } else {
+        jQuery("#RP").addClass('settingsReplay-active');
         jQuery("#replayBar").show();
         jQuery("#replayBar").css('display', 'grid');
         jQuery('#replayBar').height('100px');
@@ -7761,6 +7766,13 @@ function showReplayBar(){
         jQuery('#replaySpeedHint').text('Speed: ' + replay.speed + 'x');
 
         jQuery("#selected_showTrace_hide").hide();
+
+        // On very first click, simulate automatic start
+        if(replayShouldPlayOnFirstLoad){
+            console.log('First click on replay button, simulating automatic start');
+            loadReplay(replay.ts);
+        }
+        replayShouldPlayOnFirstLoad=false;
     }
 };
 
