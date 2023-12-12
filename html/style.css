@@ -509,6 +509,15 @@ select.error, textarea.error, input.error {
     border-radius: calc( 2px * var(--SCALE));
     display: inline-block;
 }
+#replayDatepickerHourHandle, #replayDatepickerMinuteHandle {
+    width: 4em;
+    height: 1.6em;
+    top: 50%;
+    margin-left: -2em;
+    margin-top: -.8em;
+    text-align: center;
+    line-height: 1.6em;
+}
 
 .settingsCog-active {
     background-image: url('images/cog-black.svg');

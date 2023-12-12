@@ -7139,7 +7139,7 @@ function replayDefaults(ts) {
         playing: true,
         ts: ts,
         ival: 60 * 1000,
-        speed: 30,
+        speed: 10,
         dateText: zDateString(ts),
         hours: ts.getUTCHours(),
         minutes: ts.getUTCMinutes(),
@@ -7365,6 +7365,7 @@ function replaySetTimeHint(arg) {
 
     let minutes = replay.ts.getUTCMinutes();
     jQuery('#minuteSelect').slider("option", "value", minutes);
+
     replayJumpEnabled = true;
 }
 
@@ -7699,7 +7700,7 @@ function showReplayBar(){
         jQuery('#replayBar').height('100px');
         jQuery('#map_canvas').height('calc(100% - 100px)');
         jQuery('#sidebar_canvas').height('calc(100% - 110px)');
-        if (!replay) {
+        if (!replay || replayShouldPlayOnFirstLoad) {
             replay = replayDefaults(new Date());
             replay.playing = false;
         }
@@ -7725,28 +7726,39 @@ function showReplayBar(){
         }
 
         jQuery("#replayDatepicker").datepicker(datepickerOptions);
-
+        let replaySliderHourHandle = jQuery("#replayDatepickerHourHandle");
         jQuery('#hourSelect').slider({
             step: 1,
             min: 0,
             max: 23,
+            create: function() {
+                replaySliderHourHandle.text(replay.hours + " hrs");
+            },
             slide: function(event, ui) {
                 replay.hours = ui.value;
+                replaySliderHourHandle.text(ui.value + " hrs");
                 replayOnSliderMove();
             },
-            change: function() {
+            change: function(event, ui) {
+                replaySliderHourHandle.text(ui.value + " hrs");
                 replayJump();
             }
         });
+        let replaySliderMinuteHandle = jQuery("#replayDatepickerMinuteHandle");
         jQuery('#minuteSelect').slider({
             step: 1,
             min: 0,
             max: 59,
+            create: function() {
+                replaySliderMinuteHandle.text(replay.minutes + " min");
+            },
             slide: function(event, ui) {
                 replay.minutes = ui.value;
+                replaySliderMinuteHandle.text(ui.value + " min");
                 replayOnSliderMove();
             },
-            change: function() {
+            change: function(event, ui) {
+                replaySliderMinuteHandle.text(ui.value + " min");
                 replayJump();
             }
         });
@@ -7767,16 +7779,13 @@ function showReplayBar(){
         jQuery('#replaySpeedHint').text('Speed: ' + replay.speed + 'x');
 
         jQuery("#selected_showTrace_hide").hide();
+
+        // On very first click, simulate automatic start
+        replayJump();
+        playReplay(replayShouldPlayOnFirstLoad);
     }
 
-    // On very first click, simulate automatic start
-    if(replayShouldPlayOnFirstLoad){
-        console.log('First click on replay button, simulating automatic start');
-        replay = replayDefaults(new Date());
-        loadReplay(replay.ts);
-        playReplay(true);
-    }
-    replayShouldPlayOnFirstLoad=false;
+    replayShouldPlayOnFirstLoad = false;
 };
 
 function timeoutFetch() {
