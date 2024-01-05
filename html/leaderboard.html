@@ -27,6 +27,7 @@
 
     <!-- CSS_ANCHOR -->
     <link rel="stylesheet" href="libs/jquery-ui-1.13.2.min.css" type="text/css">
+    <link href="https://kendo.cdn.telerik.com/themes/7.0.2/default/default-main.css" rel="stylesheet" />
     <link rel="stylesheet" href="libs/ol-6.14.1.css" type="text/css" />
     <link rel="stylesheet" href="libs/ol-layerswitcher-3.8.3.css" type="text/css"/>
     <link rel="stylesheet" href="style.css" type="text/css" />
@@ -61,22 +62,99 @@
         <div class="network-statistics-block">
             <h1>Feeder Network Statistics</h1>
             <div class="data-block">
-                <div><span>10,2932</span> feeders</div>
-                <div><span>283</span> feeders added (30 days)</div>
-                <div><span>250B</span> messages (24 hrs)</div>
-                <div><span>172</span> countries</div>
-                <div><span>3.5B</span> positions (24 hrs)</div>
-                <div><span>24.8K</span> aircraft</div>
+                <div><span id="feeder-count">--</span> <small># Feeders</small> </div>
+                <div><span id="feeders-added">--</span> <small># Feeders Added <br /> (30 days)</small></div>
+                <div><span id="monthly-positions">--</span> <small># Positions <br /> (30 days)</small></div>
+                <div><span id="countries-count">--</span> <small># Countries</small></div>
+                <div><span id="daily-positions">--</span> <small># Positions <br /> (24 hrs)</small></div>
+                <div><span id="aircraft-count">--</span> <small># Aircraft <br /> (24 hrs)</small></div>
             </div>
         </div>
-        <div id="chart"></div>
         <div class="search-block">
-            <div class="search-input"><p>Search any feeder to see its inpact.</p>
-                <div>
-                    <div class="search-hint"></div>
-                    <input type="text" placeholder="Search Feeder Names" />
+            <p>Search any feeder to see its impact.</p>
+            <div class="search-input">
+                <div class="search-text-input">
+                    <input id="feeder-search-input" type="text" placeholder="Search Feeder Names" />
                     <button class="search-button"></button>
-                    <div class="search-hint"><div>Tip: Hover over the rings to learn more.</div></div>
+                </div>
+                <div class="search-hint">
+                    <div>Tip: Hover over the rings to learn more.</div>
+                </div>
+            </div>
+        </div>
+        <div id="search-grid">
+            <div class="search-result">
+                <span id="search-text-summary">Showing results for 
+                    <span id="selected-feeder"></span>
+                </span>
+            </div>
+            <div class="analysis-w">
+                <div class="analysis-content" style="width: 40%;">
+                    <div class="analysis-content-item">
+                        <div id="rank-chart"></div>
+                    </div>
+                </div>
+                <div class="area-of-impact-w" style="width: 60%;">
+                    <span class="title">Area of Impact</span>
+                    <div class="area-of-impact-content">
+                        <div class="area-of-impact-content-item">
+                            <div class="area-of-impact-content-item-header">
+                                <span>Hardware</span>
+                            </div>
+                            <div id="hardware-chart"></div>
+                        </div>
+                        <div class="area-of-impact-content-item">
+                            <div class="area-of-impact-content-item-header">
+                                <span>Activity</span>
+                            </div>
+                            <div id="activity-chart"></div>
+                        </div>
+                        <div class="area-of-impact-content-item">
+                            <div class="area-of-impact-content-item-header">
+                                <span>Exchange</span>
+                            </div>
+                            <div id="exchange-chart"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="data-grid-w">
+                <div class="data-grid-info-w">
+                    <div class="data-grid-info-content">
+                        <span>Based on the filter critera you have selected.</span>
+                        <h1>This feeder is out-performming <span id="feeder-percentile">--</span> of others</h1>
+                        <span>
+                            Ready to immprove your feeder? Check out the <a href="">Feeder FAQ</a>
+                            for lots of tips on how to improve each dimension so you can be
+                            at the top of the leaderboard! Don't have a feeder? Learn how to get one
+                            <a href="">here</a>.
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="data-grid-filter-w">
+            <div class="data-grid-filter">
+                <span>Filters:</span>
+                <div class="data-grid-filter-content">
+                    <div class="data-grid-filter-item">
+                        <select id="regionselect"></select>
+                    </div>
+                    <div class="data-grid-filter-item">
+                        <select id="countryselect"></select>
+                    </div>
+                    <div class="data-grid-filter-item">
+                        <select id="municipalityselect"></select>
+                    </div>
+                    <!-- <div class="data-grid-filter-item">
+                        <select id="aircraftselect"></select>
+                    </div>
+                    <div class="data-grid-filter-item">
+                        <select id="modeselect"></select>
+                    </div>
+                    <div class="data-grid-filter-item">
+                        <select id="distanceselect"></select>
+                    </div> -->
                 </div>
             </div>
         </div>
@@ -84,9 +162,7 @@
             <div id="feeder-grid"></div>
         </div>
     </div>
-
-
-
+    </div>
     <script>let databaseFolder = "db-a48cb81";</script>
     <!-- JS_ANCHOR1 -->
     <script src="libs/jquery-3.6.1.min.js"></script>
@@ -95,6 +171,8 @@
     <script src="libs/jquery.ui.touch-punch-1.0.8.js"></script>
     <script src="libs/zstddec-tar1090-0.0.5.js"></script>
     <script src="libs/ol-custom022.js"></script>
+
+    <script src="formatter.js"></script>
 
     <!-- JS_ANCHOR2 -->
     <script src="https://kendo.cdn.telerik.com/2023.2.718/js/jszip.min.js"></script>

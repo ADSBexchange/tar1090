@@ -693,3 +693,34 @@ function itemCacheTest() {
         console.log(`ItemCache tested correctly!`);
     }
 }
+
+function transformNumber(value, args) {
+    const suffixes = ['K', 'M', 'B', 'T', 'P', 'E'];
+
+    if (!value) {
+        return null;
+    }
+
+    if (Number.isNaN(value)) {
+        return null;
+    }
+
+    if (value < 1000) {
+        return value;
+    }
+
+    const exp = Math.floor(Math.log(value) / Math.log(1000));
+
+    const returnValue = (value / Math.pow(1000, exp)).toFixed(args) + suffixes[exp - 1];
+
+    return returnValue;
+}
+
+function formatNumber(number, decimalPlaces) {
+    if (isNaN(number)) {
+        return null;
+    }
+
+    const formattedNumber = number.toFixed(decimalPlaces).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return formattedNumber;
+}
