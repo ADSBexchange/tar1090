@@ -363,3 +363,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 html/libs/kendo-ui-license.js
+html/leaderboard/feeder-block.init.js
+html/flight-activity/api.js
