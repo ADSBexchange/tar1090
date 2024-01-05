@@ -18,7 +18,7 @@ bindSearch();
 renderFilterSection();
 
 $.ajax({
-  url: 'https://__ROOT_PUB_DOMAIN_NAME__/api/aircraft/v2/public/leaderboard',
+  url: 'http://localhost:8080/api/aircraft/v2/public/leaderboard',
   method: 'GET',
   success: function (response) {
     boardData = response.data;
@@ -30,6 +30,75 @@ $.ajax({
     console.error('Error fetching feeder data:', error);
   }
 });
+
+function generateFeederGridData(feederlist) {
+  let signalTypes = new Set();
+  let aircraftTypes = new Set();
+
+  boardData.feeders.forEach((feeder) => {
+    feeder.stats.forEach((stat) => {
+      signalTypes.add(stat.signal_type);
+      aircraftTypes.add(stat.make_type_name);
+    });
+  });
+
+  return feederlist.map((feeder) => {
+    return {
+      uuid: feeder.uuid,
+      //feeder_name: feeder.feeder_name,
+      //country: feeder.country,
+      //score: feeder.score,
+      //uptime: feeder.uptime,
+      avg_range: feeder.avg_range_nm,
+      max_range: feeder.max_range,
+      position: feeder.stats.reduce((sum, stat) => sum + stat.positions_count, 0),
+      aircraft_on_ground: feeder.stats.filter(stat => stat.on_ground).length,
+      total_aircraft: feeder.total_aircraft,
+      unique_aircraft: feeder.unique_aircraft,
+      nearest_airport: feeder.nearest_airport,
+      uniqueness: feeder.uniqueness
+    }
+  });
+
+}
+
+function initializeFeederGrid() {
+  $("#feeder-grid").kendoGrid({
+    columns: [
+      { field: "rank", title: "Rank", width: 60 },
+      { field: "feeder_name", title: "Feeder Name" },
+      { field: "country", title: "Country" },
+      { field: "score", title: "Score", width: 140, format: "{0:##,#}" },
+      { field: "uptime", title: "Uptime", width: 70, format: "{0:n2}" },
+      { field: "avg_range", title: "Avg Range (SNM)", format: "{0:n2}" },
+      { field: "max_range", title: "Max Range (NM)", format: "{0:n2}" },
+      { field: "position", title: "Positions", format: "{0:n2}" },
+      { field: "aircraft_on_ground", title: "Aircraft on Ground" },
+      { field: "total_aircraft", title: "Total Aircraft" },
+      { field: "unique_aircraft", title: "Unique Aircraft" },
+      { field: "nearest_airport", title: "Nearest Airport (NM)" },
+      { field: "uniqueness", title: "Uniqueness", width: 100, format: "{0:n2}" }
+    ],
+    sortable: false,
+    pageable: {
+      buttonCount: 10
+    },
+    selectable: "row",
+    dataBound: populateCustomHeader
+  });
+}
+
+function bindSearch() {
+  let input = $('#feeder-search-input');
+  let button = $('.search-button');
+  input.on('keyup', function (event) {
+    if (event.key === 'Enter') {
+      searchFeeders();
+    }
+  });
+
+  button.on('click', searchFeeders);
+}
 
 function renderboard(feeders) {
   getMaximumProperties(feeders);
@@ -82,32 +151,6 @@ function setGridDataSources(feederlist) {
   let grid = $("#feeder-grid").data("kendoGrid");
   grid.setDataSource(dataSource);
   grid.refresh();
-}
-
-function initializeFeederGrid() {
-  $("#feeder-grid").kendoGrid({
-    columns: [
-      { field: "rank", title: "Rank", width: 60 },
-      { field: "feeder_name", title: "Feeder Name" },
-      { field: "country", title: "Country" },
-      { field: "score", title: "Score", width: 140, format: "{0:##,#}" },
-      { field: "uptime", title: "Uptime", width: 70, format: "{0:n2}" },
-      { field: "avg_range", title: "Avg Range (SNM)", format: "{0:n2}" },
-      { field: "max_range", title: "Max Range (NM)", format: "{0:n2}" },
-      { field: "position", title: "Positions", format: "{0:n2}" },
-      { field: "aircraft_on_ground", title: "Aircraft on Ground" },
-      { field: "total_aircraft", title: "Total Aircraft" },
-      { field: "unique_aircraft", title: "Unique Aircraft" },
-      { field: "nearest_airport", title: "Nearest Airport (NM)" },
-      { field: "uniqueness", title: "Uniqueness", width: 100, format: "{0:n2}" }
-    ],
-    sortable: false,
-    pageable: {
-      buttonCount: 10
-    },
-    selectable: "row",
-    dataBound: populateHeader
-  });
 }
 
 function renderFilter() {
@@ -650,18 +693,6 @@ function getUniquenessScore(feeder) {
   return +(feeder.uniqueness / maxUniqueness * 100).toFixed(2);
 }
 
-function bindSearch() {
-  let input = $('#feeder-search-input');
-  let button = $('.search-button');
-  input.on('keyup', function (event) {
-    if (event.key === 'Enter') {
-      searchFeeders();
-    }
-  });
-
-  button.on('click', searchFeeders);
-}
-
 function searchFeeders() {
   let input = $('#feeder-search-input');
   let searchText = input.val();
@@ -702,7 +733,7 @@ function generateSearchSummaryText(feeder_name) {
   }
 }
 
-function populateHeader(e) {
+function populateCustomHeader(e) {
   e.sender.element.find(".custom-header-row").remove();
   var items = e.sender.items();
   e.sender.element.height(e.sender.options.height);
