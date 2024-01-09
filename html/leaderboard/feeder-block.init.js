@@ -18,7 +18,7 @@ bindSearch();
 renderFilterSection();
 
 $.ajax({
-  url: 'https://__ROOT_PUB_DOMAIN_NAME__/api/aircraft/v2/public/leaderboard',
+  url: LEADERBOARD_API_ENDPOINT,
   method: 'GET',
   dataType: "json",
   contentType: "application/json",
@@ -80,8 +80,6 @@ function initializeFeederGrid() {
     pageable: {
       buttonCount: 10
     },
-    height: 450,
-    page: redrawCustomerHeader,
     selectable: "row",
     dataBound: populateCustomHeader
   });
@@ -703,10 +701,11 @@ function searchFeeders() {
 
 function renderFeederSection(selectedFeeder) {
   let grid = $("#feeder-grid").data("kendoGrid");
-
   renderFilterSection();
-  populateFeederPercentile(selectedFeeder);
-  generateSearchSummaryText(selectedFeeder.user);
+  if (selectedFeeder) {
+    populateFeederPercentile(selectedFeeder);
+    generateSearchSummaryText(selectedFeeder.user);
+  }
   grid.refresh();
 }
 
@@ -734,7 +733,6 @@ function generateSearchSummaryText(feeder_name) {
 function populateCustomHeader(e) {
   let grid = $("#feeder-grid").data("kendoGrid");
 
-  grid.element.find(".custom-header-row").remove();
   let items = grid.items();
   grid.element.height(grid.options.height);
 
@@ -744,16 +742,23 @@ function populateCustomHeader(e) {
       var dataItem = grid.dataItem(row);
 
       if (dataItem.feeder_name === selectedFeeder.feeder_name) {
+        let customHeader = grid.element.find(".custom-header-row");
+        if (customHeader) {
+          customHeader.remove();
+        } else {
+          grid.element.height(grid.element.height() + row.height());
+        }
+
         var item = row.clone();
         item.addClass("custom-header-row");
         var thead = grid.element.find(".k-grid-header table thead");
         thead.append(item);
-        grid.element.height(grid.element.height() + row.height());
       }
     })
+  } else {
+    let customHeader = grid.element.find(".custom-header-row");
+    if (customHeader) {
+      customHeader.remove();
+    }
   }
-}
-
-function redrawCustomerHeader(e) {
-
 }
