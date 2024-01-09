@@ -27,10 +27,10 @@ $.ajax({
   },
   crossDomain: true,
   success: function (response) {
-    boardData = response.data;
-    getGeoInfoList(boardData.feeders)
-    renderboard(boardData.feeders);
-    populateFeederStats(boardData);
+    boardData = response.data.rows;
+    getGeoInfoList(boardData);
+    renderboard(boardData);
+    populateFeederStats(response.data.network_stats);
   },
   error: function (error) {
     console.error('Error fetching feeder data:', error);
@@ -38,34 +38,25 @@ $.ajax({
 });
 
 function generateFeederGridData(feederlist) {
-  let signalTypes = new Set();
-  let aircraftTypes = new Set();
-
-  boardData.feeders.forEach((feeder) => {
-    feeder.stats.forEach((stat) => {
-      signalTypes.add(stat.signal_type);
-      aircraftTypes.add(stat.make_type_name);
-    });
-  });
-
   return feederlist.map((feeder) => {
     return {
       uuid: feeder.uuid,
-      //feeder_name: feeder.feeder_name,
-      //country: feeder.country,
-      //score: feeder.score,
-      //uptime: feeder.uptime,
-      avg_range: feeder.avg_range_nm,
-      max_range: feeder.max_range,
-      position: feeder.stats.reduce((sum, stat) => sum + stat.positions_count, 0),
-      aircraft_on_ground: feeder.stats.filter(stat => stat.on_ground).length,
-      total_aircraft: feeder.total_aircraft,
-      unique_aircraft: feeder.unique_aircraft,
-      nearest_airport: feeder.nearest_airport,
+      feeder_name: feeder.user,
+      country: feeder.country,
+      region: feeder.region,
+      state: feeder.state,
+      city: feeder.city,
+      uptime: feeder.uptime,
+      avg_range: feeder.avg_sq_nm_range,
+      max_range: feeder.max_range_nm,
+      position: feeder.all_positions_stats.reduce((sum, stat) => sum + stat.positions, 0),
+      aircraft_on_ground: feeder.all_positions_stats.filter(stat => stat.on_ground).reduce((sum, stat) => sum + stat.aircrafts, 0),
+      total_aircraft: feeder.all_positions_stats.reduce((sum, stat) => sum + stat.aircrafts, 0),
+      unique_aircraft: feeder.unique_positions_stats.reduce((sum, stat) => sum + stat.aircrafts, 0),
+      nearest_airport: feeder.nearest_airport_nm,
       uniqueness: feeder.uniqueness
     }
   });
-
 }
 
 function initializeFeederGrid() {
@@ -89,6 +80,8 @@ function initializeFeederGrid() {
     pageable: {
       buttonCount: 10
     },
+    height: 450,
+    page: redrawCustomerHeader,
     selectable: "row",
     dataBound: populateCustomHeader
   });
@@ -106,7 +99,8 @@ function bindSearch() {
   button.on('click', searchFeeders);
 }
 
-function renderboard(feeders) {
+function renderboard(feederList) {
+  let feeders = generateFeederGridData(feederList);
   getMaximumProperties(feeders);
   calculateFeederScores(feeders);
   setGridDataSources(feeders);
@@ -121,7 +115,7 @@ function renderboard(feeders) {
 function setGridDataSources(feederlist) {
   var dataSource = new kendo.data.DataSource({
     data: feederlist,
-    pageSize: 10, // Set the number of items per page
+    pageSize: 10,
     schema: {
       model: {
         id: "uuid",
@@ -139,9 +133,8 @@ function setGridDataSources(feederlist) {
           total_aircraft: { type: "number" },
           unique_aircraft: { type: "number" },
           nearest_airport: { type: "number" },
-          uniqueness: { type: "number" },
-          position: { type: "number" }
-        },
+          uniqueness: { type: "number" }
+        }
       },
     },
     height: 50,
@@ -251,10 +244,10 @@ function onFilterChange() {
   if ((region && region.startsWith('Select'))
     || (country && country.startsWith('Select'))
     || (city && city.startsWith('Select'))) {
-    renderboard(boardData.feeders);
+    renderboard(boardData);
   } else if (region && country && city) {
     renderboard(
-      boardData.feeders.filter(
+      boardData.filter(
         feeder =>
           feeder.region === region &&
           feeder.country === country &&
@@ -263,14 +256,14 @@ function onFilterChange() {
     );
   } else if (region && country) {
     renderboard(
-      boardData.feeders.filter(
+      boardData.filter(
         feeder => feeder.region === region && feeder.country === country
       )
     );
   } else if (region) {
-    renderboard(boardData.feeders.filter(feeder => feeder.region === region));
+    renderboard(boardData.filter(feeder => feeder.region === region));
   } else {
-    renderboard(boardData.feeders);
+    renderboard(boardData);
   }
 }
 
@@ -571,13 +564,13 @@ function renderFilterSection() {
   }
 }
 
-function populateFeederStats(feederArray) {
-  $("#feeder-count").text(formatNumber(feederArray.feeder_count));
-  $("#feeders-added").text(formatNumber(feederArray.feeders_added));
-  $("#monthly-positions").text(transformNumber(feederArray.total_monthly_positions, 1));
-  $("#countries-count").text(transformNumber(feederArray.countries_count, 1));
-  $("#daily-positions").text(transformNumber(feederArray.total_daily_positions, 1));
-  $("#aircraft-count").text(transformNumber(feederArray.total_aircrafts, 1));
+function populateFeederStats(feederStats) {
+  $("#feeder-count").text(formatNumber(feederStats.feeders_total));
+  $("#feeders-added").text(formatNumber(feederStats.feeders_added_last_30_days));
+  $("#monthly-positions").text(transformNumber(feederStats.positions_last_30_days, 1));
+  $("#countries-count").text(transformNumber(feederStats.countries_total, 1));
+  $("#daily-positions").text(transformNumber(feederStats.positions_captured_24h, 1));
+  $("#aircraft-count").text(transformNumber(feederStats.aircrafts_seen_24h, 1));
 }
 
 function getMaximumProperties(feederlist) {
@@ -640,7 +633,6 @@ function calculateFeederScores(feederlist) {
 
   feederlist.forEach((feeder, index) => {
     feeder.rank = index + 1;
-    feeder.position = index + 1;
   });
 }
 
@@ -703,7 +695,7 @@ function searchFeeders() {
   let input = $('#feeder-search-input');
   let searchText = input.val();
 
-  selectedFeeder = boardData.feeders
+  selectedFeeder = $("#feeder-grid").data("kendoGrid").dataSource.options.data
     .find(feeder => feeder.feeder_name.toLowerCase() === searchText.toLowerCase());
   console.log('selectedFeeder', selectedFeeder);
   renderFeederSection(selectedFeeder);
@@ -714,7 +706,7 @@ function renderFeederSection(selectedFeeder) {
 
   renderFilterSection();
   populateFeederPercentile(selectedFeeder);
-  generateSearchSummaryText(selectedFeeder.feeder_name);
+  generateSearchSummaryText(selectedFeeder.user);
   grid.refresh();
 }
 
@@ -740,22 +732,28 @@ function generateSearchSummaryText(feeder_name) {
 }
 
 function populateCustomHeader(e) {
-  e.sender.element.find(".custom-header-row").remove();
-  var items = e.sender.items();
-  e.sender.element.height(e.sender.options.height);
+  let grid = $("#feeder-grid").data("kendoGrid");
+
+  grid.element.find(".custom-header-row").remove();
+  let items = grid.items();
+  grid.element.height(grid.options.height);
 
   if (selectedFeeder) {
     items.each(function () {
       var row = $(this);
-      var dataItem = e.sender.dataItem(row);
+      var dataItem = grid.dataItem(row);
 
       if (dataItem.feeder_name === selectedFeeder.feeder_name) {
         var item = row.clone();
         item.addClass("custom-header-row");
-        var thead = e.sender.element.find(".k-grid-header table thead");
+        var thead = grid.element.find(".k-grid-header table thead");
         thead.append(item);
-        e.sender.element.height(e.sender.element.height() + row.height());
+        grid.element.height(grid.element.height() + row.height());
       }
     })
   }
+}
+
+function redrawCustomerHeader(e) {
+
 }
