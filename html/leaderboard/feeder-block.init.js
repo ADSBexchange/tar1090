@@ -1,4 +1,4 @@
-let boardData;
+let boardData = [];
 let maxUniqueness = 0;
 let maxUptime = 0;
 let maxPosition = 0;
@@ -11,11 +11,16 @@ let maxAircraftOnGround = 0;
 let countries = []
 let regions = [];
 let cities = [];
+let aircraftTypes = [];
+let signalTypes = [];
 let activeGridCount = 0;
-let selectedFeeder = null;
+filterState = null;
+
+resetFilterState();
 initializeFeederGrid();
 bindSearch();
-renderFilterSection();
+initializeFeederChart();
+renderboard();
 
 $.ajax({
   url: LEADERBOARD_API_ENDPOINT,
@@ -29,35 +34,14 @@ $.ajax({
   success: function (response) {
     boardData = response.data.rows;
     getGeoInfoList(boardData);
-    renderboard(boardData);
+    renderboard();
+    renderFilter();
     populateFeederStats(response.data.network_stats);
   },
   error: function (error) {
     console.error('Error fetching feeder data:', error);
   }
 });
-
-function generateFeederGridData(feederlist) {
-  return feederlist.map((feeder) => {
-    return {
-      uuid: feeder.uuid,
-      feeder_name: feeder.user,
-      country: feeder.country,
-      region: feeder.region,
-      state: feeder.state,
-      city: feeder.city,
-      uptime: feeder.uptime,
-      avg_range: feeder.avg_sq_nm_range,
-      max_range: feeder.max_range_nm,
-      position: feeder.all_positions_stats.reduce((sum, stat) => sum + stat.positions, 0),
-      aircraft_on_ground: feeder.all_positions_stats.filter(stat => stat.on_ground).reduce((sum, stat) => sum + stat.aircrafts, 0),
-      total_aircraft: feeder.all_positions_stats.reduce((sum, stat) => sum + stat.aircrafts, 0),
-      unique_aircraft: feeder.unique_positions_stats.reduce((sum, stat) => sum + stat.aircrafts, 0),
-      nearest_airport: feeder.nearest_airport_nm,
-      uniqueness: feeder.uniqueness
-    }
-  });
-}
 
 function initializeFeederGrid() {
   $("#feeder-grid").kendoGrid({
@@ -66,7 +50,7 @@ function initializeFeederGrid() {
       { field: "feeder_name", title: "Feeder Name" },
       { field: "country", title: "Country" },
       { field: "score", title: "Score", width: 140, format: "{0:##,#}" },
-      { field: "uptime", title: "Uptime", width: 70, format: "{0:n2}" },
+      { field: "uptime", title: "Uptime", width: 90, format: "{0:n2}\%" },
       { field: "avg_range", title: "Avg Range (SNM)", format: "{0:n2}" },
       { field: "max_range", title: "Max Range (NM)", format: "{0:n2}" },
       { field: "position", title: "Positions", format: "{0:n2}" },
@@ -83,6 +67,137 @@ function initializeFeederGrid() {
     selectable: "row",
     dataBound: populateCustomHeader
   });
+  $("#notification").kendoNotification({
+    allowHideAfter: 1000,
+    width: 300,
+    height: 50,
+    position: {
+      pinned: true,
+      top: 30,
+      // left: null,
+      // bottom: 200,
+      right: 30
+    }
+  });
+}
+
+function resetFilterState() {
+  filterState = {
+    _filterContext: null,
+    feeder_name: null,
+    country: [],
+    region: [],
+    city: [],
+    make_type_name: [],
+    signal_type: [],
+    distance: 500
+  };
+}
+
+function renderboard() {
+  let feeders = generateFeederGridData(applyFilter());
+  getMaximumProperties(feeders);
+  calculateFeederScores(feeders);
+  setGridDataSources(feeders);
+  renderFeederSection();
+  activeGridCount = feeders.length;
+}
+
+function applyFilter() {
+  let filteredData = boardData;
+  filterState._filterContext = null;
+  filteredData = filterByRegion(filteredData, filterState);
+  filteredData = filterByCountry(filteredData, filterState);
+  filteredData = filterByMunicipality(filteredData, filterState);
+  filteredData = filterByAircraftType(filteredData, filterState);
+  filteredData = filterBySignalType(filteredData, filterState);
+  filteredData = filterbyFeederName(filteredData, filterState);
+
+  return filteredData;
+}
+
+function filterbyFeederName(data, filterState) {
+  if (filterState.feeder_name) {
+    let searchedFeeder = data.find(feeder => feeder.user.toLowerCase() === filterState.feeder_name.toLowerCase());
+    if (searchedFeeder) {
+      filterState._filterContext = { foundFeeder: transformFeeder(searchedFeeder) };
+    } else {
+      $("#notification").getKendoNotification().show(`No feeder found with matching ${filterState.feeder_name}`, "error");
+    }
+  }
+  return data;
+}
+
+function filterByRegion(data, filterState) {
+  if (filterState.region.length > 0) {
+    data = data.filter(feeder => feeder.region && filterState.region.some(region => region.toLowerCase() === feeder.region.toLowerCase()));
+  }
+  return data;
+}
+
+function filterByCountry(data, filterState) {
+  if (filterState.country.length > 0) {
+    data = data.filter(feeder => feeder.country && filterState.country.some(country => country.toLowerCase() === feeder.country.toLowerCase()));
+  }
+  return data;
+}
+
+function filterByMunicipality(data, filterState) {
+  if (filterState.city.length > 0) {
+    data = data.filter(feeder => feeder.city && filterState.city.some(city => city.toLowerCase() === feeder.city.toLowerCase()));
+  }
+  return data;
+}
+
+function filterByAircraftType(data, filterState) {
+  if (filterState.make_type_name.length > 0) {
+    data = data.filter(feeder => feeder.all_positions_stats.some(stat => filterState.make_type_name.some(type => type.toLowerCase() === stat.make_type_name.toLowerCase())));
+  }
+  return data;
+}
+
+function filterBySignalType(data, filterState) {
+  if (filterState.signal_type.length > 0) {
+    data = data.filter(feeder => feeder.all_positions_stats.some(stat => filterState.signal_type.some(type => type.toLowerCase() === stat.signal_type.toLowerCase())));
+  }
+  return data;
+}
+
+function transformFeeder(feeder) {
+  return {
+    uuid: feeder.uuid,
+    feeder_name: feeder.user,
+    country: feeder.country,
+    region: feeder.region,
+    state: feeder.state,
+    city: feeder.city,
+    uptime: feeder.uptime,
+    avg_range: feeder.avg_sq_nm_range,
+    max_range: feeder.max_range_nm,
+    position: feeder.all_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.positions, 0),
+    aircraft_on_ground: feeder.all_positions_stats.filter(stat => stat.on_ground && filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0),
+    total_aircraft: feeder.all_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0),
+    unique_aircraft: feeder.unique_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0),
+    nearest_airport: feeder.nearest_airport_nm,
+    uniqueness: feeder.uniqueness
+  };
+}
+
+function filterFeederStats(stat) {
+  let result = true;
+  if (filterState.make_type_name.length > 0) {
+    result = filterState.make_type_name.some(type => type.toLowerCase() === stat.make_type_name.toLowerCase());
+  }
+
+  if (filterState.signal_type.length > 0) {
+    result = result && filterState.signal_type.some(type => type.toLowerCase() === stat.signal_type.toLowerCase());
+  }
+
+  return result;
+}
+
+function generateFeederGridData(feederlist) {
+  return feederlist.map((feeder) => transformFeeder(feeder));
 }
 
 function bindSearch() {
@@ -90,28 +205,15 @@ function bindSearch() {
   let button = $('.search-button');
   input.on('keyup', function (event) {
     if (event.key === 'Enter') {
-      searchFeeders();
+      onFilterChange();
     }
   });
 
-  button.on('click', searchFeeders);
-}
-
-function renderboard(feederList) {
-  let feeders = generateFeederGridData(feederList);
-  getMaximumProperties(feeders);
-  calculateFeederScores(feeders);
-  setGridDataSources(feeders);
-  initializeFeederChart();
-  renderFilter();
-  activeGridCount = feeders.length;
-  if (selectedFeeder) {
-    renderFeederSection(selectedFeeder);
-  }
+  button.on('click', onFilterChange);
 }
 
 function setGridDataSources(feederlist) {
-  var dataSource = new kendo.data.DataSource({
+  let dataSource = new kendo.data.DataSource({
     data: feederlist,
     pageSize: 10,
     schema: {
@@ -151,70 +253,69 @@ function setGridDataSources(feederlist) {
 }
 
 function renderFilter() {
-  $("#regionselect").kendoDropDownList({
-    optionLabel: "Select Region...",
-    rounded: "full",
-    autoBind: true,
-    dataSource: regions
+  let regionDataSource = new kendo.data.DataSource({
+    data: regions
+  });
+  let countriesDataSource = new kendo.data.DataSource({
+    data: countries
+  });
+  let citiesDataSource = new kendo.data.DataSource({
+    data: cities
+  });
+  $("#regionselect").kendoMultiSelect({
+    placeholder: "Region",
+    rounded: "medium",
+    autoBind: false,
+    dataSource: regionDataSource,
+    dataTextField: "region",
+    dataValueField: "region",
+    change: function () {
+      var filters = buildFilters(this.dataItems(), "region");
+      countriesDataSource.filter(filters);
+      onFilterChange();
+    }
   });
 
-  $("#countryselect").kendoDropDownList({
-    optionLabel: "Select country...",
-    dataSource: countries,
-    rounded: "full",
-    autoBind: true,
-    cascadeFrom: "regionselect",
-    cascadeFromField: "region",
+  $("#countryselect").kendoMultiSelect({
+    placeholder: "Country",
+    dataSource: countriesDataSource,
+    rounded: "medium",
+    autoBind: false,
     dataValueField: "country",
-    dataTextField: "country"
+    dataTextField: "country",
+    change: function () {
+      var filters = buildFilters(this.dataItems(), "country");
+      citiesDataSource.filter(filters);
+      onFilterChange();
+    }
   });
 
-  $("#municipalityselect").kendoDropDownList({
-    optionLabel: "Select municipality...",
+  $("#municipalityselect").kendoMultiSelect({
+    placeholder: "Municipality",
     dataTextField: "city",
     dataValueField: "city",
-    rounded: "full",
+    rounded: "medium",
     autoBind: false,
-    dataSource: cities,
-    cascadeFrom: "countryselect",
-    cascadeFromField: "country"
+    dataSource: citiesDataSource
   });
 
-  $("#regionselect").data("kendoDropDownList").bind("change", onFilterChange);
-  $("#countryselect").data("kendoDropDownList").bind("change", onFilterChange);
-  $("#municipalityselect").data("kendoDropDownList").bind("change", onFilterChange);
+  $("#aircraftselect").kendoMultiSelect({
+    placeholder: "Aircraft Type",
+    rounded: "medium",
+    autoBind: false,
+    dataSource: aircraftTypes
+  });
 
-  // $("#aircraftselect").kendoMultiSelect({
-  //   placeholder: "Select aircraft...",
-  //   dataTextField: "ProductName",
-  //   dataValueField: "ProductID",
-  //   autoBind: false,
-  //   dataSource: {
-  //     type: "odata",
-  //     serverFiltering: true,
-  //     transport: {
-  //       read: {
-  //         url: "https://demos.telerik.com/kendo-ui/service/Northwind.svc/Products",
-  //       }
-  //     }
-  //   }
-  // });
+  $("#modeselect").kendoMultiSelect({
+    placeholder: "Signal",
+    rounded: "medium",
+    autoBind: false,
+    dataSource: signalTypes
+  });
 
-  // $("#modeselect").kendoMultiSelect({
-  //   placeholder: "Select mode...",
-  //   dataTextField: "ProductName",
-  //   dataValueField: "ProductID",
-  //   autoBind: false,
-  //   dataSource: {
-  //     type: "odata",
-  //     serverFiltering: true,
-  //     transport: {
-  //       read: {
-  //         url: "https://demos.telerik.com/kendo-ui/service/Northwind.svc/Products",
-  //       }
-  //     }
-  //   }
-  // });
+  $("#municipalityselect").data("kendoMultiSelect").bind("change", onFilterChange);
+  $("#aircraftselect").data("kendoMultiSelect").bind("change", onFilterChange);
+  $("#modeselect").data("kendoMultiSelect").bind("change", onFilterChange);
 
   // $("#distanceselect").kendoMultiSelect({
   //   placeholder: "Select distance...",
@@ -233,36 +334,60 @@ function renderFilter() {
   // });
 }
 
+function buildFilters(dataItems, selector) {
+  var filters = [],
+    length = dataItems.length,
+    idx = 0, dataItem;
+
+  for (; idx < length; idx++) {
+    dataItem = dataItems[idx];
+    filters.push({
+      field: selector,
+      operator: "eq",
+      value: dataItem[selector]
+    });
+  }
+
+  return {
+    logic: "or",
+    filters: filters
+  };
+}
+
 function onFilterChange() {
   let region = $("#regionselect").val();
   let country = $("#countryselect").val();
   let city = $("#municipalityselect").val();
+  let aircraftType = $("#aircraftselect").val();
+  let signalType = $("#modeselect").val();
+  let feederSearchInput = $('#feeder-search-input').val();
 
-
-  if ((region && region.startsWith('Select'))
-    || (country && country.startsWith('Select'))
-    || (city && city.startsWith('Select'))) {
-    renderboard(boardData);
-  } else if (region && country && city) {
-    renderboard(
-      boardData.filter(
-        feeder =>
-          feeder.region === region &&
-          feeder.country === country &&
-          feeder.city === city
-      )
-    );
-  } else if (region && country) {
-    renderboard(
-      boardData.filter(
-        feeder => feeder.region === region && feeder.country === country
-      )
-    );
-  } else if (region) {
-    renderboard(boardData.filter(feeder => feeder.region === region));
-  } else {
-    renderboard(boardData);
+  resetFilterState();
+  if (region.length > 0) {
+    filterState.region = region;
   }
+
+  if (country.length > 0) {
+    filterState.country = country;
+  }
+
+  if (city.length > 0) {
+    filterState.city = city;
+  }
+
+  if (aircraftType.length > 0) {
+    filterState.make_type_name = aircraftType;
+  }
+
+  if (signalType.length > 0) {
+    filterState.signal_type = signalType;
+  }
+
+  if (feederSearchInput) {
+    filterState.feeder_name = feederSearchInput;
+  }
+
+  renderboard();
 }
 
 function initializeFeederChart() {
@@ -270,7 +395,10 @@ function initializeFeederChart() {
     seriesDefaults: {
       type: "donut",
       margin: 2,
-      startAngle: 150
+      startAngle: 90,
+      overlay: {
+        gradient: "none"
+      }
     },
     chartArea: {
       background: ""
@@ -302,7 +430,10 @@ function initializeFeederChart() {
     seriesDefaults: {
       type: "donut",
       margin: 2,
-      startAngle: 150
+      startAngle: 90,
+      overlay: {
+        gradient: "none"
+      }
     },
     chartArea: {
       background: ""
@@ -333,7 +464,10 @@ function initializeFeederChart() {
     seriesDefaults: {
       type: "donut",
       margin: 2,
-      startAngle: 150
+      startAngle: 90,
+      overlay: {
+        gradient: "none"
+      }
     },
     chartArea: {
       background: ""
@@ -394,174 +528,6 @@ function initializeFeederChart() {
   });
 }
 
-function renderFilterSection() {
-  if (selectedFeeder) {
-    $("#search-grid").show();
-    let hardwareChart = $("#hardware-chart").data("kendoChart");
-    hardwareChart.options.series = [
-      {
-        name: "Maximum Range",
-        data: [
-          {
-            category: "Feeder Percentile",
-            value: getMaxRangeScore(selectedFeeder),
-            color: "#1E395C"
-          }, {
-            category: "Remaining Percentile",
-            value: (100 - getMaxRangeScore(selectedFeeder)).toFixed(2),
-            color: "#C1D3EB"
-          }
-        ],
-        labels: {
-          visible: false
-        }
-      },
-      {
-        name: "Average Range",
-        data: [
-          {
-            category: "Feeder Percentile",
-            value: getAvgRangeScore(selectedFeeder),
-            color: "#066674"
-          }, {
-            category: "Remaining Percentile",
-            value: (100 - getAvgRangeScore(selectedFeeder)).toFixed(2),
-            color: "#C5F5FC"
-          }
-        ],
-        labels: {
-          visible: false,
-        }
-      },
-      {
-        name: "Uptime",
-        data: [
-          {
-            category: "Uptime",
-            value: getUptimeScore(selectedFeeder),
-            color: "#660058"
-          },
-          {
-            category: "Downtime",
-            value: (100 - getUptimeScore(selectedFeeder)).toFixed(2),
-            color: "#FFADF4"
-          }
-        ]
-      }];
-    hardwareChart.refresh();
-    let activityChart = $("#activity-chart").data("kendoChart");
-    activityChart.options.series = [
-      {
-        name: "Position",
-        data: [
-          {
-            category: "Feeder Percentile",
-            value: getPositionScore(selectedFeeder),
-            color: "#1E395C"
-          },
-          {
-            category: "Remaining Percentage",
-            value: (100 - getPositionScore(selectedFeeder)).toFixed(2),
-            color: "#C1D3EB"
-          }
-        ]
-      },
-      {
-        name: "Aircraft on Ground",
-        data: [
-          {
-            category: "Feeder Percentile",
-            value: getAircraftOnGroundScore(selectedFeeder),
-            color: "#066674"
-          },
-          {
-            category: "Remaining Percentile",
-            value: (100 - getAircraftOnGroundScore(selectedFeeder)).toFixed(2),
-            color: "#C5F5FC"
-          }
-        ],
-        labels: {
-          visible: false,
-        }
-      },
-      {
-        name: "Total Aircraft",
-        data: [
-          {
-            category: "Feeder Percentile",
-            value: getTotalAircraftScore(selectedFeeder),
-            color: "#660058"
-          }, {
-            category: "Other Percentile",
-            value: (100 - getTotalAircraftScore(selectedFeeder)).toFixed(2),
-            color: "#FFADF4"
-          }
-        ],
-        labels: {
-          visible: false
-        }
-      }
-    ]
-    activityChart.refresh();
-    let exchangeChart = $("#exchange-chart").data("kendoChart")
-    exchangeChart.options.series = [
-      {
-        name: "Unique Aircraft",
-        data: [
-          {
-            category: "Feeder Percentile",
-            value: getUniqueAircraftScore(selectedFeeder),
-            color: "#1E395C"
-          },
-          {
-            category: "Remaining Percentile",
-            value: (100 - getUniqueAircraftScore(selectedFeeder)).toFixed(2),
-            color: "#C1D3EB"
-          }
-        ]
-      },
-      {
-        name: "Nearest Airport",
-        data: [
-          {
-            category: "Feeder Percentile",
-            value: getNearestAirportScore(selectedFeeder),
-            color: "#066674"
-          },
-          {
-            category: "Remaining Percentile",
-            value: (100 - getNearestAirportScore(selectedFeeder)).toFixed(2),
-            color: "#C5F5FC"
-          }
-        ],
-        labels: {
-          visible: false,
-        }
-      },
-      {
-        name: "Unique Range",
-        data: [
-          {
-            category: "Feeder Percentile",
-            value: getUniquenessScore(selectedFeeder),
-            color: "#660058"
-          }, {
-            category: "Remaining Percentile",
-            value: (100 - getUniquenessScore(selectedFeeder)).toFixed(2),
-            color: "#FFADF4"
-          }
-        ],
-        labels: {
-          visible: false
-        }
-      }];
-    exchangeChart.refresh();
-    $("#rank-chart").data("kendoChart").refresh();
-  } else {
-    $("#search-grid").hide();
-  }
-}
-
 function populateFeederStats(feederStats) {
   $("#feeder-count").text(formatNumber(feederStats.feeders_total));
   $("#feeders-added").text(formatNumber(feederStats.feeders_added_last_30_days));
@@ -589,18 +555,34 @@ function getGeoInfoList(feederlist) {
   let distinctCountries = new Set();
   let distinctRegions = new Set();
   let distinctCities = new Set();
+  let distinctAircraftTypes = new Set();
+  let distinctSignalTypes = new Set();
 
   feederlist.forEach((feeder) => {
     if (feeder.country && feeder.country.trim() !== "") {
       distinctCountries.add({ region: feeder.region, country: feeder.country });
     }
     if (feeder.region && feeder.region.trim() !== "") {
-      distinctRegions.add(feeder.region);
+      distinctRegions.add({ region: feeder.region });
     }
     if (feeder.city && feeder.city.trim() !== "") {
       distinctCities.add({ city: feeder.city, region: feeder.region, country: feeder.country });
     }
+    feeder.all_positions_stats.forEach((stats) => {
+      if (stats.make_type_name !== "Undefined") {
+        distinctAircraftTypes.add(stats.make_type_name);
+      }
+      distinctSignalTypes.add(stats.signal_type);
+    });
   });
+
+  distinctRegions = Array.from(distinctRegions).reduce((acc, curr) => {
+    const existingRegion = acc.find(region => region.region === curr.region);
+    if (!existingRegion) {
+      acc.push(curr);
+    }
+    return acc;
+  }, []);
 
   distinctCountries = Array.from(distinctCountries).reduce((acc, curr) => {
     const existingCountry = acc.find(country => country.region === curr.region && country.country === curr.country);
@@ -618,8 +600,10 @@ function getGeoInfoList(feederlist) {
     return acc;
   }, []);
   countries = Array.from(distinctCountries).sort((a, b) => a.country.localeCompare(b.country));
-  regions = Array.from(distinctRegions).sort();
+  regions = Array.from(distinctRegions).sort((a, b) => a.region.localeCompare(b.region));
   cities = Array.from(distinctCities).sort((a, b) => a.city.localeCompare(b.city));
+  aircraftTypes = Array.from(distinctAircraftTypes).sort();
+  signalTypes = Array.from(distinctSignalTypes).sort();
 }
 
 function calculateFeederScores(feederlist) {
@@ -631,6 +615,15 @@ function calculateFeederScores(feederlist) {
 
   feederlist.forEach((feeder, index) => {
     feeder.rank = index + 1;
+
+    // refactor this to an idempotent function 
+    if (filterState._filterContext && filterState._filterContext.foundFeeder) {
+      let foundFeeder = filterState._filterContext.foundFeeder;
+      if (foundFeeder.uuid === feeder.uuid) {
+        foundFeeder.rank = feeder.rank;
+      }
+      filterState._filterContext.foundFeeder = foundFeeder;
+    }
   });
 }
 
@@ -689,24 +682,184 @@ function getUniquenessScore(feeder) {
   return +(feeder.uniqueness / maxUniqueness * 100).toFixed(2);
 }
 
-function searchFeeders() {
-  let input = $('#feeder-search-input');
-  let searchText = input.val();
-
-  selectedFeeder = $("#feeder-grid").data("kendoGrid").dataSource.options.data
-    .find(feeder => feeder.feeder_name.toLowerCase() === searchText.toLowerCase());
-  console.log('selectedFeeder', selectedFeeder);
-  renderFeederSection(selectedFeeder);
+function renderFeederSection() {
+  if (filterState._filterContext && filterState._filterContext.foundFeeder) {
+    let feeder = filterState._filterContext.foundFeeder;
+    $("#search-grid").show();
+    populateFeederPercentile(feeder);
+    generateSearchSummaryText(feeder.feeder_name);
+    renderFilterSection(feeder);
+    refreshGrid();
+  } else {
+    $("#search-grid").hide();
+  }
 }
 
-function renderFeederSection(selectedFeeder) {
-  let grid = $("#feeder-grid").data("kendoGrid");
-  renderFilterSection();
-  if (selectedFeeder) {
-    populateFeederPercentile(selectedFeeder);
-    generateSearchSummaryText(selectedFeeder.user);
-  }
-  grid.refresh();
+function renderFilterSection(feeder) {
+  let hardwareChart = $("#hardware-chart").data("kendoChart");
+  hardwareChart.options.series = [
+    {
+      name: "Maximum Range",
+      data: [
+        {
+          category: "Feeder Percentile",
+          value: getMaxRangeScore(feeder),
+          color: "#1E395C"
+        }, {
+          category: "Remaining Percentile",
+          value: (100 - getMaxRangeScore(feeder)).toFixed(2),
+          color: "#C1D3EB"
+        }
+      ],
+      labels: {
+        visible: false
+      }
+    },
+    {
+      name: "Average Range",
+      data: [
+        {
+          category: "Feeder Percentile",
+          value: getAvgRangeScore(feeder),
+          color: "#066674"
+        }, {
+          category: "Remaining Percentile",
+          value: (100 - getAvgRangeScore(feeder)).toFixed(2),
+          color: "#C5F5FC"
+        }
+      ],
+      labels: {
+        visible: false,
+      }
+    },
+    {
+      name: "Uptime",
+      data: [
+        {
+          category: "Uptime",
+          value: getUptimeScore(feeder),
+          color: "#660058"
+        },
+        {
+          category: "Downtime",
+          value: (100 - getUptimeScore(feeder)).toFixed(2),
+          color: "#FFADF4"
+        }
+      ]
+    }];
+  hardwareChart.refresh();
+  let activityChart = $("#activity-chart").data("kendoChart");
+  activityChart.options.series = [
+    {
+      name: "Position",
+      data: [
+        {
+          category: "Feeder Percentile",
+          value: getPositionScore(feeder),
+          color: "#1E395C"
+        },
+        {
+          category: "Remaining Percentage",
+          value: (100 - getPositionScore(feeder)).toFixed(2),
+          color: "#C1D3EB"
+        }
+      ]
+    },
+    {
+      name: "Aircraft on Ground",
+      data: [
+        {
+          category: "Feeder Percentile",
+          value: getAircraftOnGroundScore(feeder),
+          color: "#066674"
+        },
+        {
+          category: "Remaining Percentile",
+          value: (100 - getAircraftOnGroundScore(feeder)).toFixed(2),
+          color: "#C5F5FC"
+        }
+      ],
+      labels: {
+        visible: false,
+      }
+    },
+    {
+      name: "Total Aircraft",
+      data: [
+        {
+          category: "Feeder Percentile",
+          value: getTotalAircraftScore(feeder),
+          color: "#660058"
+        }, {
+          category: "Other Percentile",
+          value: (100 - getTotalAircraftScore(feeder)).toFixed(2),
+          color: "#FFADF4"
+        }
+      ],
+      labels: {
+        visible: false
+      }
+    }
+  ]
+  activityChart.refresh();
+  let exchangeChart = $("#exchange-chart").data("kendoChart")
+  exchangeChart.options.series = [
+    {
+      name: "Unique Aircraft",
+      data: [
+        {
+          category: "Feeder Percentile",
+          value: getUniqueAircraftScore(feeder),
+          color: "#1E395C"
+        },
+        {
+          category: "Remaining Percentile",
+          value: (100 - getUniqueAircraftScore(feeder)).toFixed(2),
+          color: "#C1D3EB"
+        }
+      ]
+    },
+    {
+      name: "Nearest Airport",
+      data: [
+        {
+          category: "Feeder Percentile",
+          value: getNearestAirportScore(feeder),
+          color: "#066674"
+        },
+        {
+          category: "Remaining Percentile",
+          value: (100 - getNearestAirportScore(feeder)).toFixed(2),
+          color: "#C5F5FC"
+        }
+      ],
+      labels: {
+        visible: false,
+      }
+    },
+    {
+      name: "Unique Range",
+      data: [
+        {
+          category: "Feeder Percentile",
+          value: getUniquenessScore(feeder),
+          color: "#660058"
+        }, {
+          category: "Remaining Percentile",
+          value: (100 - getUniquenessScore(feeder)).toFixed(2),
+          color: "#FFADF4"
+        }
+      ],
+      labels: {
+        visible: false
+      }
+    }];
+  exchangeChart.refresh();
+  $("#rank-chart").data("kendoChart").refresh();
+}
+
+function refreshGrid() {
+  $("#feeder-grid").data("kendoGrid").refresh();
 }
 
 function generateSearchSummaryText(feeder_name) {
@@ -719,15 +872,15 @@ function generateSearchSummaryText(feeder_name) {
   let locationPrefix = 'Country: ';
 
 
-  if (region && !region.startsWith('Select')) {
-    locationPrefix += `${region}`;
-  }
-  if (country && !country.startsWith('Select')) {
-    locationPrefix += `, ${country}`;
-  }
-  if (city && !city.startsWith('Select')) {
-    locationPrefix += `, ${city}`;
-  }
+  // if (region && !region.startsWith('Select')) {
+  //   locationPrefix += `${region}`;
+  // }
+  // if (country && !country.startsWith('Select')) {
+  //   locationPrefix += `, ${country}`;
+  // }
+  // if (city && !city.startsWith('Select')) {
+  //   locationPrefix += `, ${city}`;
+  // }
 }
 
 function populateCustomHeader(e) {
@@ -736,12 +889,23 @@ function populateCustomHeader(e) {
   let items = grid.items();
   grid.element.height(grid.options.height);
 
-  if (selectedFeeder) {
+  if (filterState._filterContext && filterState._filterContext.foundFeeder) {
+    let feeder = filterState._filterContext.foundFeeder;
+    let pageSize = grid.dataSource.pageSize();
+    let pageNo = feeder.rank / pageSize;
+    // console.log(pageNo);
+    if (pageNo > grid.options.pageable.page) {
+      grid.setOptions({
+        page: pageNo
+      });
+      // grid.dataSource.page(pageNo);
+    }
+
     items.each(function () {
       var row = $(this);
       var dataItem = grid.dataItem(row);
 
-      if (dataItem.feeder_name === selectedFeeder.feeder_name) {
+      if (dataItem.feeder_name === feeder.feeder_name) {
         let customHeader = grid.element.find(".custom-header-row");
         if (customHeader) {
           customHeader.remove();

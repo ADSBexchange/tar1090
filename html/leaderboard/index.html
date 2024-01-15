@@ -30,7 +30,7 @@
 
     <!-- CSS_ANCHOR -->
     <link rel="stylesheet" href="/libs/jquery-ui-1.13.2.min.css" type="text/css">
-    <link href="https://kendo.cdn.telerik.com/themes/7.0.2/default/default-main.css" rel="stylesheet" />
+    <link href="https://kendo.cdn.telerik.com/themes/7.0.2/default/default-ocean-blue.css" rel="stylesheet" />
 
     <link rel="stylesheet" href="/libs/ol-6.14.1.css" type="text/css" />
     <link rel="stylesheet" href="/libs/ol-layerswitcher-3.8.3.css" type="text/css"/>
@@ -61,6 +61,7 @@
             <img src="/images/logo_background.png"
                 alt="ADS-B Exchange. World's Largest Source of unfiltered Flight Data.">
         </div>
+        <div id="notification"></div>
         <!--To be changed to Javascript Function-->
         <div class="network-statistics-block">
             <h1>Feeder Network Statistics</h1>
@@ -74,7 +75,7 @@
             </div>
         </div>
         <div class="search-block">
-            <p>Search any feeder to see its impact.</p>
+            <p>Search any feeder name to see its impact.</p>
             <div class="search-input">
                 <div class="search-text-input">
                     <input id="feeder-search-input" type="text" placeholder="Search Feeder Names" />
@@ -149,13 +150,13 @@
                     <div class="data-grid-filter-item">
                         <select id="municipalityselect"></select>
                     </div>
-                    <!-- <div class="data-grid-filter-item">
+                    <div class="data-grid-filter-item">
                         <select id="aircraftselect"></select>
                     </div>
                     <div class="data-grid-filter-item">
                         <select id="modeselect"></select>
                     </div>
-                    <div class="data-grid-filter-item">
+                    <!-- <div class="data-grid-filter-item">
                         <select id="distanceselect"></select>
                     </div> -->
                 </div>
