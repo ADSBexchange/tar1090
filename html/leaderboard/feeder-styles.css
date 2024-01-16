@@ -113,20 +113,19 @@
   flex-direction: row;
   justify-content: center;
   height: 100%;
-  align-items: center;
 }
 
 .search-block .search-input input[type="text"] {
   /*Search block input text*/
   padding: 8px 15px;
-  height: 22px;
-  border-color: #a9a9a9;
-  border-style: solid;
-  border-width: 1px;
   color: #0983ec;
   font-size: 1em;
   width: 300px;
   margin-top: 1px;
+}
+
+.search-block .search-input .k-input {
+  /*Search block input text focus*/
   border-radius: 40px 0px 0px 40px;
 }
 
@@ -290,6 +289,7 @@
   font-size: medium;
 }
 
-#selected-feeder{
+#selected-feeder,
+#filter-summary-text {
   color: #f87503;
 }
