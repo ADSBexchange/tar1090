@@ -18,7 +18,7 @@ filterState = null;
 
 resetFilterState();
 initializeFeederGrid();
-bindSearch();
+initializeFeederSearchInput();
 initializeFeederChart();
 renderboard();
 
@@ -34,10 +34,9 @@ $.ajax({
   success: function (response) {
     boardData = response.data.rows;
     getGeoInfoList(boardData);
-    initializeFeederSearchInput();
     renderboard();
     renderFilter();
-    populateFeederStats(response.data.network_stats);
+    populateBoardStats(response.data.network_stats);
   },
   error: function (error) {
     console.error('Error fetching feeder data:', error);
@@ -45,19 +44,27 @@ $.ajax({
 });
 
 function initializeFeederSearchInput() {
-  $("#feeder-search-input").kendoAutoComplete({
-    dataSource: boardData.map((feeder) => feeder.user),
+  let feederSearchInput = $('#feeder-search-input');
+  feederSearchInput.kendoAutoComplete({
     clearButton: false,
     placeholder: "Search Feeder Names",
     filter: "contains",
     change: onFilterChange
   });
+  feederSearchInput.on('keyup', function (event) {
+    if (event.key === 'Enter') {
+      onFilterChange();
+    }
+  });
+
+  let button = $('.search-button');
+  button.on('click', onFilterChange);
 }
 
 function initializeFeederGrid() {
   $("#feeder-grid").kendoGrid({
     columns: [
-      { field: "rank", title: "Rank", width: 60 },
+      { field: "rank", title: "Rank", width: 60, sortable: false },
       { field: "feeder_name", title: "Feeder Name" },
       { field: "country", title: "Country" },
       { field: "score", title: "Score", width: 140, format: "{0:##,#}" },
@@ -71,11 +78,14 @@ function initializeFeederGrid() {
       { field: "nearest_airport", title: "Nearest Airport (NM)", format: "{0:##,#}" },
       { field: "uniqueness", title: "Uniqueness", width: 100, format: "{0:n2}" }
     ],
-    sortable: false,
-    pageable: {
-      buttonCount: 10
-    },
-    selectable: "row"
+    sortable: true,
+    // pageable: {
+    //   buttonCount: 10
+    // },
+    selectable: "row",
+    scrollable: {
+      virtual: true
+    }
   });
 
   $("#feeder-grid tbody").on("click", "tr", function (e) {
@@ -119,8 +129,8 @@ function resetFilterState() {
 
 function renderboard() {
   let feeders = generateFeederGridData(applyFilter());
-  getMaximumProperties(feeders);
-  calculateFeederScores(feeders);
+  calculateBoardMaxValues(feeders);
+  calculateFeederScoreRanks(feeders);
   setGridDataSources(feeders);
   renderFeederSection();
   populateCustomHeader();
@@ -224,18 +234,6 @@ function generateFeederGridData(feederlist) {
   return feederlist.map((feeder) => transformFeeder(feeder));
 }
 
-function bindSearch() {
-  let input = $('#feeder-search-input');
-  let button = $('.search-button');
-  input.on('keyup', function (event) {
-    if (event.key === 'Enter') {
-      onFilterChange();
-    }
-  });
-
-  button.on('click', onFilterChange);
-}
-
 function setGridDataSources(feederlist) {
   let dataSource = new kendo.data.DataSource({
     data: feederlist,
@@ -248,7 +246,7 @@ function setGridDataSources(feederlist) {
           rank: { type: "number" },
           feeder_name: { type: "string" },
           country: { type: "string" },
-          score: { type: "number", defaultValue: 100 },
+          score: { type: "number" },
           uptime: { type: "number" },
           avg_range: { type: "number" },
           max_range: { type: "number" },
@@ -262,7 +260,7 @@ function setGridDataSources(feederlist) {
       },
     },
     height: 50,
-    scrollable: true,
+    // scrollable: true,
     filterable: {
       mode: "row"
     },
@@ -274,6 +272,12 @@ function setGridDataSources(feederlist) {
   let grid = $("#feeder-grid").data("kendoGrid");
   grid.setDataSource(dataSource);
   grid.refresh();
+
+  let searchInput = $("#feeder-search-input").data("kendoAutoComplete");
+  searchInput.setDataSource(new kendo.data.DataSource({
+    data: feederlist.map(feeder => feeder.feeder_name)
+  }));
+  searchInput.refresh();
 }
 
 function renderFilter() {
@@ -430,10 +434,13 @@ function initializeFeederChart() {
   $("#hardware-chart").kendoChart({
     seriesDefaults: {
       type: "donut",
-      margin: 2,
+      holeSize: 30,
       startAngle: 90,
       overlay: {
         gradient: "none"
+      },
+      donut: {
+        margin: 5
       }
     },
     chartArea: {
@@ -465,10 +472,14 @@ function initializeFeederChart() {
   $("#activity-chart").kendoChart({
     seriesDefaults: {
       type: "donut",
+      holeSize: 30,
       margin: 2,
       startAngle: 90,
       overlay: {
         gradient: "none"
+      },
+      donut: {
+        margin: 5
       }
     },
     chartArea: {
@@ -499,10 +510,14 @@ function initializeFeederChart() {
   $("#exchange-chart").kendoChart({
     seriesDefaults: {
       type: "donut",
+      holeSize: 30,
       margin: 2,
       startAngle: 90,
       overlay: {
         gradient: "none"
+      },
+      donut: {
+        margin: 5
       }
     },
     chartArea: {
@@ -564,7 +579,7 @@ function initializeFeederChart() {
   });
 }
 
-function populateFeederStats(feederStats) {
+function populateBoardStats(feederStats) {
   $("#feeder-count").text(formatNumber(feederStats.feeders_total));
   $("#feeders-added").text(formatNumber(feederStats.feeders_added_last_30_days));
   $("#monthly-positions").text(transformNumber(feederStats.positions_last_30_days, 1));
@@ -573,7 +588,7 @@ function populateFeederStats(feederStats) {
   $("#aircraft-count").text(transformNumber(feederStats.aircrafts_seen_24h, 1));
 }
 
-function getMaximumProperties(feederlist) {
+function calculateBoardMaxValues(feederlist) {
   feederlist.forEach((feeder) => {
     maxUptime = Math.max(maxUptime, feeder.uptime);
     maxAvgRange = Math.max(maxRange, feeder.avg_range);
@@ -642,7 +657,7 @@ function getGeoInfoList(feederlist) {
   signalTypes = Array.from(distinctSignalTypes).sort();
 }
 
-function calculateFeederScores(feederlist) {
+function calculateFeederScoreRanks(feederlist) {
   feederlist.forEach((feeder) => {
     feeder.score = getFeederScore(feeder);
   });
@@ -724,14 +739,14 @@ function renderFeederSection() {
     $("#search-grid").show();
     populateFeederPercentile(feeder);
     generateSearchSummaryText(feeder.feeder_name);
-    renderFilterSection(feeder);
+    renderFeederImpactCharts(feeder);
     refreshGrid();
   } else {
     $("#search-grid").hide();
   }
 }
 
-function renderFilterSection(feeder) {
+function renderFeederImpactCharts(feeder) {
   let hardwareChart = $("#hardware-chart").data("kendoChart");
   hardwareChart.options.series = [
     {
@@ -740,11 +755,11 @@ function renderFilterSection(feeder) {
         {
           category: "Feeder Percentile",
           value: getMaxRangeScore(feeder),
-          color: "#1E395C"
+          color: "#00596a"
         }, {
           category: "disabled",
           value: (100 - getMaxRangeScore(feeder)).toFixed(2),
-          color: "#C1D3EB"
+          color: "#b3f2ff"
         }
       ],
       labels: {
@@ -757,11 +772,11 @@ function renderFilterSection(feeder) {
         {
           category: "Feeder Percentile",
           value: getAvgRangeScore(feeder),
-          color: "#066674"
+          color: "#61bac9"
         }, {
           category: "disabled",
           value: (100 - getAvgRangeScore(feeder)).toFixed(2),
-          color: "#C5F5FC"
+          color: "#ecf7f8"
         }
       ],
       labels: {
@@ -774,12 +789,12 @@ function renderFilterSection(feeder) {
         {
           category: "Uptime",
           value: getUptimeScore(feeder),
-          color: "#660058"
+          color: "#9d1edd"
         },
         {
           category: "disabled",
           value: (100 - getUptimeScore(feeder)).toFixed(2),
-          color: "#FFADF4"
+          color: "#ecd2f9"
         }
       ]
     }];
@@ -792,12 +807,12 @@ function renderFilterSection(feeder) {
         {
           category: "Feeder Percentile",
           value: getPositionScore(feeder),
-          color: "#1E395C"
+          color: "#00596a"
         },
         {
           category: "disabled",
           value: (100 - getPositionScore(feeder)).toFixed(2),
-          color: "#C1D3EB"
+          color: "#b3f2ff"
         }
       ]
     },
@@ -807,12 +822,12 @@ function renderFilterSection(feeder) {
         {
           category: "Feeder Percentile",
           value: getAircraftOnGroundScore(feeder),
-          color: "#066674"
+          color: "#61bac9"
         },
         {
           category: "disabled",
           value: (100 - getAircraftOnGroundScore(feeder)).toFixed(2),
-          color: "#C5F5FC"
+          color: "#ecf7f8"
         }
       ],
       labels: {
@@ -825,11 +840,11 @@ function renderFilterSection(feeder) {
         {
           category: "Feeder Percentile",
           value: getTotalAircraftScore(feeder),
-          color: "#660058"
+          color: "#9d1edd"
         }, {
           category: "disabled",
           value: (100 - getTotalAircraftScore(feeder)).toFixed(2),
-          color: "#FFADF4"
+          color: "#ecd2f9"
         }
       ],
       labels: {
@@ -846,12 +861,12 @@ function renderFilterSection(feeder) {
         {
           category: "Feeder Percentile",
           value: getUniqueAircraftScore(feeder),
-          color: "#1E395C"
+          color: "#00596a"
         },
         {
           category: "disabled",
           value: (100 - getUniqueAircraftScore(feeder)).toFixed(2),
-          color: "#C1D3EB"
+          color: "#b3f2ff"
         }
       ]
     },
@@ -861,12 +876,12 @@ function renderFilterSection(feeder) {
         {
           category: "Feeder Percentile",
           value: getNearestAirportScore(feeder),
-          color: "#066674"
+          color: "#61bac9"
         },
         {
           category: "disabled",
           value: (100 - getNearestAirportScore(feeder)).toFixed(2),
-          color: "#C5F5FC"
+          color: "#ecf7f8"
         }
       ],
       labels: {
@@ -879,11 +894,11 @@ function renderFilterSection(feeder) {
         {
           category: "Feeder Percentile",
           value: getUniquenessScore(feeder),
-          color: "#660058"
+          color: "#9d1edd"
         }, {
           category: "disabled",
           value: (100 - getUniquenessScore(feeder)).toFixed(2),
-          color: "#FFADF4"
+          color: "#ecd2f9"
         }
       ],
       labels: {
