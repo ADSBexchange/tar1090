@@ -182,6 +182,7 @@ let badDot;
 let badDotMlat;
 
 let showingReplayBar = false;
+let replayShouldPlayOnFirstLoad = true;
 
 function processAircraft(ac, init, uat) {
     let isArray = Array.isArray(ac);
@@ -996,6 +997,7 @@ function initPage() {
         }
         console.log(ts);
         replay = replayDefaults(ts);
+        replayShouldPlayOnFirstLoad = false;
     }
 
     //Pulling filters from params
@@ -1152,10 +1154,12 @@ function initPage() {
 
     jQuery('#settingsCog').on('click', function() {
         jQuery('#settings_infoblock').toggle();
+        $(this).toggleClass('settingsCog-active');
     });
 
     jQuery('#settings_close').on('click', function() {
         jQuery('#settings_infoblock').hide();
+        jQuery('#settingsCog').removeClass('settingsCog-active');
     });
 
     jQuery('#groundvehicle_filter').on('click', function() {
@@ -7135,7 +7139,7 @@ function replayDefaults(ts) {
         playing: true,
         ts: ts,
         ival: 60 * 1000,
-        speed: 30,
+        speed: 10,
         dateText: zDateString(ts),
         hours: ts.getUTCHours(),
         minutes: ts.getUTCMinutes(),
@@ -7361,6 +7365,7 @@ function replaySetTimeHint(arg) {
 
     let minutes = replay.ts.getUTCMinutes();
     jQuery('#minuteSelect').slider("option", "value", minutes);
+
     replayJumpEnabled = true;
 }
 
@@ -7681,13 +7686,32 @@ function playReplay(state){
 function showReplayBar(){
     console.log('showReplayBar()');
     showingReplayBar = !showingReplayBar;
+    // Function that will remove 'replay' token from address bar and reload window
+    const forceReloadWindow = function() {
+        let currentUrl = window.location.href;
+        let url = currentUrl.replace(/replay=[^&]+&?/, '');
+        // Update the URL without reloading the page
+        window.history.pushState({}, '', url);
+        // Reload the page
+        window.location.reload();
+    };
+
     if (!showingReplayBar){
+        // Hide bar
+        jQuery("#RP").removeClass('settingsReplay-active');
         jQuery("#replayBar").hide();
+        // Force-stop playing
+        playReplay(false);
+        // Clear timers
+        replayClear();
         replay = null;
         jQuery('#map_canvas').height('100%');
         jQuery('#sidebar_canvas').height('100%');
         jQuery("#selected_showTrace_hide").show();
+        // Reset everything, as closing things is a bit of a mess
+        forceReloadWindow();
     } else {
+        jQuery("#RP").addClass('settingsReplay-active');
         jQuery("#replayBar").show();
         jQuery("#replayBar").css('display', 'grid');
         jQuery('#replayBar').height('100px');
@@ -7719,28 +7743,39 @@ function showReplayBar(){
         }
 
         jQuery("#replayDatepicker").datepicker(datepickerOptions);
-
+        let replaySliderHourHandle = jQuery("#replayDatepickerHourHandle");
         jQuery('#hourSelect').slider({
             step: 1,
             min: 0,
             max: 23,
+            create: function() {
+                replaySliderHourHandle.text(replay.hours + " hrs");
+            },
             slide: function(event, ui) {
                 replay.hours = ui.value;
+                replaySliderHourHandle.text(ui.value + " hrs");
                 replayOnSliderMove();
             },
-            change: function() {
+            change: function(event, ui) {
+                replaySliderHourHandle.text(ui.value + " hrs");
                 replayJump();
             }
         });
+        let replaySliderMinuteHandle = jQuery("#replayDatepickerMinuteHandle");
         jQuery('#minuteSelect').slider({
             step: 1,
             min: 0,
             max: 59,
+            create: function() {
+                replaySliderMinuteHandle.text(replay.minutes + " min");
+            },
             slide: function(event, ui) {
                 replay.minutes = ui.value;
+                replaySliderMinuteHandle.text(ui.value + " min");
                 replayOnSliderMove();
             },
-            change: function() {
+            change: function(event, ui) {
+                replaySliderMinuteHandle.text(ui.value + " min");
                 replayJump();
             }
         });
@@ -7761,7 +7796,31 @@ function showReplayBar(){
         jQuery('#replaySpeedHint').text('Speed: ' + replay.speed + 'x');
 
         jQuery("#selected_showTrace_hide").hide();
+
+        // Re-adjust sliders to reflect accurate time
+        replayJump();
     }
+    // Function that will wait for replay to start playing
+    const waitForReplay = function(c, max) {
+        if(!replay || replay.playing) {
+            return;
+        }
+        playReplay(true);
+        if(!replay.playing && c < max) {
+            console.log(`[${c}] Wainting for replay to start playing...`);
+            setTimeout(waitForReplay, 500, c+1, max);
+        }
+    };
+    // On very first click, simulate automatic start
+    if(replayShouldPlayOnFirstLoad) {
+        // This starts loading data required to play replay
+        loadReplay(replay.ts);
+        // This will start playing the replay once the data is loaded
+        waitForReplay(0, 20);
+    }
+
+    // Indicate that we've already played once
+    replayShouldPlayOnFirstLoad = false;
 };
 
 function timeoutFetch() {
