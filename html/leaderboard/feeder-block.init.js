@@ -31,26 +31,12 @@ function fetchboardData() {
   $.ajax({
     url: LEADERBOARD_API_ENDPOINT,
     method: 'GET',
-$.ajax({
-  url: LEADERBOARD_API_ENDPOINT,
-  method: 'GET',
-  dataType: "json",
-  contentType: "application/json",
-  xhrFields: {
-    withCredentials: true,
-  },
-  crossDomain: true,
-  success: function (response) {
-    boardData = response.data.rows;
-    getGeoInfoList(boardData);
-    renderboard();
-    renderFilter();
-    populateBoardStats(response.data.network_stats);
-  },
-  error: function (error) {
-    console.error('Error fetching feeder data:', error);
-  }
-});
+    dataType: "json",
+    contentType: "application/json",
+    xhrFields: {
+      withCredentials: true,
+    },
+    crossDomain: true,
     success: function (response) {
       boardData = response.data.rows;
       getGeoInfoList(boardData);
