@@ -15,13 +15,22 @@ let aircraftTypes = [];
 let signalTypes = [];
 let activeGridCount = 0;
 filterState = null;
+let hardwareCenter, hardwareRadius, activityCenter, activityRadius, exchangeCenter, exchangeRadius;
+let hardwareAvg, activityAvg, exchangeAvg;
 
+setupLoader();
 resetFilterState();
 initializeFeederGrid();
 initializeFeederSearchInput();
 initializeFeederChart();
 renderboard();
+fetchboardData();
 
+function fetchboardData() {
+  setLoaderViewState(true);
+  $.ajax({
+    url: LEADERBOARD_API_ENDPOINT,
+    method: 'GET',
 $.ajax({
   url: LEADERBOARD_API_ENDPOINT,
   method: 'GET',
@@ -42,11 +51,46 @@ $.ajax({
     console.error('Error fetching feeder data:', error);
   }
 });
+    success: function (response) {
+      boardData = response.data.rows;
+      getGeoInfoList(boardData);
+      renderboard();
+      renderFilter();
+      populateBoardStats(response.data.network_stats);
+      setLoaderViewState(false);
+    },
+    error: function (error) {
+      console.error('Error fetching feeder data:', error);
+      $("#notification-section").getKendoNotification().show({ msg: `Error fetching feeder data` }, "error");
+    }
+  });
+}
+
+function setupLoader() {
+  $('#loader').kendoLoader({
+    size: "large",
+    type: 'converging-spinner'
+  });
+  $("#retry-api-btn").on('click', fetchboardData);
+}
+
+function setLoaderViewState(isLoading) {
+  const loader = $('#loader');
+  const loadingContainer = $('.loadingContainer');
+
+  if (isLoading) {
+    loader.show();
+    loadingContainer.show();
+  } else {
+    loader.hide();
+    loadingContainer.hide();
+  }
+}
 
 function initializeFeederSearchInput() {
   let feederSearchInput = $('#feeder-search-input');
   feederSearchInput.kendoAutoComplete({
-    clearButton: false,
+    clearButton: true,
     placeholder: "Search Feeder Names",
     filter: "contains",
     change: onFilterChange
@@ -79,9 +123,6 @@ function initializeFeederGrid() {
       { field: "uniqueness", title: "Uniqueness", width: 100, format: "{0:n2}" }
     ],
     sortable: true,
-    // pageable: {
-    //   buttonCount: 10
-    // },
     selectable: "row",
     scrollable: {
       virtual: true
@@ -102,15 +143,25 @@ function initializeFeederGrid() {
       onFilterChange();
     }
   });
-  $("#notification").kendoNotification({
-    allowHideAfter: 1000,
+  $("#notification-section").kendoNotification({
+    autoHideAfter: 0,
     width: 300,
     height: 50,
+    stacking: "down",
     position: {
       pinned: true,
       top: 30,
       right: 30
-    }
+    },
+    templates: [{
+      // define a custom template for the built-in "warning" notification type
+      type: "warning",
+      template: "<div class='myWarning'>#= myMessage #</div>"
+    }, {
+      // define a template for the custom "timeAlert" notification type
+      type: "error",
+      template: $("#ajax-error-template").html()
+    }]
   });
 }
 
@@ -237,7 +288,7 @@ function generateFeederGridData(feederlist) {
 function setGridDataSources(feederlist) {
   let dataSource = new kendo.data.DataSource({
     data: feederlist,
-    pageSize: 10,
+    pageSize: 12,
     schema: {
       model: {
         id: "uuid",
@@ -260,7 +311,6 @@ function setGridDataSources(feederlist) {
       },
     },
     height: 50,
-    // scrollable: true,
     filterable: {
       mode: "row"
     },
@@ -375,7 +425,7 @@ function toggleFilterState() {
 }
 
 function buildFilters(dataItems, selector) {
-  var filters = [],
+  let filters = [],
     length = dataItems.length,
     idx = 0, dataItem;
 
@@ -441,6 +491,12 @@ function initializeFeederChart() {
       },
       donut: {
         margin: 5
+      },
+      visual: function (e) {
+        hardwareCenter = e.center;
+        hardwareRadius = e.radius;
+
+        return e.createVisual();
       }
     },
     chartArea: {
@@ -466,6 +522,22 @@ function initializeFeederChart() {
     tooltip: {
       visible: true,
       template: "(#= series.name #) #= category # :#= value #%"
+    },
+    render: function (e) {
+      let draw = kendo.drawing;
+      let geom = kendo.geometry;
+
+      let circleGeometry = new geom.Circle(hardwareCenter, hardwareRadius);
+      let bbox = circleGeometry.bbox();
+
+      let text = new draw.Text(`${hardwareAvg}%`, [0, 0], {
+        font: "18px Verdana,Arial,sans-serif"
+      });
+
+      draw.align([text], bbox, "center");
+      draw.vAlign([text], bbox, "center");
+
+      e.sender.surface.draw(text);
     }
   });
 
@@ -480,6 +552,12 @@ function initializeFeederChart() {
       },
       donut: {
         margin: 5
+      },
+      visual: function (e) {
+        activityCenter = e.center;
+        activityRadius = e.radius;
+
+        return e.createVisual();
       }
     },
     chartArea: {
@@ -504,6 +582,22 @@ function initializeFeederChart() {
     tooltip: {
       visible: true,
       template: "(#= series.name #) #= category # :#= value #%"
+    },
+    render: function (e) {
+      let draw = kendo.drawing;
+      let geom = kendo.geometry;
+
+      let circleGeometry = new geom.Circle(activityCenter, activityRadius);
+      let bbox = circleGeometry.bbox();
+
+      let text = new draw.Text(`${activityAvg}%`, [0, 0], {
+        font: "18px Verdana,Arial,sans-serif"
+      });
+
+      draw.align([text], bbox, "center");
+      draw.vAlign([text], bbox, "center");
+
+      e.sender.surface.draw(text);
     }
   });
 
@@ -518,6 +612,12 @@ function initializeFeederChart() {
       },
       donut: {
         margin: 5
+      },
+      visual: function (e) {
+        exchangeCenter = e.center;
+        exchangeRadius = e.radius;
+
+        return e.createVisual();
       }
     },
     chartArea: {
@@ -542,6 +642,22 @@ function initializeFeederChart() {
     tooltip: {
       visible: true,
       template: "(#= series.name #) #= category # :#= value #%"
+    },
+    render: function (e) {
+      let draw = kendo.drawing;
+      let geom = kendo.geometry;
+
+      let circleGeometry = new geom.Circle(exchangeCenter, exchangeRadius);
+      let bbox = circleGeometry.bbox();
+
+      let text = new draw.Text(`${exchangeAvg}%`, [0, 0], {
+        font: "18px Verdana,Arial,sans-serif"
+      });
+
+      draw.align([text], bbox, "center");
+      draw.vAlign([text], bbox, "center");
+
+      e.sender.surface.draw(text);
     }
   });
 
@@ -798,6 +914,7 @@ function renderFeederImpactCharts(feeder) {
         }
       ]
     }];
+  hardwareAvg = Math.ceil((getMaxRangeScore(feeder) + getAvgRangeScore(feeder) + getUptimeScore(feeder)) / 3);
   hardwareChart.refresh();
   let activityChart = $("#activity-chart").data("kendoChart");
   activityChart.options.series = [
@@ -852,6 +969,7 @@ function renderFeederImpactCharts(feeder) {
       }
     }
   ]
+  activityAvg = Math.ceil((getPositionScore(feeder) + getAircraftOnGroundScore(feeder) + getTotalAircraftScore(feeder)) / 3);
   activityChart.refresh();
   let exchangeChart = $("#exchange-chart").data("kendoChart")
   exchangeChart.options.series = [
@@ -905,6 +1023,7 @@ function renderFeederImpactCharts(feeder) {
         visible: false
       }
     }];
+  exchangeAvg = Math.ceil((getUniqueAircraftScore(feeder) + getNearestAirportScore(feeder) + getUniquenessScore(feeder)) / 3);
   exchangeChart.refresh();
   $("#rank-chart").data("kendoChart").refresh();
 }

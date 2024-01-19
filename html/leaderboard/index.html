@@ -54,7 +54,7 @@
 
     <!-- BODY_ANCHOR -->
     <div class="loadingContainer">
-        <div class="loader"></div>
+        <span id="loader"></span>
     </div>
     <div id="container">
         <div class="sectionBreak logo">
@@ -62,6 +62,12 @@
                 alt="ADS-B Exchange. World's Largest Source of unfiltered Flight Data.">
         </div>
         <div id="notification"></div>
+        <div id="notification-section"></div>
+        <script id="ajax-error-template" type="text/x-kendo-template">
+            <div class="ajax-error-section">
+                <span> #= msg # <button id="retry-api-btn">Retry</button> </span>
+            </div>
+        </script>
         <!--To be changed to Javascript Function-->
         <div class="network-statistics-block">
             <h1>Feeder Network Statistics</h1>
