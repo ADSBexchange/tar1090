@@ -293,3 +293,29 @@
 #filter-summary-text {
   color: #f87503;
 }
+
+.loadingContainer {
+  text-align: center;
+  background-color: #fffffffa;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  z-index: 900000;
+  margin-left: auto;
+  margin-right: auto;
+  left: 0px;
+  top: 0px;
+  opacity: 0.5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#retry-api-btn{
+  background-color: #9d1d00;
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  right: 0;
+}
