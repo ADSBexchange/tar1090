@@ -319,3 +319,7 @@
   cursor: pointer;
   right: 0;
 }
+
+.k-svg-icon > svg {
+  display: inline;
+}

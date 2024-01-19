@@ -57,7 +57,6 @@ function setupLoader() {
     size: "large",
     type: 'converging-spinner'
   });
-  $("#retry-api-btn").on('click', fetchboardData);
 }
 
 function setLoaderViewState(isLoading) {
