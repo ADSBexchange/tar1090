@@ -31,12 +31,12 @@ function fetchboardData() {
   $.ajax({
     url: LEADERBOARD_API_ENDPOINT,
     method: 'GET',
-    // dataType: "json",
-    // contentType: "application/json",
-    // xhrFields: {
-    //   withCredentials: true,
-    // },
-    // crossDomain: true,
+    dataType: "json",
+    contentType: "application/json",
+    xhrFields: {
+      withCredentials: true,
+    },
+    crossDomain: true,
     success: function (response) {
       boardData = response.data.rows;
       getGeoInfoList(boardData);
