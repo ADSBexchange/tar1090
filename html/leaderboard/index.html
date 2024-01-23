@@ -68,6 +68,11 @@
                 <span> #= msg # <button id="retry-api-btn" onclick="fetchboardData()">Retry</button> </span>
             </div>
         </script>
+        <script id="tagTemplate" type="text/x-kendo-template">
+            <div class="chip-info-label-w">
+                <span class="chip-info-label">#:values.length#</span> <span> #:values.join() #</span>
+            </div> 
+        </script>
         <!--To be changed to Javascript Function-->
         <div class="network-statistics-block">
             <h1>Feeder Network Statistics</h1>

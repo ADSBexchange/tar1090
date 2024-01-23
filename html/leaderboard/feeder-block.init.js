@@ -31,12 +31,12 @@ function fetchboardData() {
   $.ajax({
     url: LEADERBOARD_API_ENDPOINT,
     method: 'GET',
-    dataType: "json",
-    contentType: "application/json",
-    xhrFields: {
-      withCredentials: true,
-    },
-    crossDomain: true,
+    // dataType: "json",
+    // contentType: "application/json",
+    // xhrFields: {
+    //   withCredentials: true,
+    // },
+    // crossDomain: true,
     success: function (response) {
       boardData = response.data.rows;
       getGeoInfoList(boardData);
@@ -234,6 +234,7 @@ function filterBySignalType(data, filterState) {
 }
 
 function transformFeeder(feeder) {
+  let filterPositionStats = shouldFilterPositionStats();
   return {
     uuid: feeder.uuid,
     feeder_name: feeder.user,
@@ -244,13 +245,25 @@ function transformFeeder(feeder) {
     uptime: feeder.uptime,
     avg_range: feeder.avg_sq_nm_range,
     max_range: feeder.max_range_nm,
-    position: feeder.all_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.positions, 0),
-    aircraft_on_ground: feeder.all_positions_stats.filter(stat => stat.on_ground && filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0),
-    total_aircraft: feeder.all_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0),
-    unique_aircraft: feeder.unique_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0),
+    position: filterPositionStats
+      ? feeder.all_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.positions, 0)
+      : feeder.positions,
+    aircraft_on_ground: filterPositionStats
+      ? feeder.all_positions_stats.filter(stat => stat.on_ground && filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0)
+      : feeder.aircraft_on_ground,
+    total_aircraft: filterPositionStats
+      ? feeder.all_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0)
+      : feeder.aircraft_total,
+    unique_aircraft: filterPositionStats
+      ? feeder.unique_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0)
+      : feeder.aircraft_unique,
     nearest_airport: feeder.nearest_airport_nm,
     uniqueness: feeder.uniqueness
   };
+}
+
+function shouldFilterPositionStats() {
+  return filterState.make_type_name.length > 0 || filterState.signal_type.length > 0;
 }
 
 function filterFeederStats(stat) {
@@ -323,15 +336,19 @@ function renderFilter() {
     data: countries
   });
   let citiesDataSource = new kendo.data.DataSource({
-    data: cities
+    data: cities,
+    group: { field: "state" }
   });
   $("#regionselect").kendoMultiSelect({
     placeholder: "Region",
     rounded: "medium",
     autoBind: false,
+    autoClose: false,
     dataSource: regionDataSource,
     dataTextField: "region",
     dataValueField: "region",
+    tagMode: "single",
+    tagTemplate: kendo.template($("#tagTemplate").html()),
     change: function () {
       toggleFilterState();
       let filters = buildFilters(this.dataItems(), "region");
@@ -342,11 +359,14 @@ function renderFilter() {
 
   $("#countryselect").kendoMultiSelect({
     placeholder: "Country",
-    dataSource: countriesDataSource,
     rounded: "medium",
     autoBind: false,
+    autoClose: false,
+    dataSource: countriesDataSource,
     dataValueField: "country",
     dataTextField: "country",
+    tagMode: "single",
+    tagTemplate: kendo.template($("#tagTemplate").html()),
     enable: false,
     change: function () {
       toggleFilterState();
@@ -362,22 +382,31 @@ function renderFilter() {
     dataValueField: "city",
     rounded: "medium",
     autoBind: false,
+    autoClose: false,
     dataSource: citiesDataSource,
-    enable: false
+    enable: false,
+    tagMode: "single",
+    tagTemplate: kendo.template($("#tagTemplate").html()),
   });
 
   $("#aircraftselect").kendoMultiSelect({
     placeholder: "Aircraft Type",
     rounded: "medium",
     autoBind: false,
-    dataSource: aircraftTypes
+    autoClose: false,
+    dataSource: aircraftTypes,
+    tagMode: "single",
+    tagTemplate: kendo.template($("#tagTemplate").html()),
   });
 
   $("#modeselect").kendoMultiSelect({
     placeholder: "Signal",
     rounded: "medium",
     autoBind: false,
-    dataSource: signalTypes
+    autoClose: false,
+    dataSource: signalTypes,
+    tagMode: "single",
+    tagTemplate: kendo.template($("#tagTemplate").html()),
   });
 
   $("#municipalityselect").data("kendoMultiSelect").bind("change", onFilterChange);
@@ -407,6 +436,21 @@ function toggleFilterState() {
 
   $("#countryselect").data("kendoMultiSelect").enable(region.length > 0);
   $("#municipalityselect").data("kendoMultiSelect").enable(country.length > 0);
+  $(".k-list-scroller").delegate(".k-list-item-group-label", "click", multiSelectGroupClick);
+}
+
+function multiSelectGroupClick() {
+  var ms = $("#municipalityselect").data("kendoMultiSelect");
+  var data = ms.dataSource.data();
+  var msValue = [];
+
+  for (var i = 0; i < data.length; i++) {
+    if (data[i].state == this.textContent) {
+      msValue.push(data[i].city);
+    }
+  }
+
+  ms.value(msValue);
 }
 
 function buildFilters(dataItems, selector) {
@@ -718,7 +762,7 @@ function getGeoInfoList(feederlist) {
       distinctRegions.add({ region: feeder.region });
     }
     if (feeder.city && feeder.city.trim() !== "") {
-      distinctCities.add({ city: feeder.city, region: feeder.region, country: feeder.country });
+      distinctCities.add({ city: feeder.city, region: feeder.region, country: feeder.country, state: feeder.state });
     }
     feeder.all_positions_stats.forEach((stats) => {
       if (stats.make_type_name !== "Undefined") {
@@ -745,7 +789,7 @@ function getGeoInfoList(feederlist) {
   }, []);
 
   distinctCities = Array.from(distinctCities).reduce((acc, curr) => {
-    const existingCity = acc.find(city => city.city === curr.city && city.region === curr.region && city.country === curr.country);
+    const existingCity = acc.find(city => city.city === curr.city && city.region === curr.region && city.country === curr.country && city.state === curr.state);
     if (!existingCity) {
       acc.push(curr);
     }

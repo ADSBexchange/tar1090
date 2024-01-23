@@ -323,3 +323,51 @@
 .k-svg-icon > svg {
   display: inline;
 }
+
+.k-chip-md .k-chip-action {padding: 0px}
+
+.k-chip-icon {
+   display:none
+}
+.k-chip-solid-base {
+border-color:transparent;
+color: #0983ec;
+background-color: transparent;
+background-image: none 
+}
+
+.k-chip {gap:0px}
+.k-input-values{
+  max-width: 200px; 
+  flex-flow: row;
+}
+
+.k-chip-solid-base:hover, .k-chip-solid-base.k-hover {
+  background-color: transparent;
+  background-image: none;
+  border-color:transparent;
+}
+
+.chip-info-label {
+  display: flex;
+  align-items: center;
+}
+
+.chip-info-label {
+  margin-right: 4px;
+  padding: 4px 6px;
+  color: #fff;
+  background-color: yellowgreen;
+  border-radius: 50%;
+  font-size: 11px;
+  line-height: 10px;
+}
+
+.k-list-item-group-label {
+  cursor: default;
+}
+
+.chip-info-label-w {
+  display: flex;
+  align-items: center;
+}
