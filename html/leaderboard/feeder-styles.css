@@ -371,3 +371,26 @@ background-image: none
   display: flex;
   align-items: center;
 }
+
+.distance-select-w .k-input-button {
+  display: none;
+}
+
+.distance-select-w .k-picker {
+  border: 1px;
+  border-color: #cccccd;
+  color: #515967;
+  background-color: #ffffff;
+}
+
+.search-text-input-w {
+  width: 60%;
+  display: flex;
+  justify-content: end;
+}
+
+.search-hint-w {
+  width: 40%;
+  display: flex;
+  justify-content: flex-end;
+}

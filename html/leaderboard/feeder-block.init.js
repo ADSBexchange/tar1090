@@ -17,6 +17,7 @@ let activeGridCount = 0;
 filterState = null;
 let hardwareCenter, hardwareRadius, activityCenter, activityRadius, exchangeCenter, exchangeRadius;
 let hardwareAvg, activityAvg, exchangeAvg;
+let userLat, userLong;
 
 setupLoader();
 resetFilterState();
@@ -25,6 +26,30 @@ initializeFeederSearchInput();
 initializeFeederChart();
 renderboard();
 fetchboardData();
+handleGeolocationPermission();
+
+function handleGeolocationPermission() {
+  navigator.permissions.query({ name: 'geolocation' }).then(function (result) {
+    if (result.state == 'granted') {
+      setUserLocation(result);
+    } else if (result.state == 'prompt') {
+      setUserLocation(result);
+    } else if (result.state == 'denied') {
+      console.log('Location Permission denied');
+    }
+
+    result.onchange = function () {
+      setUserLocation(result);
+    }
+  });
+}
+
+function setUserLocation(result) {
+  navigator.geolocation.getCurrentPosition(function (position) {
+    userLat = position.coords.latitude;
+    userLong = position.coords.longitude;
+  });
+}
 
 function fetchboardData() {
   setLoaderViewState(true);
@@ -98,7 +123,7 @@ function initializeFeederGrid() {
       { field: "country", title: "Country" },
       { field: "score", title: "Score", width: 140, format: "{0:##,#}" },
       { field: "uptime", title: "Uptime", width: 90, format: "{0:n2}\%" },
-      { field: "avg_range", title: "Avg Range (SNM)", format: "{0:##,#}" },
+      { field: "avg_range", title: "Avg Coverage (SNM)", format: "{0:##,#}" },
       { field: "max_range", title: "Max Range (NM)", format: "{0:##,#}" },
       { field: "position", title: "Positions", format: "{0:##,#}" },
       { field: "aircraft_on_ground", title: "Aircraft on Ground", format: "{0:##,#}" },
@@ -114,6 +139,15 @@ function initializeFeederGrid() {
     }
   });
 
+  $("#feeder-grid").kendoTooltip({
+    filter: "th",
+    position: "right",
+    width: 250,
+    content: function (e) {
+      return fetchHeaderTooltipContent(e.target.text());
+    }
+  }).data("kendoTooltip");
+
   $("#feeder-grid tbody").on("click", "tr", function (e) {
     let row = $(this);
     let grid = $("#feeder-grid").getKendoGrid();
@@ -128,6 +162,7 @@ function initializeFeederGrid() {
       onFilterChange();
     }
   });
+  $("#notification").kendoNotification();
   $("#notification-section").kendoNotification({
     autoHideAfter: 0,
     width: 300,
@@ -150,6 +185,39 @@ function initializeFeederGrid() {
   });
 }
 
+function fetchHeaderTooltipContent(headerName) {
+  switch (headerName) {
+    case "Rank":
+      return "The ultimate ranking of each feeder based on the Score";
+    case "Feeder Name":
+      return "The name of the feeder, as defined within each receiver's configuration dashboard";
+    case "Country":
+      return "The location of the receiver, as determined by the latitude and longitude entered in the receiver's configuration dashboard.";
+    case "Score":
+      return "The sum of all 9 ring percentages * 1000. The rings are based on uptime, average range, max range, positions, aircraft on ground, total aircraft, unique aircraft, nearest airport, and uniqueness data collected from each receiver.";
+    case "Uptime":
+      return "The percent of time the receiver is able to receive transmissions";
+    case "Avg Coverage (SNM)":
+      return "The average square nautical mile coverage of the receiver.";
+    case "Max Range (NM)":
+      return "The greatest nautical mile distance from the receiver that an ADS-B signal has been observed.";
+    case "Positions":
+      return "The total number of positions received by a receiver.";
+    case "Aircraft on Ground":
+      return "The number of aircraft on the ground a receiver observed.";
+    case "Total Aircraft":
+      return "The total aircraft a receiver observed. This includes aircraft that may also be observed by other receivers simultaneously.";
+    case "Unique Aircraft":
+      return "The total unique aircraft a receiver observed. i.e. when a receiver captures the position of an aircraft that no other receiver observed.";
+    case "Nearest Airport (NM)":
+      return "The GCD between the receiver and the nearest airport."
+    case "Uniqueness":
+      return "The number of receivers in your 100NM range relative to others."
+    default:
+      return headerName;
+  }
+}
+
 function resetFilterState() {
   filterState = {
     _filterContext: null,
@@ -159,7 +227,7 @@ function resetFilterState() {
     city: [],
     make_type_name: [],
     signal_type: [],
-    distance: 500
+    distance: 0
   };
 }
 
@@ -181,6 +249,7 @@ function applyFilter() {
   filteredData = filterByMunicipality(filteredData, filterState);
   filteredData = filterByAircraftType(filteredData, filterState);
   filteredData = filterBySignalType(filteredData, filterState);
+  filteredData = filterByDistance(filteredData, filterState);
   filteredData = filterbyFeederName(filteredData, filterState);
 
   return filteredData;
@@ -231,6 +300,34 @@ function filterBySignalType(data, filterState) {
     data = data.filter(feeder => feeder.all_positions_stats.some(stat => filterState.signal_type.some(type => type.toLowerCase() === stat.signal_type.toLowerCase())));
   }
   return data;
+}
+
+function filterByDistance(data, filterState) {
+  if (filterState.distance > 0) {
+    data = data.filter(feeder => isWithinDistance(feeder.lat, feeder.lon, filterState.distance));
+  }
+  return data;
+}
+
+function isWithinDistance(lat, lon, distance) {
+  const earthRadius = 3440; // Radius of the Earth in nautical miles
+
+  // Convert latitude and longitude to radians
+  const lat1 = (Math.PI / 180) * lat;
+  const lon1 = (Math.PI / 180) * lon;
+  const lat2 = (Math.PI / 180) * userLat;
+  const lon2 = (Math.PI / 180) * userLong;
+
+  // Calculate the distance between the two positions using the Haversine formula
+  const dLat = lat2 - lat1;
+  const dLon = lon2 - lon1;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distanceBetweenPositions = earthRadius * c;
+
+  return distanceBetweenPositions <= distance;
 }
 
 function transformFeeder(feeder) {
@@ -408,26 +505,28 @@ function renderFilter() {
     tagMode: "single",
     tagTemplate: kendo.template($("#tagTemplate").html()),
   });
+  $("#distanceselect").kendoDropDownList({
+    optionLabel: "Distance",
+    adaptiveMode: "auto",
+    autoBind: false,
+    fillMode: "outline",
+    dataTextField: "data",
+    dataValueField: "value",
+    dataSource: [
+      { data: 10, value: 10 },
+      { data: 50, value: 50 },
+      { data: 100, value: 100 },
+      { data: 200, value: 200 },
+      { data: 500, value: 500 },
+      { data: 1000, value: 1000 },
+      { data: "All", value: -1 }
+    ]
+  });
 
   $("#municipalityselect").data("kendoMultiSelect").bind("change", onFilterChange);
   $("#aircraftselect").data("kendoMultiSelect").bind("change", onFilterChange);
   $("#modeselect").data("kendoMultiSelect").bind("change", onFilterChange);
-
-  // $("#distanceselect").kendoMultiSelect({
-  //   placeholder: "Select distance...",
-  //   dataTextField: "ProductName",
-  //   dataValueField: "ProductID",
-  //   autoBind: false,
-  //   dataSource: {
-  //     type: "odata",
-  //     serverFiltering: true,
-  //     transport: {
-  //       read: {
-  //         url: "https://demos.telerik.com/kendo-ui/service/Northwind.svc/Products",
-  //       }
-  //     }
-  //   }
-  // });
+  $("#distanceselect").data("kendoDropDownList").bind("change", onFilterChange);
 }
 
 function toggleFilterState() {
@@ -479,6 +578,7 @@ function onFilterChange() {
   let city = $("#municipalityselect").val();
   let aircraftType = $("#aircraftselect").val();
   let signalType = $("#modeselect").val();
+  let distance = $("#distanceselect").val();
   let feederSearchInput = $('#feeder-search-input').val();
 
   resetFilterState();
@@ -500,6 +600,10 @@ function onFilterChange() {
 
   if (signalType.length > 0) {
     filterState.signal_type = signalType;
+  }
+
+  if (distance > 0) {
+    filterState.distance = distance;
   }
 
   if (feederSearchInput) {
@@ -540,17 +644,10 @@ function initializeFeederChart() {
     legend: {
       visible: false,
     },
-    seriesHover: function (e) {
-      if (e.category) {
-        if (e.category == "disabled") {
-          e.preventDefault(); //Turns off tooltip for disabled category.
-        }
-      }
-    },
     series: [],
     tooltip: {
       visible: true,
-      template: "(#= series.name #) #= category # :#= value #%"
+      template: kendo.template($("#chartTemplate").html())
     },
     render: function (e) {
       let draw = kendo.drawing;
@@ -600,17 +697,10 @@ function initializeFeederChart() {
     legend: {
       visible: false,
     },
-    seriesHover: function (e) {
-      if (e.category) {
-        if (e.category == "disabled") {
-          e.preventDefault(); //Turns off tooltip for disabled category.
-        }
-      }
-    },
     series: [],
     tooltip: {
       visible: true,
-      template: "(#= series.name #) #= category # :#= value #%"
+      template: kendo.template($("#chartTemplate").html())
     },
     render: function (e) {
       let draw = kendo.drawing;
@@ -660,17 +750,10 @@ function initializeFeederChart() {
     legend: {
       visible: false,
     },
-    seriesHover: function (e) {
-      if (e.category) {
-        if (e.category == "disabled") {
-          e.preventDefault(); //Turns off tooltip for disabled category.
-        }
-      }
-    },
     series: [],
     tooltip: {
       visible: true,
-      template: "(#= series.name #) #= category # :#= value #%"
+      template: kendo.template($("#chartTemplate").html())
     },
     render: function (e) {
       let draw = kendo.drawing;
@@ -834,7 +917,7 @@ function getFeederScore(feeder) {
   score += getUniqueAircraftScore(feeder);
   score += getNearestAirportScore(feeder);
   score += getUniquenessScore(feeder);
-  return (score * 10000).toFixed(0);
+  return (score * 100).toFixed(0);
 }
 
 function populateFeederPercentile(feeder) {
@@ -912,7 +995,7 @@ function renderFeederImpactCharts(feeder) {
       }
     },
     {
-      name: "Average Range",
+      name: "Average Coverage",
       data: [
         {
           category: "Feeder Percentile",
@@ -1133,5 +1216,31 @@ function populateCustomHeader() {
     if (customHeader) {
       customHeader.remove();
     }
+  }
+}
+
+function generateChartTooltip(seriesName, category, value) {
+  let pretext = '';
+  if (category != 'disabled') {
+    pretext += `(${seriesName}) ${category}: ${value}% </br>`;
+  }
+  if (seriesName === 'Maximum Range') {
+    return pretext += 'The further the coverage distance of a receiver, the more likely it is to receive ADS-B transmissions. </br>To improve, you want to have your receiver hardwired and place the antenna as high as possible outside in an area with no obstructions.';
+  } else if (seriesName === 'Average Coverage') {
+    return pretext += 'The larger the coverage area of a receiver, the more likely it is to receive ADS - B transmissions. </br>To improve, you want to have your receiver hardwired and place the antenna as high as possible outside in an area with no obstructions.';
+  } else if (seriesName === 'Position') {
+    return pretext += 'The more positions a feeder receives, the more valuable it is to the Exchange.';
+  } else if (seriesName === 'Aircraft on Ground') {
+    return pretext += 'Ground activity is a vital signal to the Exchange. </br>To improve, you want to place your receiver as close to an airport runway as possible and / or minimize obstructions between the antenna and the airport.';
+  } else if (seriesName === 'Total Aircraft') {
+    return pretext += 'The more aircraft a feeder receives, the more valuable it is to the Exchange.';
+  } else if (seriesName === 'Unique Aircraft') {
+    return pretext += 'The more unique aircraft a feeder receives, the more valuable it is to the Exchange. </br>This is the most valuable of all signals that contribute to the Exchange.';
+  } else if (seriesName === 'Nearest Airport') {
+    return pretext += 'Receivers that at close to airports are particularly valuable to the Exchange. </br>To improve, you want to place your receiver as close to an airport runway as possible.';
+  } else if (seriesName === 'Unique Range') {
+    return pretext += "A feeder's value to the ADS - B Exchange network based on receiver's placement relative to other receivers. </br>To improve, you want to find a location for your receiver that is not already covered by other receivers.";
+  } else {
+    return pretext;
   }
 }
