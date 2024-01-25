@@ -13,11 +13,10 @@ let regions = [];
 let cities = [];
 let aircraftTypes = [];
 let signalTypes = [];
-let activeGridCount = 0;
 let filterState = null;
+let userPosition = null;
 let hardwareCenter, hardwareRadius, activityCenter, activityRadius, exchangeCenter, exchangeRadius;
 let hardwareAvg, activityAvg, exchangeAvg;
-let userPosition = null;
 
 setupLoader();
 resetFilterState();
@@ -238,7 +237,6 @@ function renderboard() {
   setGridDataSources(feeders);
   renderFeederSection();
   populateCustomHeader();
-  activeGridCount = feeders.length;
 }
 
 function applyFilter() {
@@ -930,7 +928,11 @@ function getFeederScore(feeder) {
 }
 
 function populateFeederPercentile(feeder) {
-  let feederPercentile = ((activeGridCount - feeder.rank) / activeGridCount * 100).toFixed(2);
+  const recordCount = $("#feeder-grid")
+    .data("kendoGrid")
+    .dataSource
+    .data().length;
+  let feederPercentile = ((recordCount - feeder.rank) / recordCount * 100).toFixed(2);
   $("#feeder-percentile").text(`${feederPercentile}%`);
 }
 
