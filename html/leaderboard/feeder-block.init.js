@@ -14,10 +14,10 @@ let cities = [];
 let aircraftTypes = [];
 let signalTypes = [];
 let activeGridCount = 0;
-filterState = null;
+let filterState = null;
 let hardwareCenter, hardwareRadius, activityCenter, activityRadius, exchangeCenter, exchangeRadius;
 let hardwareAvg, activityAvg, exchangeAvg;
-let userLat, userLong;
+let userPosition = null;
 
 setupLoader();
 resetFilterState();
@@ -26,30 +26,6 @@ initializeFeederSearchInput();
 initializeFeederChart();
 renderboard();
 fetchboardData();
-handleGeolocationPermission();
-
-function handleGeolocationPermission() {
-  navigator.permissions.query({ name: 'geolocation' }).then(function (result) {
-    if (result.state == 'granted') {
-      setUserLocation(result);
-    } else if (result.state == 'prompt') {
-      setUserLocation(result);
-    } else if (result.state == 'denied') {
-      console.log('Location Permission denied');
-    }
-
-    result.onchange = function () {
-      setUserLocation(result);
-    }
-  });
-}
-
-function setUserLocation(result) {
-  navigator.geolocation.getCurrentPosition(function (position) {
-    userLat = position.coords.latitude;
-    userLong = position.coords.longitude;
-  });
-}
 
 function fetchboardData() {
   setLoaderViewState(true);
@@ -69,11 +45,35 @@ function fetchboardData() {
       renderFilter();
       populateBoardStats(response.data.network_stats);
       setLoaderViewState(false);
+      handleGeolocationPermission();
     },
     error: function (error) {
       console.error('Error fetching feeder data:', error);
       $("#notification-section").getKendoNotification().show({ msg: `Error fetching feeder data` }, "error");
     }
+  });
+}
+
+function handleGeolocationPermission() {
+  navigator.permissions.query({ name: 'geolocation' }).then(function (result) {
+    if (result.state == 'granted') {
+      setUserLocation(result);
+    } else if (result.state == 'prompt') {
+      setUserLocation(result);
+    } else if (result.state == 'denied') {
+      console.log('Location Permission denied');
+    }
+
+    result.onchange = function () {
+      setUserLocation(result);
+    }
+  });
+}
+
+function setUserLocation(result) {
+  navigator.geolocation.getCurrentPosition(function (position) {
+    userPosition = { userLat: position.coords.latitude, userLong: position.coords.longitude };
+    $("#distanceselect").data("kendoDropDownList").enable(userPosition);
   });
 }
 
@@ -512,6 +512,7 @@ function renderFilter() {
     fillMode: "outline",
     dataTextField: "data",
     dataValueField: "value",
+    enable: false,
     dataSource: [
       { data: 10, value: 10 },
       { data: 50, value: 50 },
@@ -522,6 +523,14 @@ function renderFilter() {
       { data: "All", value: -1 }
     ]
   });
+
+  $("#distance-select-w").kendoTooltip({
+    filter: "span.k-disabled",
+    position: "right",
+    content: function (e) {
+      return "Grant location permission to enable this filter";
+    }
+  }).data("kendoTooltip");
 
   $("#municipalityselect").data("kendoMultiSelect").bind("change", onFilterChange);
   $("#aircraftselect").data("kendoMultiSelect").bind("change", onFilterChange);

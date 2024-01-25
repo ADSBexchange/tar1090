@@ -372,15 +372,19 @@ background-image: none
   align-items: center;
 }
 
-.distance-select-w .k-input-button {
+#distance-select-w .k-input-button {
   display: none;
 }
 
-.distance-select-w .k-picker {
+#distance-select-w .k-picker {
   border: 1px;
   border-color: #cccccd;
   color: #515967;
   background-color: #ffffff;
+}
+
+#distance-select-w .k-disabled {
+  pointer-events: auto;
 }
 
 .search-text-input-w {
