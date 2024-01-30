@@ -76,6 +76,8 @@
 
 .search-result {
   margin: 10px;
+  display: flex;
+  justify-content: space-between;
 }
 
 .search-block .search-input {
@@ -206,7 +208,7 @@
   /*Area of impact block*/
   display: flex;
   flex-direction: row;
-  justify-content: center;
+  justify-content: space-evenly;
   align-items: center;
   width: 100%;
 }
@@ -377,8 +379,7 @@ background-image: none
 }
 
 #distance-select-w .k-picker {
-  border: 1px;
-  border-color: #cccccd;
+  border-color: #b9b9b9;
   color: #515967;
   background-color: #ffffff;
 }
@@ -387,14 +388,28 @@ background-image: none
   pointer-events: auto;
 }
 
-.search-text-input-w {
-  width: 60%;
-  display: flex;
-  justify-content: end;
-}
-
 .search-hint-w {
   width: 40%;
   display: flex;
   justify-content: flex-end;
+}
+
+.k-grid .k-column-title {
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+.k-grid-header .k-sort-icon, 
+.k-grid-header .k-sort-order {
+  color: #000000;
+}
+
+.k-svg-icon.k-svg-i-sort-desc-small  svg,
+.k-svg-icon.k-svg-i-sort-asc-small svg {
+  display: none;
+}
+
+th.k-sorted .k-column-title {
+  color: #2573f6;
+  font-weight: bold;
 }

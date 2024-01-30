@@ -117,11 +117,11 @@ function initializeFeederSearchInput() {
 function initializeFeederGrid() {
   $("#feeder-grid").kendoGrid({
     columns: [
-      { field: "rank", title: "Rank", width: 60, sortable: false },
+      { field: "rank", title: "Rank", width: 80 },
       { field: "feeder_name", title: "Feeder Name" },
       { field: "country", title: "Country" },
       { field: "score", title: "Score", width: 140, format: "{0:##,#}" },
-      { field: "uptime", title: "Uptime", width: 90, format: "{0:n2}\%" },
+      { field: "uptime", title: "Uptime", width: 90, format: "{0}\%" },
       { field: "avg_range", title: "Avg Coverage (SNM)", format: "{0:##,#}" },
       { field: "max_range", title: "Max Range (NM)", format: "{0:##,#}" },
       { field: "position", title: "Positions", format: "{0:##,#}" },
@@ -329,7 +329,20 @@ function isWithinDistance(lat, lon, distance) {
 }
 
 function transformFeeder(feeder) {
-  let filterPositionStats = shouldFilterPositionStats();
+  const filterPositionStats = shouldFilterPositionStats();
+  const feederUptime = feeder.uptime >= 100 ? 100 : feeder.uptime;
+  const position = filterPositionStats
+    ? feeder.all_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.positions, 0)
+    : feeder.positions;
+  const aircraftOnGround = filterPositionStats
+    ? feeder.all_positions_stats.filter(stat => stat.on_ground && filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0)
+    : feeder.aircraft_on_ground;
+  const totalAircraft = filterPositionStats
+    ? feeder.all_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0)
+    : feeder.aircraft_total;
+  const uniqueAircraft = filterPositionStats
+    ? feeder.unique_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0)
+    : feeder.aircraft_unique;
   return {
     uuid: feeder.uuid,
     feeder_name: feeder.user,
@@ -337,21 +350,13 @@ function transformFeeder(feeder) {
     region: feeder.region,
     state: feeder.state,
     city: feeder.city,
-    uptime: feeder.uptime,
+    uptime: feederUptime,
     avg_range: feeder.avg_sq_nm_range,
     max_range: feeder.max_range_nm,
-    position: filterPositionStats
-      ? feeder.all_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.positions, 0)
-      : feeder.positions,
-    aircraft_on_ground: filterPositionStats
-      ? feeder.all_positions_stats.filter(stat => stat.on_ground && filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0)
-      : feeder.aircraft_on_ground,
-    total_aircraft: filterPositionStats
-      ? feeder.all_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0)
-      : feeder.aircraft_total,
-    unique_aircraft: filterPositionStats
-      ? feeder.unique_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0)
-      : feeder.aircraft_unique,
+    position: position,
+    aircraft_on_ground: aircraftOnGround,
+    total_aircraft: totalAircraft,
+    unique_aircraft: uniqueAircraft,
     nearest_airport: feeder.nearest_airport_nm,
     uniqueness: feeder.uniqueness
   };
@@ -783,7 +788,7 @@ function initializeFeederChart() {
   $("#rank-chart").kendoChart({
     title: {
       visible: false,
-      text: "Internet Users"
+      text: "Feeder Rank Trend"
     },
     legend: {
       position: "bottom",
@@ -801,7 +806,8 @@ function initializeFeederChart() {
       data: [55.7, 80, 73.5, 96.6],
       markers: {
         visible: false
-      }
+      },
+      color: "#28cf8a"
     }],
     valueAxis: {
       labels: {
@@ -932,7 +938,8 @@ function populateFeederPercentile(feeder) {
     .data("kendoGrid")
     .dataSource
     .data().length;
-  let feederPercentile = ((recordCount - feeder.rank) / recordCount * 100).toFixed(2);
+
+  const feederPercentile = ((recordCount - feeder.rank) / (recordCount - 1) * 100).toFixed(2);
   $("#feeder-percentile").text(`${feederPercentile}%`);
 }
 
@@ -1235,7 +1242,9 @@ function generateChartTooltip(seriesName, category, value) {
   if (category != 'disabled') {
     pretext += `(${seriesName}) ${category}: ${value}% </br>`;
   }
-  if (seriesName === 'Maximum Range') {
+  if (seriesName === 'Uptime') {
+    return pretext += "The percentage of time the feeder is active and able to receive transmissions. </br>To improve, you will want to make sure you're plugged in to a stable power source, connect to a reliable internet service, and use hardwired connections between your hardware and source of internet.";
+  } else if (seriesName === 'Maximum Range') {
     return pretext += 'The further the coverage distance of a receiver, the more likely it is to receive ADS-B transmissions. </br>To improve, you want to have your receiver hardwired and place the antenna as high as possible outside in an area with no obstructions.';
   } else if (seriesName === 'Average Coverage') {
     return pretext += 'The larger the coverage area of a receiver, the more likely it is to receive ADS - B transmissions. </br>To improve, you want to have your receiver hardwired and place the antenna as high as possible outside in an area with no obstructions.';

@@ -58,9 +58,11 @@
         <span id="loader"></span>
     </div>
     <div id="container">
-        <div class="sectionBreak logo">
-            <img src="/images/logo_background.png"
-                alt="ADS-B Exchange. World's Largest Source of unfiltered Flight Data.">
+        <div class="sectionBreak logo" href="https://www.adsbexchange.com">
+            <a href="https://www.adsbexchange.com" target="_blank">
+                <img src="/images/logo_background.png"
+                    alt="ADS-B Exchange. World's Largest Source of unfiltered Flight Data.">
+            </a>
         </div>
         <div id="notification"></div>
         <div id="notification-section"></div>
@@ -90,18 +92,11 @@
             </div>
         </div>
         <div class="search-block">
-            <p>Search any feeder name to see its impact.</p>
+            <p>Search any feeder name or click on a feeder in the table below to see its impact.</p>
             <div class="search-input">
-                <div class="search-text-input-w">
-                    <div class="search-text-input">
-                        <input id="feeder-search-input" type="text" placeholder="Search Feeder Names" />
-                        <button class="search-button"></button>
-                    </div>
-                </div>
-                <div class="search-hint-w">
-                    <div class="search-hint">
-                        <div>Tip: Hover over the rings to learn more.</div>
-                    </div>
+                <div class="search-text-input">
+                    <input id="feeder-search-input" type="text" placeholder="Search Feeder Names" />
+                    <button class="search-button"></button>
                 </div>
             </div>
         </div>
@@ -112,14 +107,19 @@
                     <span id="filter-summary-pretext"> with filters </span>
                     <span id="filter-summary-text"></span>
                 </span>
+                <div class="search-hint-w">
+                    <div class="search-hint">
+                        <div>Tip: Hover over the rings to learn more.</div>
+                    </div>
+                </div>
             </div>
             <div class="analysis-w">
-                <div class="analysis-content" style="width: 40%;">
+                <div class="analysis-content" style="width: 25%;">
                     <div class="analysis-content-item">
                         <div id="rank-chart"></div>
                     </div>
                 </div>
-                <div class="area-of-impact-w" style="width: 60%;">
+                <div class="area-of-impact-w" style="width: 75%;">
                     <span class="title">Areas of Impact</span>
                     <div class="area-of-impact-content">
                         <div class="area-of-impact-content-item" id="aoici">
@@ -149,10 +149,8 @@
                         <span>Based on the filter critera you have selected,</span>
                         <h1>This feeder is out-performing <span id="feeder-percentile">--</span> of others</h1>
                         <span>
-                            Ready to improve your feeder? Check out the <a href="">Feeder FAQ</a>
-                            for lots of tips on how to improve each dimension so you can be
-                            at the top of the leaderboard! Don't have a feeder? Learn how to get one
-                            <a href="https://www.adsbexchange.com/ways-to-join-the-exchange">here</a>.
+                            Ready to improve your feeder? Inspect a feeder and click on each of the rings for tips
+                            on how to improve each dimension so you can be at the top of the leaderboard
                         </span>
                     </div>
                 </div>
@@ -177,7 +175,7 @@
                     <div class="data-grid-filter-item">
                         <select id="modeselect"></select>
                     </div>
-                    <div class="data-grid-filter-item" id="distance-select-w" >
+                    <div class="data-grid-filter-item" id="distance-select-w">
                         <select id="distanceselect"></select>
                     </div>
                 </div>
