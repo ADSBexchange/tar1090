@@ -17,6 +17,7 @@ let filterState = null;
 let userPosition = null;
 let hardwareCenter, hardwareRadius, activityCenter, activityRadius, exchangeCenter, exchangeRadius;
 let hardwareAvg, activityAvg, exchangeAvg;
+let lastColour = "none";
 
 setupLoader();
 resetFilterState();
@@ -106,6 +107,7 @@ function initializeFeederSearchInput() {
   });
   feederSearchInput.on('keyup', function (event) {
     if (event.key === 'Enter') {
+      console.log('Enter key pressed');
       onFilterChange();
     }
   });
@@ -641,11 +643,12 @@ function initializeFeederChart() {
         hardwareCenter = e.center;
         hardwareRadius = e.radius;
 
-        return e.createVisual();
+        return Pie_CurvedEnds(e);
       }
     },
     chartArea: {
-      background: ""
+      background: "",
+      height: 250
     },
     title: {
       visible: false,
@@ -659,7 +662,8 @@ function initializeFeederChart() {
     series: [],
     tooltip: {
       visible: true,
-      template: kendo.template($("#chartTemplate").html())
+      template: kendo.template($("#chartTemplate").html()),
+      padding: 15
     },
     render: function (e) {
       let draw = kendo.drawing;
@@ -695,11 +699,12 @@ function initializeFeederChart() {
         activityCenter = e.center;
         activityRadius = e.radius;
 
-        return e.createVisual();
+        return Pie_CurvedEnds(e);
       }
     },
     chartArea: {
-      background: ""
+      background: "",
+      height: 250
     },
     title: {
       visible: false,
@@ -748,11 +753,12 @@ function initializeFeederChart() {
         exchangeCenter = e.center;
         exchangeRadius = e.radius;
 
-        return e.createVisual();
+        return Pie_CurvedEnds(e);
       }
     },
     chartArea: {
-      background: ""
+      background: "",
+      height: 250
     },
     title: {
       visible: false,
@@ -996,23 +1002,20 @@ function renderFeederImpactCharts(feeder) {
   let hardwareChart = $("#hardware-chart").data("kendoChart");
   hardwareChart.options.series = [
     {
-      name: "Maximum Range",
+      name: "Uptime",
       data: [
         {
-          category: "Feeder Percentile",
-          value: getMaxRangeScore(feeder),
+          category: "Uptime",
+          value: getUptimeScore(feeder),
           color: "#00596a"
-        }, {
+        },
+        {
           category: "disabled",
-          value: (100 - getMaxRangeScore(feeder)).toFixed(2),
+          value: (100 - getUptimeScore(feeder)).toFixed(2),
           color: "#b3f2ff"
         }
-      ],
-      labels: {
-        visible: false
-      }
-    },
-    {
+      ]
+    }, {
       name: "Average Coverage",
       data: [
         {
@@ -1028,22 +1031,23 @@ function renderFeederImpactCharts(feeder) {
       labels: {
         visible: false,
       }
-    },
-    {
-      name: "Uptime",
+    }, {
+      name: "Maximum Range",
       data: [
         {
-          category: "Uptime",
-          value: getUptimeScore(feeder),
+          category: "Feeder Percentile",
+          value: getMaxRangeScore(feeder),
           color: "#9d1edd"
-        },
-        {
+        }, {
           category: "disabled",
-          value: (100 - getUptimeScore(feeder)).toFixed(2),
+          value: (100 - getMaxRangeScore(feeder)).toFixed(2),
           color: "#ecd2f9"
         }
-      ]
-    }];
+      ],
+      labels: {
+        visible: false
+      }
+    },];
   hardwareAvg = Math.ceil((getMaxRangeScore(feeder) + getAvgRangeScore(feeder) + getUptimeScore(feeder)) / 3);
   hardwareChart.refresh();
   let activityChart = $("#activity-chart").data("kendoChart");
@@ -1080,8 +1084,7 @@ function renderFeederImpactCharts(feeder) {
       labels: {
         visible: false,
       }
-    },
-    {
+    }, {
       name: "Total Aircraft",
       data: [
         {
@@ -1098,6 +1101,7 @@ function renderFeederImpactCharts(feeder) {
         visible: false
       }
     }
+
   ]
   activityAvg = Math.ceil((getPositionScore(feeder) + getAircraftOnGroundScore(feeder) + getTotalAircraftScore(feeder)) / 3);
   activityChart.refresh();
@@ -1137,7 +1141,7 @@ function renderFeederImpactCharts(feeder) {
       }
     },
     {
-      name: "Unique Range",
+      name: "Uniqueness",
       data: [
         {
           category: "Feeder Percentile",
@@ -1240,27 +1244,76 @@ function populateCustomHeader() {
 function generateChartTooltip(seriesName, category, value) {
   let pretext = '';
   if (category != 'disabled') {
-    pretext += `(${seriesName}) ${category}: ${value}% </br>`;
+    pretext += `${seriesName}: <b>${value}%</b> </br> </br>`;
+  } else {
+    pretext += `${seriesName} </br> </br>`
   }
   if (seriesName === 'Uptime') {
-    return pretext += "The percentage of time the feeder is active and able to receive transmissions. </br>To improve, you will want to make sure you're plugged in to a stable power source, connect to a reliable internet service, and use hardwired connections between your hardware and source of internet.";
+    return pretext += "The percentage of time the feeder is active and able to receive transmissions. </br>To improve, you will want to make sure you're plugged in to a stable power source, </br>connect to a reliable internet service, and use hardwired connections between your hardware </br>and source of internet.";
   } else if (seriesName === 'Maximum Range') {
-    return pretext += 'The further the coverage distance of a receiver, the more likely it is to receive ADS-B transmissions. </br>To improve, you want to have your receiver hardwired and place the antenna as high as possible outside in an area with no obstructions.';
+    return pretext += 'The further the coverage distance of a receiver, </br>the more likely it is to receive ADS-B transmissions. </br>To improve, you want to have your receiver hardwired and place the </br>antenna as high as possible outside in an area with no obstructions.';
   } else if (seriesName === 'Average Coverage') {
-    return pretext += 'The larger the coverage area of a receiver, the more likely it is to receive ADS - B transmissions. </br>To improve, you want to have your receiver hardwired and place the antenna as high as possible outside in an area with no obstructions.';
+    return pretext += 'The larger the coverage area of a receiver, the more likely </br>it is to receive ADS - B transmissions. </br>To improve, you want to have your receiver hardwired and place the antenna as high </br>as possible outside in an area with no obstructions.';
   } else if (seriesName === 'Position') {
     return pretext += 'The more positions a feeder receives, the more valuable it is to the Exchange.';
   } else if (seriesName === 'Aircraft on Ground') {
-    return pretext += 'Ground activity is a vital signal to the Exchange. </br>To improve, you want to place your receiver as close to an airport runway as possible and / or minimize obstructions between the antenna and the airport.';
+    return pretext += 'Ground activity is a vital signal to the Exchange. </br>To improve, you want to place your receiver as close to an airport runway as possible </br>and / or minimize obstructions between the antenna and the airport.';
   } else if (seriesName === 'Total Aircraft') {
     return pretext += 'The more aircraft a feeder receives, the more valuable it is to the Exchange.';
   } else if (seriesName === 'Unique Aircraft') {
     return pretext += 'The more unique aircraft a feeder receives, the more valuable it is to the Exchange. </br>This is the most valuable of all signals that contribute to the Exchange.';
   } else if (seriesName === 'Nearest Airport') {
-    return pretext += 'Receivers that at close to airports are particularly valuable to the Exchange. </br>To improve, you want to place your receiver as close to an airport runway as possible.';
-  } else if (seriesName === 'Unique Range') {
-    return pretext += "A feeder's value to the ADS - B Exchange network based on receiver's placement relative to other receivers. </br>To improve, you want to find a location for your receiver that is not already covered by other receivers.";
+    return pretext += 'Receivers that are close to airports are particularly valuable to the Exchange. </br>To improve, you want to place your receiver as close to an airport runway as possible.';
+  } else if (seriesName === 'Uniqueness') {
+    return pretext += "A feeder's value to the ADS - B Exchange network based on </br>receiver's placement relative to other receivers. </br>To improve, you want to find a location for your receiver </br>that is not already covered by other receivers.";
   } else {
     return pretext;
   }
 }
+
+function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+  var angleInRadians = (angleInDegrees) * Math.PI / 180.0;
+
+  return {
+    x: centerX + (radius * Math.cos(angleInRadians)),
+    y: centerY + (radius * Math.sin(angleInRadians))
+  };
+}
+
+function Pie_CurvedEnds(e) {
+  var seg = e.createVisual();
+
+  var circRad = (e.radius - e.innerRadius) / 2;
+  var dist = e.innerRadius + circRad;
+  var spoint = polarToCartesian(e.center.x, e.center.y, dist, e.startAngle);
+  var epoint = polarToCartesian(e.center.x, e.center.y, dist, e.endAngle);
+
+  var group = new kendo.drawing.Group();
+  group.append(seg);
+
+  if (lastColour != "none") {
+    var endArcGeometry = new kendo.geometry.Arc([spoint.x, spoint.y], {
+      startAngle: 0, endAngle: 360, radiusX: circRad, radiusY: circRad
+    });
+
+    var endArc = new kendo.drawing.Arc(endArcGeometry, {
+      fill: { color: lastColour },
+      stroke: { color: "none" }
+    });
+
+    group.append(endArc);
+  }
+
+  //draw semi-circle at end of segment to allow for overlap at the top of the pie
+  var startArcGeometry = new kendo.geometry.Arc([epoint.x, epoint.y], {
+    startAngle: 0, endAngle: 360, radiusX: circRad, radiusY: circRad
+  });
+  var startArc = new kendo.drawing.Arc(startArcGeometry, {
+    fill: { color: e.category === "disabled" ? lastColour : e.options.color },
+    stroke: { color: "none" }
+  });
+  group.append(startArc);
+
+  lastColour = e.category === "disabled" ? "none" : e.options.color;
+  return group;
+};
