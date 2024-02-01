@@ -17,7 +17,8 @@ let filterState = null;
 let userPosition = null;
 let hardwareCenter, hardwareRadius, activityCenter, activityRadius, exchangeCenter, exchangeRadius;
 let hardwareAvg, activityAvg, exchangeAvg;
-let lastColour = "none";
+let lastChartSeriesColour = "none";
+let schema = null;
 
 setupLoader();
 resetFilterState();
@@ -39,7 +40,8 @@ function fetchboardData() {
     },
     crossDomain: true,
     success: function (response) {
-      boardData = response.data.rows;
+      schema = response.data.schemas;
+      boardData = response.data.feeders;
       getGeoInfoList(boardData);
       renderboard();
       renderFilter();
@@ -98,7 +100,7 @@ function setLoaderViewState(isLoading) {
 }
 
 function initializeFeederSearchInput() {
-  let feederSearchInput = $('#feeder-search-input');
+  const feederSearchInput = $('#feeder-search-input');
   feederSearchInput.kendoAutoComplete({
     clearButton: true,
     placeholder: "Search Feeder Names",
@@ -107,37 +109,39 @@ function initializeFeederSearchInput() {
   });
   feederSearchInput.on('keyup', function (event) {
     if (event.key === 'Enter') {
-      console.log('Enter key pressed');
       onFilterChange();
     }
   });
 
-  let button = $('.search-button');
+  const button = $('.search-button');
   button.on('click', onFilterChange);
 }
 
 function initializeFeederGrid() {
   $("#feeder-grid").kendoGrid({
     columns: [
-      { field: "rank", title: "Rank", width: 80 },
-      { field: "feeder_name", title: "Feeder Name" },
-      { field: "country", title: "Country" },
-      { field: "score", title: "Score", width: 140, format: "{0:##,#}" },
-      { field: "uptime", title: "Uptime", width: 90, format: "{0}\%" },
-      { field: "avg_range", title: "Avg Coverage (SNM)", format: "{0:##,#}" },
-      { field: "max_range", title: "Max Range (NM)", format: "{0:##,#}" },
-      { field: "position", title: "Positions", format: "{0:##,#}" },
-      { field: "aircraft_on_ground", title: "Aircraft on Ground", format: "{0:##,#}" },
-      { field: "total_aircraft", title: "Total Aircraft", format: "{0:##,#}" },
-      { field: "unique_aircraft", title: "Unique Aircraft", format: "{0:##,#}" },
-      { field: "nearest_airport", title: "Nearest Airport (NM)", format: "{0:##,#}" },
-      { field: "uniqueness", title: "Uniqueness", width: 100, format: "{0:n2}" }
+      { field: "rank", title: "Rank", width: 80, attributes: { "data-field": "rank" } },
+      { field: "feeder_name", title: "Feeder Name", attributes: { "data-field": "feeder_name" } },
+      { field: "country", title: "Country", attributes: { "data-field": "country" } },
+      { field: "score", title: "Score", width: 140, format: "{0:##,#}", attributes: { "data-field": "score" } },
+      { field: "uptime", title: "Uptime", width: 90, format: "{0}\%", attributes: { "data-field": "uptime" } },
+      { field: "avg_range", title: "Avg Coverage (SNM)", format: "{0:##,#}", attributes: { "data-field": "avg_range" } },
+      { field: "max_range", title: "Max Range (NM)", format: "{0:##,#}", attributes: { "data-field": "max_range" } },
+      { field: "position", title: "Positions", format: "{0:##,#}", attributes: { "data-field": "position" } },
+      { field: "aircraft_on_ground", title: "Aircraft on Ground", format: "{0:##,#}", attributes: { "data-field": "aircraft_on_ground" } },
+      { field: "total_aircraft", title: "Total Aircraft", format: "{0:##,#}", attributes: { "data-field": "total_aircraft" } },
+      { field: "unique_aircraft", title: "Unique Aircraft", format: "{0:##,#}", attributes: { "data-field": "unique_aircraft" } },
+      { field: "nearest_airport", title: "Nearest Airport (NM)", format: "{0:##,#}", attributes: { "data-field": "nearest_airport" } },
+      { field: "uniqueness", title: "Uniqueness", width: 100, format: "{0:n2}", attributes: { "data-field": "uniqueness" } }
     ],
-    sortable: true,
+    sortable: {
+      allowUnsort: false
+    },
     selectable: "row",
     scrollable: {
-      virtual: true
-    }
+      endless: true
+    },
+    height: 450
   });
 
   $("#feeder-grid").kendoTooltip({
@@ -257,7 +261,10 @@ function applyFilter() {
 
 function filterbyFeederName(data, filterState) {
   if (filterState.feeder_name) {
-    let searchedFeeder = data.find(feeder => feeder.user.toLowerCase() === filterState.feeder_name.toLowerCase());
+    let searchedFeeder = data.find(feederArray => {
+      const feeder = new Feeder(feederArray, schema);
+      return feeder.get("user").toLowerCase() === filterState.feeder_name.toLowerCase();
+    });
     if (searchedFeeder) {
       filterState._filterContext = { foundFeeder: transformFeeder(searchedFeeder) };
     } else {
@@ -269,42 +276,66 @@ function filterbyFeederName(data, filterState) {
 
 function filterByRegion(data, filterState) {
   if (filterState.region.length > 0) {
-    data = data.filter(feeder => feeder.region && filterState.region.some(region => region.toLowerCase() === feeder.region.toLowerCase()));
+    data = data.filter(feeder => {
+      const region = new Feeder(feeder, schema).get("region");
+      return region && filterState.region.some(r => r.toLowerCase() === region.toLowerCase())
+    });
   }
   return data;
 }
 
 function filterByCountry(data, filterState) {
   if (filterState.country.length > 0) {
-    data = data.filter(feeder => feeder.country && filterState.country.some(country => country.toLowerCase() === feeder.country.toLowerCase()));
+    data = data.filter(feeder => {
+      const country = new Feeder(feeder, schema).get("country");
+      return country && filterState.country.some(c => c.toLowerCase() === country.toLowerCase());
+    });
   }
   return data;
 }
 
 function filterByMunicipality(data, filterState) {
   if (filterState.city.length > 0) {
-    data = data.filter(feeder => feeder.city && filterState.city.some(city => city.toLowerCase() === feeder.city.toLowerCase()));
+    data = data.filter(feeder => {
+      const city = new Feeder(feeder, schema).get("city");
+      return city && filterState.city.some(c => c.toLowerCase() === city.toLowerCase());
+    });
   }
   return data;
 }
 
 function filterByAircraftType(data, filterState) {
   if (filterState.make_type_name.length > 0) {
-    data = data.filter(feeder => feeder.all_positions_stats.some(stat => filterState.make_type_name.some(type => type.toLowerCase() === stat.make_type_name.toLowerCase())));
+    data = data.filter(feeder => {
+      const all_positions_stats = new Feeder(feeder, schema).get("all_positions_stats");
+      return all_positions_stats.some(stat => filterState.make_type_name.some(type => {
+        const positionStat = new PositionStat("all_positions_stats", stat, schema);
+        return type.toLowerCase() === positionStat.get("make_type_name").toLowerCase();
+      }));
+    });
   }
   return data;
 }
 
 function filterBySignalType(data, filterState) {
   if (filterState.signal_type.length > 0) {
-    data = data.filter(feeder => feeder.all_positions_stats.some(stat => filterState.signal_type.some(type => type.toLowerCase() === stat.signal_type.toLowerCase())));
+    data = data.filter(feeder => {
+      const all_positions_stats = new Feeder(feeder, schema).get("all_positions_stats");
+      return all_positions_stats.some(stat => filterState.signal_type.some(type => {
+        const positionStat = new PositionStat("all_positions_stats", stat, schema);
+        return type.toLowerCase() === positionStat.get("signal_type").toLowerCase();
+      }));
+    });
   }
   return data;
 }
 
 function filterByDistance(data, filterState) {
   if (filterState.distance > 0) {
-    data = data.filter(feeder => isWithinDistance(feeder.lat, feeder.lon, filterState.distance));
+    data = data.filter(feederArray => {
+      const feeder = new Feeder(feederArray, schema);
+      return isWithinDistance(feeder.get("lat"), feeder.get("lon"), filterState.distance)
+    });
   }
   return data;
 }
@@ -330,37 +361,62 @@ function isWithinDistance(lat, lon, distance) {
   return distanceBetweenPositions <= distance;
 }
 
-function transformFeeder(feeder) {
+function transformFeeder(feederArray) {
   const filterPositionStats = shouldFilterPositionStats();
-  const feederUptime = feeder.uptime >= 100 ? 100 : feeder.uptime;
+  const feeder = new Feeder(feederArray, schema);
+  const uptime = feeder.get("uptime");
+  const positions = feeder.get("positions");
+  const aircraft_on_ground = feeder.get("aircraft_on_ground");
+  const aircraft_total = feeder.get("aircraft_total");
+  const aircraft_unique = feeder.get("aircraft_unique");
+  const all_positions_stats = feeder.get("all_positions_stats");
+  const uuid = feeder.get("uuid");
+  const user = feeder.get("user");
+  const country = feeder.get("country");
+  const region = feeder.get("region");
+  const state = feeder.get("state");
+  const city = feeder.get("city");
+  const avg_sq_nm_range = feeder.get("avg_sq_nm_range");
+  const max_range_nm = feeder.get("max_range_nm");
+  const nearest_airport_nm = feeder.get("nearest_airport_nm");
+  const uniqueness = feeder.get("uniqueness");
+  const feederUptime = uptime >= 100 ? 100 : uptime;
   const position = filterPositionStats
-    ? feeder.all_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.positions, 0)
-    : feeder.positions;
+    ? all_positions_stats
+      .filter(stat => filterFeederStats(stat))
+      .reduce((sum, stat) => sum + new PositionStat("all_positions_stats", stat, schema).get("positions"), 0)
+    : positions;
   const aircraftOnGround = filterPositionStats
-    ? feeder.all_positions_stats.filter(stat => stat.on_ground && filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0)
-    : feeder.aircraft_on_ground;
+    ? all_positions_stats
+      .filter(stat => new PositionStat("all_positions_stats", stat, schema).get("on_ground") === "On Ground" && filterFeederStats(stat))
+      .reduce((sum, stat) => sum + new PositionStat("all_positions_stats", stat, schema).get("aircrafts"), 0)
+    : aircraft_on_ground;
   const totalAircraft = filterPositionStats
-    ? feeder.all_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0)
-    : feeder.aircraft_total;
+    ? all_positions_stats
+      .filter(stat => filterFeederStats(stat))
+      .reduce((sum, stat) => sum + new PositionStat("all_positions_stats", stat, schema).get("aircrafts"), 0)
+    : aircraft_total;
   const uniqueAircraft = filterPositionStats
-    ? feeder.unique_positions_stats.filter(stat => filterFeederStats(stat)).reduce((sum, stat) => sum + stat.aircrafts, 0)
-    : feeder.aircraft_unique;
+    ? unique_positions_stats
+      .filter(stat => filterFeederStats(stat))
+      .reduce((sum, stat) => sum + new PositionStat("unique_positions_stats", stat, schema).get("aircrafts"), 0)
+    : aircraft_unique;
   return {
-    uuid: feeder.uuid,
-    feeder_name: feeder.user,
-    country: feeder.country,
-    region: feeder.region,
-    state: feeder.state,
-    city: feeder.city,
+    uuid: uuid,
+    feeder_name: user,
+    country: country,
+    region: region,
+    state: state,
+    city: city,
     uptime: feederUptime,
-    avg_range: feeder.avg_sq_nm_range,
-    max_range: feeder.max_range_nm,
+    avg_range: avg_sq_nm_range,
+    max_range: max_range_nm,
     position: position,
     aircraft_on_ground: aircraftOnGround,
     total_aircraft: totalAircraft,
     unique_aircraft: uniqueAircraft,
-    nearest_airport: feeder.nearest_airport_nm,
-    uniqueness: feeder.uniqueness
+    nearest_airport: nearest_airport_nm,
+    uniqueness: uniqueness
   };
 }
 
@@ -370,12 +426,14 @@ function shouldFilterPositionStats() {
 
 function filterFeederStats(stat) {
   let result = true;
+  const positionStat = new PositionStat("all_positions_stats", stat, schema);
+
   if (filterState.make_type_name.length > 0) {
-    result = filterState.make_type_name.some(type => type.toLowerCase() === stat.make_type_name.toLowerCase());
+    result = filterState.make_type_name.some(type => type.toLowerCase() === positionStat.get("make_type_name").toLowerCase());
   }
 
   if (filterState.signal_type.length > 0) {
-    result = result && filterState.signal_type.some(type => type.toLowerCase() === stat.signal_type.toLowerCase());
+    result = result && filterState.signal_type.some(type => type.toLowerCase() === positionStat.get("signal_type").toLowerCase());
   }
 
   return result;
@@ -386,7 +444,7 @@ function generateFeederGridData(feederlist) {
 }
 
 function setGridDataSources(feederlist) {
-  let dataSource = new kendo.data.DataSource({
+  const dataSource = new kendo.data.DataSource({
     data: feederlist,
     pageSize: 12,
     schema: {
@@ -410,24 +468,23 @@ function setGridDataSources(feederlist) {
         }
       },
     },
-    height: 50,
-    filterable: {
-      mode: "row"
-    },
+    // height: 50,
     sort: {
       field: "score",
       dir: "desc"
     }
   });
-  let grid = $("#feeder-grid").data("kendoGrid");
+  const grid = $("#feeder-grid").data("kendoGrid");
   grid.setDataSource(dataSource);
   grid.refresh();
 
-  let searchInput = $("#feeder-search-input").data("kendoAutoComplete");
-  searchInput.setDataSource(new kendo.data.DataSource({
-    data: feederlist.map(feeder => feeder.feeder_name)
-  }));
-  searchInput.refresh();
+  const searchInput = $("#feeder-search-input").data("kendoAutoComplete");
+  if (!searchInput.value()) {
+    searchInput.setDataSource(new kendo.data.DataSource({
+      data: feederlist.map(feeder => feeder.feeder_name)
+    }));
+    searchInput.refresh();
+  }
 }
 
 function renderFilter() {
@@ -856,21 +913,32 @@ function getGeoInfoList(feederlist) {
   let distinctAircraftTypes = new Set();
   let distinctSignalTypes = new Set();
 
-  feederlist.forEach((feeder) => {
-    if (feeder.country && feeder.country.trim() !== "") {
-      distinctCountries.add({ region: feeder.region, country: feeder.country });
+  feederlist.forEach((feederArray) => {
+    const feeder = new Feeder(feederArray, schema);
+    const country = feeder.get("country");
+    const region = feeder.get("region");
+    const city = feeder.get("city");
+    const state = feeder.get("state");
+    const all_positions_stats = feeder.get("all_positions_stats");
+
+    if (country && country.trim() !== "") {
+      distinctCountries.add({ region: region, country: country });
     }
-    if (feeder.region && feeder.region.trim() !== "") {
-      distinctRegions.add({ region: feeder.region });
+    if (region && region.trim() !== "") {
+      distinctRegions.add({ region: region });
     }
-    if (feeder.city && feeder.city.trim() !== "") {
-      distinctCities.add({ city: feeder.city, region: feeder.region, country: feeder.country, state: feeder.state });
+    if (city && city.trim() !== "") {
+      distinctCities.add({ city: city, region: region, country: country, state: state });
     }
-    feeder.all_positions_stats.forEach((stats) => {
-      if (stats.make_type_name !== "Undefined") {
-        distinctAircraftTypes.add(stats.make_type_name);
+    all_positions_stats.forEach((statsArray) => {
+      const stats = new PositionStat("all_positions_stats", statsArray, schema);
+      const make_type_name = stats.get("make_type_name");
+      const signal_type = stats.get("signal_type");
+
+      if (make_type_name !== "Undefined") {
+        distinctAircraftTypes.add(make_type_name);
       }
-      distinctSignalTypes.add(stats.signal_type);
+      distinctSignalTypes.add(signal_type);
     });
   });
 
@@ -1291,13 +1359,13 @@ function Pie_CurvedEnds(e) {
   var group = new kendo.drawing.Group();
   group.append(seg);
 
-  if (lastColour != "none") {
+  if (lastChartSeriesColour != "none") {
     var endArcGeometry = new kendo.geometry.Arc([spoint.x, spoint.y], {
       startAngle: 0, endAngle: 360, radiusX: circRad, radiusY: circRad
     });
 
     var endArc = new kendo.drawing.Arc(endArcGeometry, {
-      fill: { color: lastColour },
+      fill: { color: lastChartSeriesColour },
       stroke: { color: "none" }
     });
 
@@ -1309,11 +1377,11 @@ function Pie_CurvedEnds(e) {
     startAngle: 0, endAngle: 360, radiusX: circRad, radiusY: circRad
   });
   var startArc = new kendo.drawing.Arc(startArcGeometry, {
-    fill: { color: e.category === "disabled" ? lastColour : e.options.color },
+    fill: { color: e.category === "disabled" ? lastChartSeriesColour : e.options.color },
     stroke: { color: "none" }
   });
   group.append(startArc);
 
-  lastColour = e.category === "disabled" ? "none" : e.options.color;
+  lastChartSeriesColour = e.category === "disabled" ? "none" : e.options.color;
   return group;
 };

@@ -419,16 +419,19 @@ th.k-sorted .k-column-title {
 .custom-header-row .k-table-td[data-field="total_aircraft"], 
 .custom-header-row .k-table-td[data-field="uniqueness"] {
   color: #9d1edd;
+  font-weight: bold;
 }
 
 .custom-header-row .k-table-td[data-field="avg_range"],
 .custom-header-row .k-table-td[data-field="aircraft_on_ground"],
 .custom-header-row .k-table-td[data-field="nearest_airport"] {
   color: #61bac9;
+  font-weight: bold;
 }
 
 .custom-header-row .k-table-td[data-field="uptime"],
 .custom-header-row .k-table-td[data-field="position"],
 .custom-header-row .k-table-td[data-field="unique_aircraft"] {
   color: #00596a;
+  font-weight: bold;
 }

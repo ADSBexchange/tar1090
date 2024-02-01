@@ -1,30 +1,35 @@
-function buildChartText(textStr, center, radius) {
-  var draw = kendo.drawing;
-  var geom = kendo.geometry;
+class Feeder {
+  feeder = [];
+  schema = null;
 
-  // The center and radius are populated by now.
-  // We can ask a circle geometry to calculate the bounding rectangle for us.
-  //
-  // https://docs.telerik.com/kendo-ui/api/javascript/geometry/circle/methods/bbox
-  var circleGeometry = new geom.Circle(center, radius);
-  var bbox = circleGeometry.bbox();
+  constructor(feederArray, schema) {
+    console
+    this.feeder = feederArray;
+    this.schema = schema;
+  }
 
-  // Render the text
-  //
-  // https://docs.telerik.com/kendo-ui/api/javascript/dataviz/drawing/text
-  var text = new draw.Text(textStr, [0, 0], {
-    font: "30px Verdana,Arial,sans-serif",
-    fillOptions: {
-      color: "#ff0000",
-    },
-  });
+  get(fieldName) {
+    const fieldIndex = this.schema["_main._schema_index"][fieldName];
+    return this.feeder[fieldIndex];
+  }
+}
 
-  // Align the text in the bounding box
-  //
-  // https://docs.telerik.com/kendo-ui/api/javascript/drawing/methods/align
-  // https://docs.telerik.com/kendo-ui/api/javascript/drawing/methods/vAlign
-  draw.align([text], bbox, "center");
-  draw.vAlign([text], bbox, "center");
+class PositionStat {
+  constructor(type, statArray, schema) {
+    this.type = type;
+    this.stat = statArray;
+    this.schema = schema;
+  }
 
-  return text;
+  get(statName) {
+    const statIndex = this.schema[`.${this.type}._schema_index`][statName];
+    if (statName === 'aircrafts' || statName === 'positions') {
+      return this.stat[statIndex];
+    }
+
+    const valueMap = schema[`.${this.type}.${statName}._value_map`];
+    const resultMap = schema[`.${this.type}.${statName}._friendly_name_map`];
+    const value = Object.keys(valueMap).find(key => valueMap[key] === this.stat[statIndex]);
+    return resultMap[value];
+  }
 }
