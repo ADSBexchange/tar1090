@@ -624,8 +624,8 @@ function renderFilter() {
     filter: "span.k-disabled",
     position: "right",
     content: function (e) {
-      return `<span>Grant location permission to enable this filter
-        <a target="_blank" href="https://www.google.com/search?q=allow+browser+to+access+location"> show me how.</a>
+      return `<span>Grant location permission to enable this filter.
+        <a target="_blank" href="https://www.google.com/search?q=allow+browser+to+access+location"> Show me how.</a>
       </span>`;
     }
   }).data("kendoTooltip");
