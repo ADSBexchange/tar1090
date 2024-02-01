@@ -435,3 +435,11 @@ th.k-sorted .k-column-title {
   color: #00596a;
   font-weight: bold;
 }
+
+.k-grid .k-grid-header .k-table-th {
+  border-color: rgb(203, 203, 203);
+}
+
+.k-tooltip-content a {
+  color: inherit;
+}

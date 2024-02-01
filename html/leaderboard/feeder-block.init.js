@@ -46,14 +46,25 @@ function fetchboardData() {
       renderboard();
       renderFilter();
       populateBoardStats(response.data.network_stats);
+      showDefaultFeederStats();
       setLoaderViewState(false);
       handleGeolocationPermission();
     },
     error: function (error) {
-      console.error('Error fetching feeder data:', error);
+      console.error('Error fetching feeder data:');
       $("#notification-section").getKendoNotification().show({ msg: `Error fetching feeder data` }, "error");
     }
   });
+}
+
+function showDefaultFeederStats() {
+  const topRankedFeeder = $("#feeder-grid")
+    .data("kendoGrid")
+    .dataSource
+    .at(0);
+  let searchInput = $("#feeder-search-input").data("kendoAutoComplete");
+  searchInput.value(topRankedFeeder.feeder_name);
+  onFilterChange();
 }
 
 function handleGeolocationPermission() {
@@ -121,18 +132,31 @@ function initializeFeederGrid() {
   $("#feeder-grid").kendoGrid({
     columns: [
       { field: "rank", title: "Rank", width: 80, attributes: { "data-field": "rank" } },
-      { field: "feeder_name", title: "Feeder Name", attributes: { "data-field": "feeder_name" } },
+      { field: "feeder_name", title: "Feeder Name", attributes: { "data-field": "feeder_name", style: "overflow-wrap: break-word;" } },
       { field: "country", title: "Country", attributes: { "data-field": "country" } },
-      { field: "score", title: "Score", width: 140, format: "{0:##,#}", attributes: { "data-field": "score" } },
-      { field: "uptime", title: "Uptime", width: 90, format: "{0}\%", attributes: { "data-field": "uptime" } },
-      { field: "avg_range", title: "Avg Coverage (SNM)", format: "{0:##,#}", attributes: { "data-field": "avg_range" } },
-      { field: "max_range", title: "Max Range (NM)", format: "{0:##,#}", attributes: { "data-field": "max_range" } },
-      { field: "position", title: "Positions", format: "{0:##,#}", attributes: { "data-field": "position" } },
-      { field: "aircraft_on_ground", title: "Aircraft on Ground", format: "{0:##,#}", attributes: { "data-field": "aircraft_on_ground" } },
-      { field: "total_aircraft", title: "Total Aircraft", format: "{0:##,#}", attributes: { "data-field": "total_aircraft" } },
-      { field: "unique_aircraft", title: "Unique Aircraft", format: "{0:##,#}", attributes: { "data-field": "unique_aircraft" } },
-      { field: "nearest_airport", title: "Nearest Airport (NM)", format: "{0:##,#}", attributes: { "data-field": "nearest_airport" } },
-      { field: "uniqueness", title: "Uniqueness", width: 100, format: "{0:n2}", attributes: { "data-field": "uniqueness" } }
+      { field: "score", title: "Score", width: 80, format: "{0:##,#}", attributes: { "data-field": "score" } },
+      {
+        title: "Hardware",
+        columns: [
+          { field: "uptime", title: "Uptime", width: 80, format: "{0}\%", attributes: { "data-field": "uptime" } },
+          { field: "avg_range", title: "Avg Coverage (SNM)", format: "{0:##,#}", attributes: { "data-field": "avg_range" } },
+          { field: "max_range", title: "Max Range (NM)", format: "{0:##,#}", attributes: { "data-field": "max_range" } },
+        ]
+      }, {
+        title: "Activity",
+        columns: [
+          { field: "position", title: "Positions", format: "{0:##,#}", attributes: { "data-field": "position" } },
+          { field: "aircraft_on_ground", title: "Aircraft on Ground", format: "{0:##,#}", attributes: { "data-field": "aircraft_on_ground" } },
+          { field: "total_aircraft", title: "Total Aircraft", format: "{0:##,#}", attributes: { "data-field": "total_aircraft" } },
+        ]
+      }, {
+        title: "Exchange",
+        columns: [
+          { field: "unique_aircraft", title: "Unique Aircraft", format: "{0:##,#}", attributes: { "data-field": "unique_aircraft" } },
+          { field: "nearest_airport", title: "Nearest Airport (NM)", format: "{0:##,#}", attributes: { "data-field": "nearest_airport" } },
+          { field: "uniqueness_pct", title: "Uniqueness", width: 110, format: "{0:n2}\%", attributes: { "data-field": "uniqueness" } }
+        ]
+      }
     ],
     sortable: {
       allowUnsort: false
@@ -141,7 +165,14 @@ function initializeFeederGrid() {
     scrollable: {
       endless: true
     },
-    height: 450
+    height: 450,
+    pageable: {
+      numeric: false,
+      previousNext: false,
+      messages: {
+        display: "Showing {0}-{1} of {2} feeders"
+      }
+    }
   });
 
   $("#feeder-grid").kendoTooltip({
@@ -370,6 +401,7 @@ function transformFeeder(feederArray) {
   const aircraft_total = feeder.get("aircraft_total");
   const aircraft_unique = feeder.get("aircraft_unique");
   const all_positions_stats = feeder.get("all_positions_stats");
+  const unique_positions_stats = feeder.get("unique_positions_stats");
   const uuid = feeder.get("uuid");
   const user = feeder.get("user");
   const country = feeder.get("country");
@@ -380,6 +412,7 @@ function transformFeeder(feederArray) {
   const max_range_nm = feeder.get("max_range_nm");
   const nearest_airport_nm = feeder.get("nearest_airport_nm");
   const uniqueness = feeder.get("uniqueness");
+  const uniqueness_pct = feeder.get("uniqueness_percentile");
   const feederUptime = uptime >= 100 ? 100 : uptime;
   const position = filterPositionStats
     ? all_positions_stats
@@ -416,7 +449,8 @@ function transformFeeder(feederArray) {
     total_aircraft: totalAircraft,
     unique_aircraft: uniqueAircraft,
     nearest_airport: nearest_airport_nm,
-    uniqueness: uniqueness
+    uniqueness: uniqueness,
+    uniqueness_pct: uniqueness_pct
   };
 }
 
@@ -590,7 +624,9 @@ function renderFilter() {
     filter: "span.k-disabled",
     position: "right",
     content: function (e) {
-      return "Grant location permission to enable this filter";
+      return `<span>Grant location permission to enable this filter
+        <a target="_blank" href="https://www.google.com/search?q=allow+browser+to+access+location"> show me how.</a>
+      </span>`;
     }
   }).data("kendoTooltip");
 
@@ -1011,7 +1047,7 @@ function populateFeederPercentile(feeder) {
   const recordCount = $("#feeder-grid")
     .data("kendoGrid")
     .dataSource
-    .data().length;
+    .total();
 
   const feederPercentile = ((recordCount - feeder.rank) / (recordCount - 1) * 100).toFixed(2);
   $("#feeder-percentile").text(`${feederPercentile}%`);
@@ -1272,17 +1308,17 @@ function generateSearchSummaryText(feeder_name) {
 }
 
 function populateCustomHeader() {
-  let grid = $("#feeder-grid").data("kendoGrid");
+  const grid = $("#feeder-grid").data("kendoGrid");
 
   grid.element.height(grid.options.height);
 
   if (filterState._filterContext && filterState._filterContext.foundFeeder) {
-    let feeder = filterState._filterContext.foundFeeder;
-    let pageSize = grid.dataSource.pageSize();
-    let pageNo = Math.ceil(feeder.rank / pageSize);
+    const feeder = filterState._filterContext.foundFeeder;
+    const pageSize = grid.dataSource.pageSize();
+    const pageNo = Math.ceil(feeder.rank / pageSize);
     grid.dataSource.page(pageNo);
 
-    let items = grid.items();
+    const items = grid.items();
     items.each(function () {
       let row = $(this);
       let dataItem = grid.dataItem(row);
@@ -1302,7 +1338,7 @@ function populateCustomHeader() {
       }
     })
   } else {
-    let customHeader = grid.element.find(".custom-header-row");
+    const customHeader = grid.element.find(".custom-header-row");
     if (customHeader) {
       customHeader.remove();
     }
@@ -1340,7 +1376,7 @@ function generateChartTooltip(seriesName, category, value) {
 }
 
 function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
-  var angleInRadians = (angleInDegrees) * Math.PI / 180.0;
+  const angleInRadians = (angleInDegrees) * Math.PI / 180.0;
 
   return {
     x: centerX + (radius * Math.cos(angleInRadians)),
@@ -1349,22 +1385,22 @@ function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
 }
 
 function Pie_CurvedEnds(e) {
-  var seg = e.createVisual();
+  const seg = e.createVisual();
 
-  var circRad = (e.radius - e.innerRadius) / 2;
-  var dist = e.innerRadius + circRad;
-  var spoint = polarToCartesian(e.center.x, e.center.y, dist, e.startAngle);
-  var epoint = polarToCartesian(e.center.x, e.center.y, dist, e.endAngle);
+  const circRad = (e.radius - e.innerRadius) / 2;
+  const dist = e.innerRadius + circRad;
+  const spoint = polarToCartesian(e.center.x, e.center.y, dist, e.startAngle);
+  const epoint = polarToCartesian(e.center.x, e.center.y, dist, e.endAngle);
 
-  var group = new kendo.drawing.Group();
+  const group = new kendo.drawing.Group();
   group.append(seg);
 
   if (lastChartSeriesColour != "none") {
-    var endArcGeometry = new kendo.geometry.Arc([spoint.x, spoint.y], {
+    const endArcGeometry = new kendo.geometry.Arc([spoint.x, spoint.y], {
       startAngle: 0, endAngle: 360, radiusX: circRad, radiusY: circRad
     });
 
-    var endArc = new kendo.drawing.Arc(endArcGeometry, {
+    const endArc = new kendo.drawing.Arc(endArcGeometry, {
       fill: { color: lastChartSeriesColour },
       stroke: { color: "none" }
     });
@@ -1373,10 +1409,10 @@ function Pie_CurvedEnds(e) {
   }
 
   //draw semi-circle at end of segment to allow for overlap at the top of the pie
-  var startArcGeometry = new kendo.geometry.Arc([epoint.x, epoint.y], {
+  const startArcGeometry = new kendo.geometry.Arc([epoint.x, epoint.y], {
     startAngle: 0, endAngle: 360, radiusX: circRad, radiusY: circRad
   });
-  var startArc = new kendo.drawing.Arc(startArcGeometry, {
+  const startArc = new kendo.drawing.Arc(startArcGeometry, {
     fill: { color: e.category === "disabled" ? lastChartSeriesColour : e.options.color },
     stroke: { color: "none" }
   });
