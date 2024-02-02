@@ -946,15 +946,28 @@ input{
   grid-area: speedHint;
 }
 
-#pmLink {        
-    visibility: hidden;               
-    text-decoration: none;        
-    cursor: pointer;        
-    background: transparent;        
-    border: none;    
+#privacy {
+    display: block;
+    align-items: center;
+    opacity: 0.5;
+    position: absolute;
+    bottom: calc( -10px * var(--SCALE));
+    left: calc(30px * var(--SCALE));
 }
-
-#pmLink:hover {        
-    visibility: visible;        
-    color: grey;    
-} 
+#pmLink {
+    visibility: hidden;
+    text-decoration: none;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    font-size: var(--FS2);
+}
+#pmLink:hover {
+    visibility: visible;
+    color: white;
+    opacity: 1;
+}
+/* removes empty line between browser ribbon and map */
+#adsbexchange_mobile_pushdown-pushdown-cls {
+    display: block!important;
+}
