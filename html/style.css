@@ -952,7 +952,8 @@ input{
     opacity: 0.5;
     position: absolute;
     bottom: calc( -10px * var(--SCALE));
-    left: calc(30px * var(--SCALE));
+    left: calc(20px * var(--SCALE));
+    white-space: nowrap;
 }
 #pmLink {
     visibility: hidden;
