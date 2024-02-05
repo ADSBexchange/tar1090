@@ -6008,17 +6008,16 @@ function updateAddressBar() {
         string = pathName + string;
     }
 
-    // Update URL bar
-    /*
+    // Update URL bar not frequently than once per second
+    const ONE_SECOND_IN_MS = 1000;
     let time = new Date().getTime();
-    if (time < lastAddressBarUpdate + 200) {
+    if (time < lastAddressBarUpdate + ONE_SECOND_IN_MS) {
         clearTimeout(updateAddressBarTimeout);
-        updateAddressBarTimeout = setTimeout(updateAddressBar, 205);
+        updateAddressBarTimeout = setTimeout(updateAddressBar, ONE_SECOND_IN_MS + 5);
         return;
     }
 
     lastAddressBarUpdate = time;
-    */
 
     if (!updateAddressBarPushed) {
         // make sure we keep the thing we clicked on first in the browser history
@@ -6215,7 +6214,6 @@ function legShift(offset, plane) {
     traceOpts.legStart = legStart;
     traceOpts.legEnd = legEnd;
     plane.processTrace();
-
     updateAddressBar();
 }
 
