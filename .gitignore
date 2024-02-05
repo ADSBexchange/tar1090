@@ -365,3 +365,5 @@ FodyWeavers.xsd
 html/libs/kendo-ui-license.js
 html/leaderboard/feeder-vars.js
 html/flight-activity/api.js
+
+scripts/
