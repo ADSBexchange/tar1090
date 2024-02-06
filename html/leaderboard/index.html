@@ -104,8 +104,7 @@
             <div class="search-result">
                 <span id="search-text-summary">Showing results for
                     <span id="selected-feeder"></span>
-                    <span id="filter-summary-pretext"> with filters </span>
-                    <span id="filter-summary-text"></span>
+                    <span id="filter-summary-pretext"> with filters <span id="filter-summary-text"></span></span>
                 </span>
                 <div class="search-hint-w">
                     <div class="search-hint">
@@ -149,8 +148,8 @@
                         <span>Based on the filter critera you have selected,</span>
                         <h1>This feeder is out-performing <span id="feeder-percentile">--</span> of others</h1>
                         <span>
-                            Ready to improve your feeder? Inspect a feeder and click on each of the rings for tips
-                            on how to improve each dimension so you can be at the top of the leaderboard
+                            Ready to improve your feeder? Inspect a feeder and hover on each of the rings for tips
+                            on how to improve each dimension so you can be at the top of the leaderboard.
                         </span>
                     </div>
                 </div>
@@ -176,7 +175,7 @@
                         <select id="modeselect"></select>
                     </div>
                     <div class="data-grid-filter-item" id="distance-select-w">
-                        <select id="distanceselect"></select>
+                        <select id="distanceselect" style="width: 180px;"></select>
                     </div>
                 </div>
             </div>
@@ -205,7 +204,7 @@
 
     <!-- JS_ANCHOR3 -->
     <script src="feeder-vars.js"></script>
-    <script src="feeder-block.functions.js"></script>
+    <script src="feeder-block.model.js"></script>
     <script src="feeder-block.init.js"></script>
 
     <!-- Google tag (gtag.js) -->

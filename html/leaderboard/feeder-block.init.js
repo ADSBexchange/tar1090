@@ -154,7 +154,7 @@ function initializeFeederGrid() {
         columns: [
           { field: "unique_aircraft", title: "Unique Aircraft", format: "{0:##,#}", attributes: { "data-field": "unique_aircraft" } },
           { field: "nearest_airport", title: "Nearest Airport (NM)", format: "{0:##,#}", attributes: { "data-field": "nearest_airport" } },
-          { field: "uniqueness_pct", title: "Uniqueness", width: 110, format: "{0:n2}\%", attributes: { "data-field": "uniqueness" } }
+          { field: "uniqueness_pct", title: "Uniqueness", width: 110, format: "{0}\%", attributes: { "data-field": "uniqueness" } }
         ]
       }
     ],
@@ -163,7 +163,7 @@ function initializeFeederGrid() {
     },
     selectable: "row",
     scrollable: {
-      endless: true
+      virtual: true
     },
     height: 450,
     pageable: {
@@ -294,7 +294,8 @@ function filterbyFeederName(data, filterState) {
   if (filterState.feeder_name) {
     let searchedFeeder = data.find(feederArray => {
       const feeder = new Feeder(feederArray, schema);
-      return feeder.get("user").toLowerCase() === filterState.feeder_name.toLowerCase();
+      return feeder.get("user").toLowerCase() === filterState.feeder_name.toLowerCase()
+        || (feeder.get("sid") && feeder.get("sid").toLowerCase() === filterState.feeder_name.toLowerCase());
     });
     if (searchedFeeder) {
       filterState._filterContext = { foundFeeder: transformFeeder(searchedFeeder) };
@@ -350,8 +351,13 @@ function filterByAircraftType(data, filterState) {
 
 function filterBySignalType(data, filterState) {
   if (filterState.signal_type.length > 0) {
+    const signalTypeIndex = getSignalTypeIndex("signal_type");
     data = data.filter(feeder => {
       const all_positions_stats = new Feeder(feeder, schema).get("all_positions_stats");
+      return all_positions_stats.some(stat =>
+        filterState.signal_type
+          .some(type => getSignalTypeIndexFromFriendlyName(type) === stat[signalTypeIndex]));
+
       return all_positions_stats.some(stat => filterState.signal_type.some(type => {
         const positionStat = new PositionStat("all_positions_stats", stat, schema);
         return type.toLowerCase() === positionStat.get("signal_type").toLowerCase();
@@ -359,6 +365,17 @@ function filterBySignalType(data, filterState) {
     });
   }
   return data;
+}
+
+function getSignalTypeIndexFromFriendlyName(signalTypeFriendlyName) {
+  const friendlyNameMap = schema[".all_positions_stats.signal_type._friendly_name_map"];
+  const valueMap = schema[".all_positions_stats.signal_type._value_map"];
+  const value = Object.keys(friendlyNameMap).find(key => friendlyNameMap[key] === signalTypeFriendlyName);
+  return valueMap[value];
+}
+
+function getSignalTypeIndex() {
+  return schema[".all_positions_stats._schema_index"]["signal_type"];
 }
 
 function filterByDistance(data, filterState) {
@@ -377,8 +394,8 @@ function isWithinDistance(lat, lon, distance) {
   // Convert latitude and longitude to radians
   const lat1 = (Math.PI / 180) * lat;
   const lon1 = (Math.PI / 180) * lon;
-  const lat2 = (Math.PI / 180) * userLat;
-  const lon2 = (Math.PI / 180) * userLong;
+  const lat2 = (Math.PI / 180) * userPosition.userLat;
+  const lon2 = (Math.PI / 180) * userPosition.userLong;
 
   // Calculate the distance between the two positions using the Haversine formula
   const dLat = lat2 - lat1;
@@ -413,6 +430,7 @@ function transformFeeder(feederArray) {
   const nearest_airport_nm = feeder.get("nearest_airport_nm");
   const uniqueness = feeder.get("uniqueness");
   const uniqueness_pct = feeder.get("uniqueness_percentile");
+  const feederUniqueness = uniqueness_pct >= 100 ? 100 : uniqueness_pct;
   const feederUptime = uptime >= 100 ? 100 : uptime;
   const position = filterPositionStats
     ? all_positions_stats
@@ -450,7 +468,7 @@ function transformFeeder(feederArray) {
     unique_aircraft: uniqueAircraft,
     nearest_airport: nearest_airport_nm,
     uniqueness: uniqueness,
-    uniqueness_pct: uniqueness_pct
+    uniqueness_pct: feederUniqueness
   };
 }
 
@@ -602,7 +620,7 @@ function renderFilter() {
     tagTemplate: kendo.template($("#tagTemplate").html()),
   });
   $("#distanceselect").kendoDropDownList({
-    optionLabel: "Distance",
+    optionLabel: "Distance from You (NM)",
     adaptiveMode: "auto",
     autoBind: false,
     fillMode: "outline",
@@ -938,7 +956,7 @@ function calculateBoardMaxValues(feederlist) {
     maxTotalAircraft = Math.max(maxTotalAircraft, feeder.total_aircraft);
     maxUniqueAircraft = Math.max(maxUniqueAircraft, feeder.unique_aircraft);
     maxNearestAirport = Math.max(maxNearestAirport, feeder.nearest_airport);
-    maxUniqueness = Math.max(maxUniqueness, feeder.uniqueness);
+    maxUniqueness = Math.max(maxUniqueness, feeder.uniqueness_pct);
   });
 }
 
@@ -1049,7 +1067,7 @@ function populateFeederPercentile(feeder) {
     .dataSource
     .total();
 
-  const feederPercentile = ((recordCount - feeder.rank) / (recordCount - 1) * 100).toFixed(2);
+  const feederPercentile = parseFloat(((recordCount - feeder.rank) / (recordCount - 1) * 100).toFixed(2));
   $("#feeder-percentile").text(`${feederPercentile}%`);
 }
 
@@ -1086,7 +1104,7 @@ function getNearestAirportScore(feeder) {
 }
 
 function getUniquenessScore(feeder) {
-  return +(feeder.uniqueness / maxUniqueness * 100).toFixed(2);
+  return +(feeder.uniqueness_pct / maxUniqueness * 100).toFixed(2);
 }
 
 function renderFeederSection() {
@@ -1337,6 +1355,8 @@ function populateCustomHeader() {
         thead.append(item);
       }
     })
+    // get the page header and append it to the grid
+    grid.dataSource.page(1);
   } else {
     const customHeader = grid.element.find(".custom-header-row");
     if (customHeader) {
@@ -1385,6 +1405,64 @@ function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
 }
 
 function Pie_CurvedEnds(e) {
+  // var seg = e.createVisual(); //get original segment geometry
+
+  // var circRad = (e.radius - e.innerRadius) / 2; //end cap radius
+  // var dist = e.innerRadius + circRad;
+  // var spoint = polarToCartesian(
+  //   e.center.x,
+  //   e.center.y,
+  //   dist,
+  //   e.startAngle
+  // );
+  // var epoint = polarToCartesian(
+  //   e.center.x,
+  //   e.center.y,
+  //   dist,
+  //   e.endAngle
+  // );
+
+  // //draw circle at start of segment
+  // var startArcGeometry = new kendo.geometry.Arc([spoint.x, spoint.y], {
+  //   startAngle: 0,
+  //   endAngle: 360,
+  //   radiusX: circRad,
+  //   radiusY: circRad,
+  //   center: e.center,
+  // });
+  // var startArc = new kendo.drawing.Arc(startArcGeometry, {
+  //   fill: { color: e.options.color },
+  //   stroke: { color: 'none' },
+  // });
+
+  // var group = new kendo.drawing.Group();
+  // group.append(seg, startArc);
+
+  // //for last item draw circle at end of segment in color of first item
+  // var lastItem = e.series.data[e.series.data.length - 1];
+  // if (lastItem.category == e.category) {
+  //   var firstItem = e.series.data[0];
+  //   console.log(firstItem.color);
+
+  //   var endArcGeometry = new kendo.geometry.Arc([epoint.x, epoint.y], {
+  //     startAngle: 0,
+  //     endAngle: 360,
+  //     radiusX: circRad,
+  //     radiusY: circRad,
+  //     center: e.center,
+  //   });
+
+  //   var endArc = new kendo.drawing.Arc(endArcGeometry, {
+  //     fill: { color: firstItem.color },
+  //     stroke: { color: 'none' },
+  //   });
+
+  //   group.append(endArc);
+  // }
+
+  // return group;
+
+
   const seg = e.createVisual();
 
   const circRad = (e.radius - e.innerRadius) / 2;
@@ -1392,8 +1470,34 @@ function Pie_CurvedEnds(e) {
   const spoint = polarToCartesian(e.center.x, e.center.y, dist, e.startAngle);
   const epoint = polarToCartesian(e.center.x, e.center.y, dist, e.endAngle);
 
-  const group = new kendo.drawing.Group();
+  let group = new kendo.drawing.Group();
   group.append(seg);
+
+  // if (e.category != 'disabled') {
+  //   console.log('category is not disabled and color is', e.category, e.options.color);
+  //   let endArcGeometry = new kendo.geometry.Arc([spoint.x, spoint.y], {
+  //     startAngle: 90, endAngle: 360, radiusX: circRad, radiusY: circRad
+  //   });
+
+  //   let endArc = new kendo.drawing.Arc(endArcGeometry, {
+  //     fill: { color: e.options.color },
+  //     stroke: { color: "none" }
+  //   });
+
+  //   group.append(endArc);
+
+
+  //   let startArcGeometry = new kendo.geometry.Arc([epoint.x, epoint.y], {
+  //     startAngle: 0, endAngle: 360, radiusX: circRad, radiusY: circRad
+  //   });
+  //   let startArc = new kendo.drawing.Arc(startArcGeometry, {
+  //     fill: { color: e.options.color },
+  //     stroke: { color: "none" }
+  //   });
+  //   group.append(startArc);
+  // }
+
+  // return group;
 
   if (lastChartSeriesColour != "none") {
     const endArcGeometry = new kendo.geometry.Arc([spoint.x, spoint.y], {
@@ -1408,7 +1512,7 @@ function Pie_CurvedEnds(e) {
     group.append(endArc);
   }
 
-  //draw semi-circle at end of segment to allow for overlap at the top of the pie
+  // draw semi-circle at end of segment to allow for overlap at the top of the pie
   const startArcGeometry = new kendo.geometry.Arc([epoint.x, epoint.y], {
     startAngle: 0, endAngle: 360, radiusX: circRad, radiusY: circRad
   });
@@ -1420,4 +1524,5 @@ function Pie_CurvedEnds(e) {
 
   lastChartSeriesColour = e.category === "disabled" ? "none" : e.options.color;
   return group;
-};
+}
+
