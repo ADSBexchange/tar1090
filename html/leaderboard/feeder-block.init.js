@@ -857,33 +857,43 @@ function renderFeederSection() {
 }
 
 function renderFeederImpactCharts(feeder) {
-  let hardwareChart = $("#hardware-chart").data("kendoChart");
+  const hardwareChart = $("#hardware-chart").data("kendoChart");
+  const uptimeScore = getUptimeScore(feeder);
+  const avgRangeScore = getAvgRangeScore(feeder);
+  const maxRangeScore = getMaxRangeScore(feeder);
+  const positionScore = getPositionScore(feeder);
+  const aircraftOnGroundScore = getAircraftOnGroundScore(feeder);
+  const totalAircraftScore = getTotalAircraftScore(feeder);
+  const uniqueAircraftScore = getUniqueAircraftScore(feeder);
+  const nearestAirportScore = getNearestAirportScore(feeder);
+  const uniquenessScore = getUniquenessScore(feeder);
   hardwareChart.options.series = [
     {
       name: "Uptime",
+      startAngle: 90 + (uptimeScore * 3.6),
       data: [
         {
+          category: "disabled",
+          value: (100 - uptimeScore).toFixed(2),
+          color: "#b3f2ff"
+        }, {
           category: "Uptime",
-          value: getUptimeScore(feeder),
+          value: uptimeScore,
           color: "#00596a"
         },
-        {
-          category: "disabled",
-          value: (100 - getUptimeScore(feeder)).toFixed(2),
-          color: "#b3f2ff"
-        }
       ]
     }, {
       name: "Average Coverage",
+      startAngle: 90 + (avgRangeScore * 3.6),
       data: [
         {
-          category: "Feeder Percentile",
-          value: getAvgRangeScore(feeder),
-          color: "#61bac9"
-        }, {
           category: "disabled",
-          value: (100 - getAvgRangeScore(feeder)).toFixed(2),
+          value: (100 - avgRangeScore).toFixed(2),
           color: "#ecf7f8"
+        }, {
+          category: "Feeder Percentile",
+          value: avgRangeScore,
+          color: "#61bac9"
         }
       ],
       labels: {
@@ -891,15 +901,16 @@ function renderFeederImpactCharts(feeder) {
       }
     }, {
       name: "Maximum Range",
+      startAngle: 90 + (maxRangeScore * 3.6),
       data: [
         {
-          category: "Feeder Percentile",
-          value: getMaxRangeScore(feeder),
-          color: "#9d1edd"
-        }, {
           category: "disabled",
-          value: (100 - getMaxRangeScore(feeder)).toFixed(2),
+          value: (100 - maxRangeScore).toFixed(2),
           color: "#ecd2f9"
+        }, {
+          category: "Feeder Percentile",
+          value: maxRangeScore,
+          color: "#9d1edd"
         }
       ],
       labels: {
@@ -912,31 +923,31 @@ function renderFeederImpactCharts(feeder) {
   activityChart.options.series = [
     {
       name: "Position",
+      startAngle: 90 + (positionScore * 3.6),
       data: [
         {
-          category: "Feeder Percentile",
-          value: getPositionScore(feeder),
-          color: "#00596a"
-        },
-        {
           category: "disabled",
-          value: (100 - getPositionScore(feeder)).toFixed(2),
+          value: (100 - positionScore).toFixed(2),
           color: "#b3f2ff"
+        }, {
+          category: "Feeder Percentile",
+          value: positionScore,
+          color: "#00596a"
         }
       ]
     },
     {
       name: "Aircraft on Ground",
+      startAngle: 90 + (aircraftOnGroundScore * 3.6),
       data: [
         {
-          category: "Feeder Percentile",
-          value: getAircraftOnGroundScore(feeder),
-          color: "#61bac9"
-        },
-        {
           category: "disabled",
-          value: (100 - getAircraftOnGroundScore(feeder)).toFixed(2),
+          value: (100 - aircraftOnGroundScore).toFixed(2),
           color: "#ecf7f8"
+        }, {
+          category: "Feeder Percentile",
+          value: aircraftOnGroundScore,
+          color: "#61bac9"
         }
       ],
       labels: {
@@ -944,15 +955,16 @@ function renderFeederImpactCharts(feeder) {
       }
     }, {
       name: "Total Aircraft",
+      startAngle: 90 + (totalAircraftScore * 3.6),
       data: [
         {
-          category: "Feeder Percentile",
-          value: getTotalAircraftScore(feeder),
-          color: "#9d1edd"
-        }, {
           category: "disabled",
-          value: (100 - getTotalAircraftScore(feeder)).toFixed(2),
+          value: (100 - totalAircraftScore).toFixed(2),
           color: "#ecd2f9"
+        }, {
+          category: "Feeder Percentile",
+          value: totalAircraftScore,
+          color: "#9d1edd"
         }
       ],
       labels: {
@@ -967,31 +979,31 @@ function renderFeederImpactCharts(feeder) {
   exchangeChart.options.series = [
     {
       name: "Unique Aircraft",
+      startAngle: 90 + (uniqueAircraftScore * 3.6),
       data: [
         {
-          category: "Feeder Percentile",
-          value: getUniqueAircraftScore(feeder),
-          color: "#00596a"
-        },
-        {
           category: "disabled",
-          value: (100 - getUniqueAircraftScore(feeder)).toFixed(2),
+          value: (100 - uniqueAircraftScore).toFixed(2),
           color: "#b3f2ff"
+        }, {
+          category: "Feeder Percentile",
+          value: uniqueAircraftScore,
+          color: "#00596a"
         }
       ]
     },
     {
       name: "Nearest Airport",
+      startAngle: 90 + (nearestAirportScore * 3.6),
       data: [
         {
-          category: "Feeder Percentile",
-          value: getNearestAirportScore(feeder),
-          color: "#61bac9"
-        },
-        {
           category: "disabled",
-          value: (100 - getNearestAirportScore(feeder)).toFixed(2),
+          value: (100 - nearestAirportScore).toFixed(2),
           color: "#ecf7f8"
+        }, {
+          category: "Feeder Percentile",
+          value: nearestAirportScore,
+          color: "#61bac9"
         }
       ],
       labels: {
@@ -1000,15 +1012,16 @@ function renderFeederImpactCharts(feeder) {
     },
     {
       name: "Uniqueness",
+      startAngle: 90 + (uniquenessScore * 3.6),
       data: [
         {
-          category: "Feeder Percentile",
-          value: getUniquenessScore(feeder),
-          color: "#9d1edd"
-        }, {
           category: "disabled",
-          value: (100 - getUniquenessScore(feeder)).toFixed(2),
+          value: (100 - uniquenessScore).toFixed(2),
           color: "#ecd2f9"
+        }, {
+          category: "Feeder Percentile",
+          value: uniquenessScore,
+          color: "#9d1edd"
         }
       ],
       labels: {
@@ -1141,64 +1154,6 @@ function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
 }
 
 function Pie_CurvedEnds(e) {
-  // var seg = e.createVisual(); //get original segment geometry
-
-  // var circRad = (e.radius - e.innerRadius) / 2; //end cap radius
-  // var dist = e.innerRadius + circRad;
-  // var spoint = polarToCartesian(
-  //   e.center.x,
-  //   e.center.y,
-  //   dist,
-  //   e.startAngle
-  // );
-  // var epoint = polarToCartesian(
-  //   e.center.x,
-  //   e.center.y,
-  //   dist,
-  //   e.endAngle
-  // );
-
-  // //draw circle at start of segment
-  // var startArcGeometry = new kendo.geometry.Arc([spoint.x, spoint.y], {
-  //   startAngle: 0,
-  //   endAngle: 360,
-  //   radiusX: circRad,
-  //   radiusY: circRad,
-  //   center: e.center,
-  // });
-  // var startArc = new kendo.drawing.Arc(startArcGeometry, {
-  //   fill: { color: e.options.color },
-  //   stroke: { color: 'none' },
-  // });
-
-  // var group = new kendo.drawing.Group();
-  // group.append(seg, startArc);
-
-  // //for last item draw circle at end of segment in color of first item
-  // var lastItem = e.series.data[e.series.data.length - 1];
-  // if (lastItem.category == e.category) {
-  //   var firstItem = e.series.data[0];
-  //   console.log(firstItem.color);
-
-  //   var endArcGeometry = new kendo.geometry.Arc([epoint.x, epoint.y], {
-  //     startAngle: 0,
-  //     endAngle: 360,
-  //     radiusX: circRad,
-  //     radiusY: circRad,
-  //     center: e.center,
-  //   });
-
-  //   var endArc = new kendo.drawing.Arc(endArcGeometry, {
-  //     fill: { color: firstItem.color },
-  //     stroke: { color: 'none' },
-  //   });
-
-  //   group.append(endArc);
-  // }
-
-  // return group;
-
-
   const seg = e.createVisual();
 
   const circRad = (e.radius - e.innerRadius) / 2;
@@ -1209,39 +1164,13 @@ function Pie_CurvedEnds(e) {
   let group = new kendo.drawing.Group();
   group.append(seg);
 
-  // if (e.category != 'disabled') {
-  //   console.log('category is not disabled and color is', e.category, e.options.color);
-  //   let endArcGeometry = new kendo.geometry.Arc([spoint.x, spoint.y], {
-  //     startAngle: 90, endAngle: 360, radiusX: circRad, radiusY: circRad
-  //   });
-
-  //   let endArc = new kendo.drawing.Arc(endArcGeometry, {
-  //     fill: { color: e.options.color },
-  //     stroke: { color: "none" }
-  //   });
-
-  //   group.append(endArc);
-
-
-  //   let startArcGeometry = new kendo.geometry.Arc([epoint.x, epoint.y], {
-  //     startAngle: 0, endAngle: 360, radiusX: circRad, radiusY: circRad
-  //   });
-  //   let startArc = new kendo.drawing.Arc(startArcGeometry, {
-  //     fill: { color: e.options.color },
-  //     stroke: { color: "none" }
-  //   });
-  //   group.append(startArc);
-  // }
-
-  // return group;
-
   if (lastChartSeriesColour != "none") {
     const endArcGeometry = new kendo.geometry.Arc([spoint.x, spoint.y], {
       startAngle: 0, endAngle: 360, radiusX: circRad, radiusY: circRad
     });
 
     const endArc = new kendo.drawing.Arc(endArcGeometry, {
-      fill: { color: lastChartSeriesColour },
+      fill: { color: e.options.color },
       stroke: { color: "none" }
     });
 
@@ -1258,7 +1187,7 @@ function Pie_CurvedEnds(e) {
   });
   group.append(startArc);
 
-  lastChartSeriesColour = e.category === "disabled" ? "none" : e.options.color;
+  lastChartSeriesColour = e.category != "disabled" ? "none" : e.options.color;
   return group;
 }
 

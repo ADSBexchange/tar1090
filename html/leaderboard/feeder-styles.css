@@ -97,17 +97,18 @@
 }
 
 /*Search block text*/
-.search-block .search-input .search-hint {
+.search-hint {
   /*Search block hint text container*/
   margin-top: 5px;
   align-self: center;
   color: #6e6e6e;
-}
-
-.search-block .search-input .search-hint div {
-  /*Search block hint text*/
-  width: 150px;
-  font-size: 10px;
+  
+  div {
+    /*Search block hint text*/
+    width: 150px;
+    font-size: 15px;
+    color: #878686
+  }
 }
 
 .search-block .search-input .search-text-input {
@@ -363,7 +364,7 @@
   margin-right: 4px;
   padding: 4px 6px;
   color: #fff;
-  background-color: yellowgreen;
+  background-color: #76cd8e;
   border-radius: 50%;
   font-size: 11px;
   line-height: 10px;
