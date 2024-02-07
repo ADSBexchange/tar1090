@@ -554,6 +554,12 @@ function initializeFeederChart() {
       type: "donut",
       holeSize: 30,
       startAngle: 90,
+      highlight: {
+        border: {
+          opacity: 0
+        },
+        opacity: 0
+      },
       overlay: {
         gradient: "none"
       },
@@ -610,6 +616,12 @@ function initializeFeederChart() {
       holeSize: 30,
       margin: 2,
       startAngle: 90,
+      highlight: {
+        border: {
+          opacity: 0
+        },
+        opacity: 0
+      },
       overlay: {
         gradient: "none"
       },
@@ -664,6 +676,12 @@ function initializeFeederChart() {
       holeSize: 30,
       margin: 2,
       startAngle: 90,
+      highlight: {
+        border: {
+          opacity: 0
+        },
+        opacity: 0
+      },
       overlay: {
         gradient: "none"
       },
@@ -836,7 +854,7 @@ function getUniqueAircraftScore(feeder) {
 }
 
 function getNearestAirportScore(feeder) {
-  return +(feeder.nearest_airport / maxNearestAirport * 100).toFixed(2);
+  return +((1 - (feeder.nearest_airport / maxNearestAirport)) * 100).toFixed(2);
 }
 
 function getUniquenessScore(feeder) {
@@ -917,7 +935,7 @@ function renderFeederImpactCharts(feeder) {
         visible: false
       }
     },];
-  hardwareAvg = Math.ceil((getMaxRangeScore(feeder) + getAvgRangeScore(feeder) + getUptimeScore(feeder)) / 3);
+  hardwareAvg = Math.ceil((maxRangeScore + avgRangeScore + uptimeScore) / 3);
   hardwareChart.refresh();
   let activityChart = $("#activity-chart").data("kendoChart");
   activityChart.options.series = [
@@ -973,7 +991,7 @@ function renderFeederImpactCharts(feeder) {
     }
 
   ]
-  activityAvg = Math.ceil((getPositionScore(feeder) + getAircraftOnGroundScore(feeder) + getTotalAircraftScore(feeder)) / 3);
+  activityAvg = Math.ceil((positionScore + aircraftOnGroundScore + totalAircraftScore) / 3);
   activityChart.refresh();
   let exchangeChart = $("#exchange-chart").data("kendoChart")
   exchangeChart.options.series = [
@@ -1028,7 +1046,7 @@ function renderFeederImpactCharts(feeder) {
         visible: false
       }
     }];
-  exchangeAvg = Math.ceil((getUniqueAircraftScore(feeder) + getNearestAirportScore(feeder) + getUniquenessScore(feeder)) / 3);
+  exchangeAvg = Math.ceil((uniqueAircraftScore + nearestAirportScore + uniquenessScore) / 3);
   exchangeChart.refresh();
   $("#rank-chart").data("kendoChart").refresh();
 }
