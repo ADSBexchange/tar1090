@@ -768,8 +768,8 @@ function initializeFeederChart() {
 function calculateBoardMaxValues(feederlist) {
   feederlist.forEach((feeder) => {
     maxUptime = Math.max(maxUptime, feeder.uptime);
-    maxAvgRange = Math.max(maxRange, feeder.avg_range);
-    maxRange = Math.max(maxAvgRange, feeder.max_range);
+    maxAvgRange = Math.max(maxAvgRange, feeder.avg_range);
+    maxRange = Math.max(maxRange, feeder.max_range);
     maxPosition = Math.max(maxPosition, feeder.position);
     maxAircraftOnGround = Math.max(maxAircraftOnGround, feeder.aircraft_on_ground);
     maxTotalAircraft = Math.max(maxTotalAircraft, feeder.total_aircraft);
