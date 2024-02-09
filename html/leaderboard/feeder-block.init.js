@@ -156,8 +156,11 @@ function initializeFeederGrid() {
       numeric: false,
       previousNext: false,
       messages: {
-        display: "Showing {0}-{1} of {2} feeders"
+        display: "Showing {2} feeders"
       }
+    },
+    sort: function (e) {
+      e.sender.dataSource.page(1);
     }
   });
 
@@ -232,9 +235,15 @@ function fetchHeaderTooltipContent(headerName) {
     case "Unique Aircraft":
       return "The total unique aircraft a receiver observed. i.e. when a receiver captures the position of an aircraft that no other receiver observed.";
     case "Nearest Airport (NM)":
-      return "The GCD between the receiver and the nearest airport."
+      return "The GCD between the receiver and the nearest airport.";
     case "Uniqueness":
-      return "The number of receivers in your 100NM range relative to others."
+      return "The number of receivers in your 100NM range relative to others.";
+    case "Hardware":
+      return "Optimal setup of your hardware will maximize your opportunity to receive transmissions.";
+    case "Activity":
+      return "Aircraft activity is the cornerstone of what drives many of us to become feeders.";
+    case "Exchange":
+      return "Contributing unique data helps the community see a more complete picture of global aircraft activity.";
     default:
       return headerName;
   }
@@ -350,33 +359,46 @@ function setGridDataSources(feederlist) {
 }
 
 function renderFilter() {
-  let regionDataSource = new kendo.data.DataSource({
-    data: regions
-  });
+  // let regionDataSource = new kendo.data.DataSource({
+  //   data: regions
+  // });
   let countriesDataSource = new kendo.data.DataSource({
-    data: countries
+    data: countries,
+    group: {
+      field: "region",
+      compare: function (a, b) {
+        if (a.value === 'Popular') {
+          return -1;
+        } else if (a.value === 'Others') {
+          return 1;
+        } else if (b.value === 'Others') {
+          return -1;
+        }
+        return a.value.localeCompare(b.value);
+      }
+    }
   });
   let citiesDataSource = new kendo.data.DataSource({
     data: cities,
     group: { field: "state" }
   });
-  $("#regionselect").kendoMultiSelect({
-    placeholder: "Region",
-    rounded: "medium",
-    autoBind: false,
-    autoClose: false,
-    dataSource: regionDataSource,
-    dataTextField: "region",
-    dataValueField: "region",
-    tagMode: "single",
-    tagTemplate: kendo.template($("#tagTemplate").html()),
-    change: function () {
-      toggleFilterState();
-      let filters = buildFilters(this.dataItems(), "region");
-      countriesDataSource.filter(filters);
-      onFilterChange();
-    }
-  });
+  // $("#regionselect").kendoMultiSelect({
+  //   placeholder: "Region",
+  //   rounded: "medium",
+  //   autoBind: false,
+  //   autoClose: false,
+  //   dataSource: regionDataSource,
+  //   dataTextField: "region",
+  //   dataValueField: "region",
+  //   tagMode: "single",
+  //   tagTemplate: kendo.template($("#tagTemplate").html()),
+  //   change: function () {
+  //     toggleFilterState();
+  //     let filters = buildFilters(this.dataItems(), "region");
+  //     countriesDataSource.filter(filters);
+  //     onFilterChange();
+  //   }
+  // });
 
   $("#countryselect").kendoMultiSelect({
     placeholder: "Country",
@@ -388,7 +410,6 @@ function renderFilter() {
     dataTextField: "country",
     tagMode: "single",
     tagTemplate: kendo.template($("#tagTemplate").html()),
-    enable: false,
     change: function () {
       toggleFilterState();
       let filters = buildFilters(this.dataItems(), "country");
@@ -465,12 +486,17 @@ function renderFilter() {
 }
 
 function toggleFilterState() {
-  let region = $("#regionselect").val();
-  let country = $("#countryselect").val();
+  const country = $("#countryselect").val();
+  const ms = $("#municipalityselect").data("kendoMultiSelect");
 
-  $("#countryselect").data("kendoMultiSelect").enable(region.length > 0);
-  $("#municipalityselect").data("kendoMultiSelect").enable(country.length > 0);
+  if (country.length > 0) {
+    ms.enable(true);
+  } else {
+    ms.value([]);
+    ms.enable(false);
+  }
   $(".k-list-scroller").delegate(".k-list-item-group-label", "click", multiSelectGroupClick);
+  // $("#municipalityselect_listbox").delegate(".k-list-item-group-label", "click", multiSelectGroupClick);
 }
 
 function multiSelectGroupClick() {
@@ -508,7 +534,7 @@ function buildFilters(dataItems, selector) {
 }
 
 function onFilterChange() {
-  let region = $("#regionselect").val();
+  // let region = $("#regionselect").val();
   let country = $("#countryselect").val();
   let city = $("#municipalityselect").val();
   let aircraftType = $("#aircraftselect").val();
@@ -517,9 +543,9 @@ function onFilterChange() {
   let feederSearchInput = $('#feeder-search-input').val();
 
   resetFilterState();
-  if (region.length > 0) {
-    filterState.region = region;
-  }
+  // if (region.length > 0) {
+  //   filterState.region = region;
+  // }
 
   if (country.length > 0) {
     filterState.country = country;

@@ -1,7 +1,6 @@
 let boardData = [];
 let schema = null;
 let countries = []
-let regions = [];
 let cities = [];
 let aircraftTypes = [];
 let signalTypes = [];
@@ -20,7 +19,6 @@ function handleDataResponse(response) {
 
 function getGeoInfoList(feederlist) {
     let distinctCountries = new Set();
-    let distinctRegions = new Set();
     let distinctCities = new Set();
     let distinctAircraftTypes = new Set();
     let distinctSignalTypes = new Set();
@@ -32,15 +30,13 @@ function getGeoInfoList(feederlist) {
         const city = feeder.get("city");
         const state = feeder.get("state");
         const all_positions_stats = feeder.get("all_positions_stats");
+        const feederRegion = region && region.trim() !== "" ? region : "Others";
 
         if (country && country.trim() !== "") {
-            distinctCountries.add({ region: region, country: country });
-        }
-        if (region && region.trim() !== "") {
-            distinctRegions.add({ region: region });
+            distinctCountries.add({ region: feederRegion, country: country });
         }
         if (city && city.trim() !== "") {
-            distinctCities.add({ city: city, region: region, country: country, state: state });
+            distinctCities.add({ city: city, region: feederRegion, country: country, state: state });
         }
         all_positions_stats.forEach((statsArray) => {
             const stats = new PositionStat("all_positions_stats", statsArray, schema);
@@ -53,14 +49,6 @@ function getGeoInfoList(feederlist) {
             distinctSignalTypes.add(signal_type);
         });
     });
-
-    distinctRegions = Array.from(distinctRegions).reduce((acc, curr) => {
-        const existingRegion = acc.find(region => region.region === curr.region);
-        if (!existingRegion) {
-            acc.push(curr);
-        }
-        return acc;
-    }, []);
 
     distinctCountries = Array.from(distinctCountries).reduce((acc, curr) => {
         const existingCountry = acc.find(country => country.region === curr.region && country.country === curr.country);
@@ -78,7 +66,7 @@ function getGeoInfoList(feederlist) {
         return acc;
     }, []);
     countries = Array.from(distinctCountries).sort((a, b) => a.country.localeCompare(b.country));
-    regions = Array.from(distinctRegions).sort((a, b) => a.region.localeCompare(b.region));
+    countries.unshift({ region: "Popular", country: "United States" });
     cities = Array.from(distinctCities).sort((a, b) => a.city.localeCompare(b.city));
     aircraftTypes = Array.from(distinctAircraftTypes).sort();
     signalTypes = Array.from(distinctSignalTypes).sort();
