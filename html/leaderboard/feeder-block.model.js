@@ -3,7 +3,6 @@ class Feeder {
   schema = null;
 
   constructor(feederArray, schema) {
-    console
     this.feeder = feederArray;
     this.schema = schema;
   }
@@ -31,5 +30,98 @@ class PositionStat {
     const resultMap = schema[`.${this.type}.${statName}._friendly_name_map`];
     const value = Object.keys(valueMap).find(key => valueMap[key] === this.stat[statIndex]);
     return resultMap[value];
+  }
+}
+
+class FeederStat {
+  maxUniqueness = 0;
+  maxUptime = 0;
+  maxPosition = 0;
+  maxTotalAircraft = 0;
+  maxUniqueAircraft = 0;
+  maxRange = 0;
+  maxAvgRange = 0;
+  maxNearestAirport = 0;
+  maxAircraftOnGround = 0;
+
+  constructor(feederArray) {
+    this.calculateBoardMaxValues(feederArray);
+  }
+
+  calculateBoardMaxValues(feederlist) {
+    feederlist.forEach((feeder) => {
+      this.maxUptime = Math.max(this.maxUptime, feeder.uptime);
+      this.maxAvgRange = Math.max(this.maxAvgRange, feeder.avg_range);
+      this.maxRange = Math.max(this.maxRange, feeder.max_range);
+      this.maxPosition = Math.max(this.maxPosition, feeder.position);
+      this.maxAircraftOnGround = Math.max(this.maxAircraftOnGround, feeder.aircraft_on_ground);
+      this.maxTotalAircraft = Math.max(this.maxTotalAircraft, feeder.total_aircraft);
+      this.maxUniqueAircraft = Math.max(this.maxUniqueAircraft, feeder.unique_aircraft);
+      this.maxNearestAirport = Math.max(this.maxNearestAirport, feeder.nearest_airport);
+      this.maxUniqueness = Math.max(this.maxUniqueness, feeder.uniqueness_pct);
+    });
+  }
+
+  populateScoreRanks(feederlist) {
+    feederlist.forEach((feeder) => {
+      feeder.score = this.getFeederScore(feeder);
+    });
+
+    feederlist.sort((a, b) => b.score - a.score);
+
+    feederlist.forEach((feeder, index) => {
+      feeder.rank = index + 1;
+    });
+    return feederlist;
+  }
+
+  getFeederScore(feeder) {
+    let score = 0;
+    score += this.getUptimeScore(feeder);
+    score += this.getAvgRangeScore(feeder);
+    score += this.getMaxRangeScore(feeder);
+    score += this.getPositionScore(feeder);
+    score += this.getAircraftOnGroundScore(feeder);
+    score += this.getTotalAircraftScore(feeder);
+    score += this.getUniqueAircraftScore(feeder);
+    score += this.getNearestAirportScore(feeder);
+    score += this.getUniquenessScore(feeder);
+    return (score * 100).toFixed(0);
+  }
+
+  getUptimeScore(feeder) {
+    return +(feeder.uptime / this.maxUptime * 100).toFixed(2);
+  }
+
+  getAvgRangeScore(feeder) {
+    return +(feeder.avg_range / this.maxAvgRange * 100).toFixed(2);
+  }
+
+  getMaxRangeScore(feeder) {
+    return +(feeder.max_range / this.maxRange * 100).toFixed(2);
+  }
+
+  getPositionScore(feeder) {
+    return +(feeder.position / this.maxPosition * 100).toFixed(2);
+  }
+
+  getAircraftOnGroundScore(feeder) {
+    return +(feeder.aircraft_on_ground / this.maxAircraftOnGround * 100).toFixed(2);
+  }
+
+  getTotalAircraftScore(feeder) {
+    return +(feeder.total_aircraft / this.maxTotalAircraft * 100).toFixed(2);
+  }
+
+  getUniqueAircraftScore(feeder) {
+    return +(feeder.unique_aircraft / this.maxUniqueAircraft * 100).toFixed(2);
+  }
+
+  getNearestAirportScore(feeder) {
+    return +((1 - (feeder.nearest_airport / this.maxNearestAirport)) * 100).toFixed(2);
+  }
+
+  getUniquenessScore(feeder) {
+    return +(feeder.uniqueness_pct / this.maxUniqueness * 100).toFixed(2);
   }
 }

@@ -68,7 +68,7 @@
         <div id="notification-section"></div>
         <script id="ajax-error-template" type="text/x-kendo-template">
             <div class="ajax-error-section">
-                <span> #= msg # <button id="retry-api-btn" onclick="fetchboardData()">Retry</button> </span>
+                <span> #= msg # <button id="retry-api-btn" onclick="fetchData()">Retry</button> </span>
             </div>
         </script>
         <script id="tagTemplate" type="text/x-kendo-template">
@@ -85,8 +85,8 @@
             <div class="data-block">
                 <div><span id="feeder-count">--</span> <small># Feeders</small> </div>
                 <div><span id="feeders-added">--</span> <small># Feeders Added <br /> (30 days)</small></div>
-                <div><span id="monthly-positions">--</span> <small># Positions <br /> (30 days)</small></div>
-                <div><span id="countries-count">--</span> <small># Countries</small></div>
+                <!-- <div><span id="monthly-positions">--</span> <small># Positions <br /> (30 days)</small></div>
+                <div><span id="countries-count">--</span> <small># Countries</small></div> -->
                 <div><span id="daily-positions">--</span> <small># Positions <br /> (24 hrs)</small></div>
                 <div><span id="aircraft-count">--</span> <small># Aircraft <br /> (24 hrs)</small></div>
             </div>

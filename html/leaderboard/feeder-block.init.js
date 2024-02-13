@@ -13,6 +13,11 @@ let userPosition = null;
 let hardwareCenter, hardwareRadius, activityCenter, activityRadius, exchangeCenter, exchangeRadius;
 let hardwareAvg, activityAvg, exchangeAvg;
 let lastChartSeriesColour = "none";
+let currentBoardStat = null;
+let pastBoardData = null;
+
+const boardStartDate = new Date();
+boardStartDate.setDate(boardStartDate.getDate() - 30);
 
 setupLoader();
 resetFilterState();
@@ -20,27 +25,53 @@ initializeFeederGrid();
 initializeFeederSearchInput();
 initializeFeederChart();
 renderboard();
-fetchboardData();
+setLoaderViewState(true);
+fetchData();
+
+function fetchData() {
+  Promise.all([fetchboardData(), fetchboardDataForDate(boardStartDate)])
+    .then(([boardData, pastBoardData]) => {
+      setDataSchema(boardData.data.schemas);
+      calculatePastRank(pastBoardData);
+      handleDataResponse(boardData);
+      setLoaderViewState(false);
+    })
+    .catch((error) => {
+      console.error('Error fetching feeder data:', error);
+      $("#notification-section").getKendoNotification().show({ msg: `Error fetching feeder data` }, "error");
+    });
+}
 
 function fetchboardData() {
-  setLoaderViewState(true);
-  $.ajax({
-    url: LEADERBOARD_API_ENDPOINT,
+  return makeAjaxGetRequest(LEADERBOARD_API_ENDPOINT);
+}
+
+function fetchboardDataForDate(date) {
+  return makeAjaxGetRequest(`${LEADERBOARD_API_ENDPOINT}/${date}`);
+}
+
+function makeAjaxGetRequest(url) {
+  return $.ajax({
+    url: url,
     method: 'GET',
     dataType: "json",
     contentType: "application/json",
     xhrFields: {
       withCredentials: true,
     },
-    crossDomain: true,
-    success: function (response) {
-      handleDataResponse(response);
-    },
-    error: function (error) {
-      console.error('Error fetching feeder data:');
-      $("#notification-section").getKendoNotification().show({ msg: `Error fetching feeder data` }, "error");
-    }
+    crossDomain: true
   });
+}
+
+function calculatePastRank(response) {
+  let feeders = generateFeederGridData(response.data.feeders);
+  const pastBoardStat = new FeederStat(feeders);
+  feeders = pastBoardStat.populateScoreRanks(feeders);
+
+  pastBoardData = feeders.reduce((acc, feeder) => {
+    acc[feeder.uuid] = feeder.rank;
+    return acc;
+  }, {});
 }
 
 function showDefaultFeederStats() {
@@ -264,8 +295,8 @@ function resetFilterState() {
 
 function renderboard() {
   let feeders = generateFeederGridData(applyFilter());
-  calculateBoardMaxValues(feeders);
-  calculateFeederScoreRanks(feeders);
+  currentBoardStat = new FeederStat(feeders);
+  feeders = currentBoardStat.populateScoreRanks(feeders);
   setGridDataSources(feeders);
   renderFeederSection();
   populateCustomHeader();
@@ -274,7 +305,6 @@ function renderboard() {
 function applyFilter() {
   let filteredData = boardData;
   filterState._filterContext = null;
-  filteredData = filterByRegion(filteredData, filterState);
   filteredData = filterByCountry(filteredData, filterState);
   filteredData = filterByMunicipality(filteredData, filterState);
   filteredData = filterByAircraftType(filteredData, filterState);
@@ -359,9 +389,6 @@ function setGridDataSources(feederlist) {
 }
 
 function renderFilter() {
-  // let regionDataSource = new kendo.data.DataSource({
-  //   data: regions
-  // });
   let countriesDataSource = new kendo.data.DataSource({
     data: countries,
     group: {
@@ -382,23 +409,6 @@ function renderFilter() {
     data: cities,
     group: { field: "state" }
   });
-  // $("#regionselect").kendoMultiSelect({
-  //   placeholder: "Region",
-  //   rounded: "medium",
-  //   autoBind: false,
-  //   autoClose: false,
-  //   dataSource: regionDataSource,
-  //   dataTextField: "region",
-  //   dataValueField: "region",
-  //   tagMode: "single",
-  //   tagTemplate: kendo.template($("#tagTemplate").html()),
-  //   change: function () {
-  //     toggleFilterState();
-  //     let filters = buildFilters(this.dataItems(), "region");
-  //     countriesDataSource.filter(filters);
-  //     onFilterChange();
-  //   }
-  // });
 
   $("#countryselect").kendoMultiSelect({
     placeholder: "Country",
@@ -496,7 +506,6 @@ function toggleFilterState() {
     ms.enable(false);
   }
   $(".k-list-scroller").delegate(".k-list-item-group-label", "click", multiSelectGroupClick);
-  // $("#municipalityselect_listbox").delegate(".k-list-item-group-label", "click", multiSelectGroupClick);
 }
 
 function multiSelectGroupClick() {
@@ -534,7 +543,6 @@ function buildFilters(dataItems, selector) {
 }
 
 function onFilterChange() {
-  // let region = $("#regionselect").val();
   let country = $("#countryselect").val();
   let city = $("#municipalityselect").val();
   let aircraftType = $("#aircraftselect").val();
@@ -543,9 +551,6 @@ function onFilterChange() {
   let feederSearchInput = $('#feeder-search-input').val();
 
   resetFilterState();
-  // if (region.length > 0) {
-  //   filterState.region = region;
-  // }
 
   if (country.length > 0) {
     filterState.country = country;
@@ -601,7 +606,10 @@ function initializeFeederChart() {
     },
     chartArea: {
       background: "",
-      height: 250
+      height: 200,
+      margin: {
+        bottom: -30
+      }
     },
     title: {
       visible: false,
@@ -663,7 +671,10 @@ function initializeFeederChart() {
     },
     chartArea: {
       background: "",
-      height: 250
+      height: 200,
+      margin: {
+        bottom: -30
+      }
     },
     title: {
       visible: false,
@@ -723,7 +734,10 @@ function initializeFeederChart() {
     },
     chartArea: {
       background: "",
-      height: 250
+      height: 200,
+      margin: {
+        bottom: -30
+      }
     },
     title: {
       visible: false,
@@ -766,126 +780,120 @@ function initializeFeederChart() {
       visible: false
     },
     chartArea: {
-      background: ""
+      background: "",
+      height: 300,
     },
     seriesDefaults: {
       type: "line",
       style: "smooth"
     },
     series: [{
-      name: "World",
-      data: [55.7, 80, 73.5, 96.6],
+      name: "Rank",
+      field: "rank",
       markers: {
         visible: false
       },
-      color: "#28cf8a"
+      color: "#28cf8a",
+      noteTextField: "rank",
+      notes: {
+        line: {
+          length: 0
+        },
+        label: {
+          position: "outside",
+          font: "16px sans-serif",
+          template: "#: value #%"
+        },
+        icon: {
+          visible: false
+        },
+        position: "bottom"
+      }
     }],
     valueAxis: {
+      max: 100,
       labels: {
-        format: "{0}%"
+        visible: false,
+        format: "{0}%",
       }
     },
     categoryAxis: {
-      categories: [new Date(new Date().getTime() - 30 * 24 * 60 * 60 * 1000), new Date()]
-    }
-  });
-}
-
-function calculateBoardMaxValues(feederlist) {
-  feederlist.forEach((feeder) => {
-    maxUptime = Math.max(maxUptime, feeder.uptime);
-    maxAvgRange = Math.max(maxAvgRange, feeder.avg_range);
-    maxRange = Math.max(maxRange, feeder.max_range);
-    maxPosition = Math.max(maxPosition, feeder.position);
-    maxAircraftOnGround = Math.max(maxAircraftOnGround, feeder.aircraft_on_ground);
-    maxTotalAircraft = Math.max(maxTotalAircraft, feeder.total_aircraft);
-    maxUniqueAircraft = Math.max(maxUniqueAircraft, feeder.unique_aircraft);
-    maxNearestAirport = Math.max(maxNearestAirport, feeder.nearest_airport);
-    maxUniqueness = Math.max(maxUniqueness, feeder.uniqueness_pct);
-  });
-}
-
-
-function calculateFeederScoreRanks(feederlist) {
-  feederlist.forEach((feeder) => {
-    feeder.score = getFeederScore(feeder);
-  });
-
-  feederlist.sort((a, b) => b.score - a.score);
-
-  feederlist.forEach((feeder, index) => {
-    feeder.rank = index + 1;
-
-    // refactor this to an idempotent function 
-    if (filterState._filterContext && filterState._filterContext.foundFeeder) {
-      let foundFeeder = filterState._filterContext.foundFeeder;
-      if (foundFeeder.uuid === feeder.uuid) {
-        foundFeeder.rank = feeder.rank;
+      majorGridLines: {
+        visible: false
+      },
+      categories: [boardStartDate, new Date()],
+      justified: true,
+      type: "date",
+      baseUnit: "days",
+      labels: {
+        step: 29,
+        position: "start",
+        dateFormats: {
+          days: "MMM dd, yyyy"
+        }
       }
-      filterState._filterContext.foundFeeder = foundFeeder;
+    },
+    render: function (e) {
+      let chart = e.sender;
+      if (chart.dataSource.options.data) {
+        let draw = kendo.drawing;
+        const chartData = chart.dataSource.options.data;
+
+        let rangeDiff = chartData[1].rank - chartData[0].rank;
+        if (rangeDiff < 0) {
+          rangeDiff = `${Math.abs(rangeDiff)} ↓`;
+        } else {
+          rangeDiff = `${rangeDiff} ↑`;
+        }
+
+        let bbox = chart._model.visual.bbox();
+        let text = new draw.Text(rangeDiff, [0, 0], {
+          font: "bold 20px Verdana,Arial,sans-serif"
+        });
+
+        draw.align([text], bbox, "center");
+        draw.vAlign([text], bbox, "center");
+
+        chart.surface.draw(text);
+      }
     }
   });
-}
-
-function getFeederScore(feeder) {
-  let score = 0;
-  score += getUptimeScore(feeder);
-  score += getAvgRangeScore(feeder);
-  score += getMaxRangeScore(feeder);
-  score += getPositionScore(feeder);
-  score += getAircraftOnGroundScore(feeder);
-  score += getTotalAircraftScore(feeder);
-  score += getUniqueAircraftScore(feeder);
-  score += getNearestAirportScore(feeder);
-  score += getUniquenessScore(feeder);
-  return (score * 100).toFixed(0);
 }
 
 function populateFeederPercentile(feeder) {
-  const recordCount = $("#feeder-grid")
-    .data("kendoGrid")
-    .dataSource
-    .total();
-
-  const feederPercentile = parseFloat(((recordCount - feeder.rank) / (recordCount - 1) * 100).toFixed(2));
+  const feederPercentile = calculateFeederPercentile(feeder);
   $("#feeder-percentile").text(`${feederPercentile}%`);
 }
 
-function getUptimeScore(feeder) {
-  return +(feeder.uptime / maxUptime * 100).toFixed(2);
+function calculateFeederPercentile(feeder) {
+  const dataSource = $("#feeder-grid").data("kendoGrid").dataSource;
+  const recordCount = dataSource.total();
+  const rank = dataSource.options.data.find(f => f.uuid === feeder.uuid).rank;
+
+  return parseFloat(((recordCount - rank) / (recordCount - 1) * 100).toFixed(2));
 }
 
-function getAvgRangeScore(feeder) {
-  return +(feeder.avg_range / maxAvgRange * 100).toFixed(2);
+function renderRankChart() {
+  if (filterState._filterContext && filterState._filterContext.foundFeeder) {
+    let feeder = filterState._filterContext.foundFeeder;
+    const currentPct = calculateFeederPercentile(feeder);
+
+    const pastPct = 0;
+    const pastFeederRank = pastBoardData[feeder.uuid] || 0;
+    if (pastFeederRank > 0) {
+      const pastBoardFeederCount = Object.keys(pastBoardData).length;
+      pastPct = parseFloat(((pastBoardFeederCount - pastFeederRank) / (pastBoardFeederCount - 1) * 100).toFixed(2));
+    }
+
+    const rankChart = $("#rank-chart").data("kendoChart");
+    let dataSource = new kendo.data.DataSource({
+      data: [{ rank: pastPct }, { rank: currentPct }]
+    });
+    rankChart.setDataSource(dataSource);
+    rankChart.refresh();
+  }
 }
 
-function getMaxRangeScore(feeder) {
-  return +(feeder.max_range / maxRange * 100).toFixed(2);
-}
-
-function getPositionScore(feeder) {
-  return +(feeder.position / maxPosition * 100).toFixed(2);
-}
-
-function getAircraftOnGroundScore(feeder) {
-  return +(feeder.aircraft_on_ground / maxAircraftOnGround * 100).toFixed(2);
-}
-
-function getTotalAircraftScore(feeder) {
-  return +(feeder.total_aircraft / maxTotalAircraft * 100).toFixed(2);
-}
-
-function getUniqueAircraftScore(feeder) {
-  return +(feeder.unique_aircraft / maxUniqueAircraft * 100).toFixed(2);
-}
-
-function getNearestAirportScore(feeder) {
-  return +((1 - (feeder.nearest_airport / maxNearestAirport)) * 100).toFixed(2);
-}
-
-function getUniquenessScore(feeder) {
-  return +(feeder.uniqueness_pct / maxUniqueness * 100).toFixed(2);
-}
 
 function renderFeederSection() {
   if (filterState._filterContext && filterState._filterContext.foundFeeder) {
@@ -894,6 +902,7 @@ function renderFeederSection() {
     populateFeederPercentile(feeder);
     generateSearchSummaryText(feeder.feeder_name);
     renderFeederImpactCharts(feeder);
+    renderRankChart();
     refreshGrid();
   } else {
     $("#search-grid").hide();
@@ -902,15 +911,15 @@ function renderFeederSection() {
 
 function renderFeederImpactCharts(feeder) {
   const hardwareChart = $("#hardware-chart").data("kendoChart");
-  const uptimeScore = getUptimeScore(feeder);
-  const avgRangeScore = getAvgRangeScore(feeder);
-  const maxRangeScore = getMaxRangeScore(feeder);
-  const positionScore = getPositionScore(feeder);
-  const aircraftOnGroundScore = getAircraftOnGroundScore(feeder);
-  const totalAircraftScore = getTotalAircraftScore(feeder);
-  const uniqueAircraftScore = getUniqueAircraftScore(feeder);
-  const nearestAirportScore = getNearestAirportScore(feeder);
-  const uniquenessScore = getUniquenessScore(feeder);
+  const uptimeScore = currentBoardStat.getUptimeScore(feeder);
+  const avgRangeScore = currentBoardStat.getAvgRangeScore(feeder);
+  const maxRangeScore = currentBoardStat.getMaxRangeScore(feeder);
+  const positionScore = currentBoardStat.getPositionScore(feeder);
+  const aircraftOnGroundScore = currentBoardStat.getAircraftOnGroundScore(feeder);
+  const totalAircraftScore = currentBoardStat.getTotalAircraftScore(feeder);
+  const uniqueAircraftScore = currentBoardStat.getUniqueAircraftScore(feeder);
+  const nearestAirportScore = currentBoardStat.getNearestAirportScore(feeder);
+  const uniquenessScore = currentBoardStat.getUniquenessScore(feeder);
   hardwareChart.options.series = [
     {
       name: "Uptime",
@@ -1074,7 +1083,6 @@ function renderFeederImpactCharts(feeder) {
     }];
   exchangeAvg = Math.ceil((uniqueAircraftScore + nearestAirportScore + uniquenessScore) / 3);
   exchangeChart.refresh();
-  $("#rank-chart").data("kendoChart").refresh();
 }
 
 function refreshGrid() {
@@ -1126,7 +1134,8 @@ function populateCustomHeader() {
   if (filterState._filterContext && filterState._filterContext.foundFeeder) {
     const feeder = filterState._filterContext.foundFeeder;
     const pageSize = grid.dataSource.pageSize();
-    const pageNo = Math.ceil(feeder.rank / pageSize);
+    const rank = grid.dataSource.options.data.find(f => f.uuid === feeder.uuid).rank;
+    const pageNo = Math.ceil(rank / pageSize);
     grid.dataSource.page(pageNo);
 
     const items = grid.items();
@@ -1234,4 +1243,3 @@ function Pie_CurvedEnds(e) {
   lastChartSeriesColour = e.category != "disabled" ? "none" : e.options.color;
   return group;
 }
-

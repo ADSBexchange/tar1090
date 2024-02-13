@@ -5,6 +5,10 @@ let cities = [];
 let aircraftTypes = [];
 let signalTypes = [];
 
+function setDataSchema(schemas) {
+    schema = schemas;
+}
+
 function handleDataResponse(response) {
     schema = response.data.schemas;
     boardData = response.data.feeders;
@@ -13,7 +17,6 @@ function handleDataResponse(response) {
     renderFilter();
     populateBoardStats(response.data.network_stats);
     showDefaultFeederStats();
-    setLoaderViewState(false);
     handleGeolocationPermission();
 }
 
@@ -93,16 +96,6 @@ function filterbyFeederName(data, filterState) {
         } else {
             $("#notification").getKendoNotification().show(`No feeder found matching ${filterState.feeder_name}`, "error");
         }
-    }
-    return data;
-}
-
-function filterByRegion(data, filterState) {
-    if (filterState.region.length > 0) {
-        data = data.filter(feeder => {
-            const region = new Feeder(feeder, schema).get("region");
-            return region && filterState.region.some(r => r.toLowerCase() === region.toLowerCase())
-        });
     }
     return data;
 }
