@@ -840,6 +840,7 @@ function initializeFeederChart() {
         const chartData = chart.dataSource.options.data;
 
         let rangeDiff = chartData[1].rank - chartData[0].rank;
+        rangeDiff = parseFloat(rangeDiff).toFixed(2);
         if (rangeDiff < 0) {
           rangeDiff = `${Math.abs(rangeDiff)} ↓`;
         } else {
@@ -878,7 +879,7 @@ function renderRankChart() {
     let feeder = filterState._filterContext.foundFeeder;
     const currentPct = calculateFeederPercentile(feeder);
 
-    const pastPct = 0;
+    let pastPct = 0;
     const pastFeederRank = pastBoardData[feeder.uuid] || 0;
     if (pastFeederRank > 0) {
       const pastBoardFeederCount = Object.keys(pastBoardData).length;
