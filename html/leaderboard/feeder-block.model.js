@@ -90,38 +90,65 @@ class FeederStat {
   }
 
   getUptimeScore(feeder) {
+    if (this.maxUptime === 0) {
+      return 0;
+    }
     return +(feeder.uptime / this.maxUptime * 100).toFixed(2);
   }
 
   getAvgRangeScore(feeder) {
+    if (this.maxAvgRange === 0) {
+      return 0;
+    }
     return +(feeder.avg_range / this.maxAvgRange * 100).toFixed(2);
   }
 
   getMaxRangeScore(feeder) {
+    if (this.maxRange === 0) {
+      return 0;
+    }
     return +(feeder.max_range / this.maxRange * 100).toFixed(2);
   }
 
   getPositionScore(feeder) {
+    if (this.maxPosition === 0) {
+      return 0;
+    }
     return +(feeder.position / this.maxPosition * 100).toFixed(2);
   }
 
   getAircraftOnGroundScore(feeder) {
+    if (this.maxAircraftOnGround === 0) {
+      return 0;
+    }
     return +(feeder.aircraft_on_ground / this.maxAircraftOnGround * 100).toFixed(2);
   }
 
   getTotalAircraftScore(feeder) {
+    if (this.maxTotalAircraft === 0) {
+      return 0;
+    }
     return +(feeder.total_aircraft / this.maxTotalAircraft * 100).toFixed(2);
   }
 
   getUniqueAircraftScore(feeder) {
+    if (this.maxUniqueAircraft === 0) {
+      return 0;
+    }
     return +(feeder.unique_aircraft / this.maxUniqueAircraft * 100).toFixed(2);
   }
 
   getNearestAirportScore(feeder) {
+    if (this.maxNearestAirport === 0) {
+      return 0;
+    }
     return +((1 - (feeder.nearest_airport / this.maxNearestAirport)) * 100).toFixed(2);
   }
 
   getUniquenessScore(feeder) {
+    if (this.maxUniqueness === 0) {
+      return 0;
+    }
     return +(feeder.uniqueness_pct / this.maxUniqueness * 100).toFixed(2);
   }
 }

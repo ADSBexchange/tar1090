@@ -1,13 +1,3 @@
-let maxUniqueness = 0;
-let maxUptime = 0;
-let maxPosition = 0;
-let maxTotalAircraft = 0;
-let maxUniqueAircraft = 0;
-let maxRange = 0;
-let maxAvgRange = 0;
-let maxNearestAirport = 0;
-let maxAircraftOnGround = 0;
-
 let filterState = null;
 let userPosition = null;
 let hardwareCenter, hardwareRadius, activityCenter, activityRadius, exchangeCenter, exchangeRadius;
@@ -204,6 +194,14 @@ function initializeFeederGrid() {
     }
   }).data("kendoTooltip");
 
+  $("#feeder-count-stat").kendoTooltip({
+    filter: "small",
+    position: "right",
+    width: 300,
+    content: function (e) {
+      return "The total number of feeders contributing to the ADS-B Exchange network.<br/>Feeders obscuring lat/lon will not appear in the leaderboard stats table.";
+    }
+  }).data("kendoTooltip");
   $("#feeder-grid tbody").on("click", "tr", function (e) {
     let row = $(this);
     let grid = $("#feeder-grid").getKendoGrid();
@@ -785,31 +783,88 @@ function initializeFeederChart() {
     },
     seriesDefaults: {
       type: "line",
-      style: "smooth"
+      style: "smooth",
+      labels: {
+        visible: true,
+        position: "center",
+        font: "16px sans-serif",
+        template: "#: value #%",
+        // visual: function (e) {
+        //   console.log(e);
+        //   let draw = kendo.drawing;
+        //   let geom = kendo.geometry;
+        //   let chart = e.sender;
+        //   if (chart) {
+        //     let bbox = chart._model.visual.bbox();
+        //     let text = new draw.Text(e.text, [0, 0], {
+        //       font: "16px Verdana,Arial,sans-serif"
+        //     });
+
+        //     let bboxCenter = bbox.center();
+        //     let textBbox = text.bbox();
+        //     let textCenter = textBbox.center();
+
+        //     let textTop = bbox.top + 10;
+        //     let textLeft = bbox.left + 10;
+
+        //     if (textCenter.y < bbox.top) {
+        //       textTop = bbox.bottom - 20;
+        //     }
+
+        //     if (textCenter.x < bbox.left) {
+        //       textLeft = bbox.right - 20;
+        //     }
+
+        //     text.transform(geom.transform().translate(textLeft, textTop));
+
+        //     draw.align([text], bbox, "center");
+        //     draw.vAlign([text], bbox, "center");
+
+        //     chart.surface.draw(text);
+        //   }
+        //   // let bbox = e.rect;
+        //   // let chart = e.sender;
+        //   // let text = e.text;
+        //   // let label = e.createVisual();
+
+        //   // let bboxCenter = bbox.center();
+        //   // let labelCenter = label.bbox().center();
+        //   // console.log(bbox, label, text, chart, bboxCenter, labelCenter);
+        //   // let labelTop = bbox.top + 10;
+        //   // let labelLeft = bbox.left + 10;
+
+        //   // if (labelCenter.y < bbox.top) {
+        //   //   labelTop = bbox.bottom - 20;
+        //   // }
+
+        //   // if (labelCenter.x < bbox.left) {
+        //   //   labelLeft = bbox.right - 20;
+        //   // }
+
+        //   // label.position([labelLeft, labelTop]);
+        //   // if (chart) {
+        //   //   chart.surface.draw(label);
+        //   // }
+        //   // return label;
+        // }
+      }
     },
     series: [{
       name: "Rank",
       field: "rank",
       markers: {
-        visible: false
+        visible: true
       },
       color: "#28cf8a",
-      noteTextField: "rank",
-      notes: {
-        line: {
-          length: 0
-        },
-        label: {
-          position: "outside",
-          font: "16px sans-serif",
-          template: "#: value #%"
-        },
-        icon: {
-          visible: false
-        },
-        position: "bottom"
-      }
     }],
+    axisDefaults: {
+      minorTicks: {
+        visible: false,
+      },
+      majorTicks: {
+        visible: false,
+      }
+    },
     valueAxis: {
       max: 100,
       labels: {
@@ -842,9 +897,9 @@ function initializeFeederChart() {
         let rangeDiff = chartData[1].rank - chartData[0].rank;
         rangeDiff = parseFloat(rangeDiff).toFixed(2);
         if (rangeDiff < 0) {
-          rangeDiff = `${Math.abs(rangeDiff)} ↓`;
+          rangeDiff = `${Math.abs(rangeDiff)} &#9660;`;
         } else {
-          rangeDiff = `${rangeDiff} ↑`;
+          rangeDiff = `${rangeDiff} &#9650;`;
         }
 
         let bbox = chart._model.visual.bbox();
@@ -871,6 +926,9 @@ function calculateFeederPercentile(feeder) {
   const recordCount = dataSource.total();
   const rank = dataSource.options.data.find(f => f.uuid === feeder.uuid).rank;
 
+  if (recordCount === 1) {
+    return 100;
+  }
   return parseFloat(((recordCount - rank) / (recordCount - 1) * 100).toFixed(2));
 }
 
@@ -894,7 +952,6 @@ function renderRankChart() {
     rankChart.refresh();
   }
 }
-
 
 function renderFeederSection() {
   if (filterState._filterContext && filterState._filterContext.foundFeeder) {

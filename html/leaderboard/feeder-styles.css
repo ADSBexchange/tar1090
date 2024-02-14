@@ -8,18 +8,39 @@
   margin: 15px;
 }
 
-.sectionBreak {
+.header {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   min-height: calc(50px * var(--SCALE));
+  align-items: center;
+  font-weight: bold;
+
+  .become-feeder a {
+    text-decoration: none;
+    background-color: #28CF8A;
+    padding: 20px 40px;
+    color: white;
+    border-radius: 5px;
+  }
+
+  /*Logo image padding*/
+  .header-logo img {
+    padding-top: 2.5em;
+    padding-bottom: 2.5em;
+    width: 300px;
+  }
+
+  .learn-more  a {
+    text-decoration: none;
+    background-color: #fff;
+    padding: 20px 40px;
+    color: #28CF8A;
+    border-radius: 5px;
+    border: 3px solid #28CF8A;
+  }
 }
 
-/*Logo image padding*/
-.sectionBreak.logo img {
-  padding-top: 2.5em;
-  padding-bottom: 2.5em;
-  width: 300px;
-}
+
 
 /*Network Statistics Block container*/
 .network-statistics-block {
@@ -37,7 +58,7 @@
   /* grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr; */
   gap: 0px 0px;
   text-align: center;
-  margin: 1.5em 0 1em;
+  margin: 3em 0 1em;
   color: #a9a9a9;
 }
 
@@ -59,13 +80,22 @@
   font-weight: bold;
 }
 
+.network-statistics-block .network-statistics-title {
+  display: flex;
+  align-items: center;
+}
+
 /*Network statistics block titles*/
-.network-statistics-block h1 {
+.network-statistics-block .network-statistics-title h1 {
   color: #a9a9a9;
   margin: 0px;
   font-weight: normal;
   font-size: 2em;
-  margin-bottom: 30px;
+}
+
+.network-statistics-block .network-statistics-title img {
+  width: 25px;
+  margin-left: 10px;
 }
 
 /*Search block container*/
@@ -165,8 +195,20 @@
   border-width: 0px;
 }
 
+.search-block .search-input-hint a {
+  text-decoration: none;
+  color: #0983ec;
+  margin: 1em;
+}
+
 .grid-block {
   margin-top: 4em;
+}
+
+.feeder-grid-hint {
+  text-align: right;
+  margin-bottom: 0.5rem;
+  color: grey
 }
 
 .analysis-w {

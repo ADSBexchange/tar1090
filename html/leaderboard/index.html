@@ -58,11 +58,19 @@
         <span id="loader"></span>
     </div>
     <div id="container">
-        <div class="sectionBreak logo" href="https://www.adsbexchange.com">
-            <a href="https://www.adsbexchange.com" target="_blank">
-                <img src="/images/logo_background.png"
-                    alt="ADS-B Exchange. World's Largest Source of unfiltered Flight Data.">
-            </a>
+        <div class="header">
+            <div class="become-feeder">
+                <a href="https://www.adsbexchange.com/what-is-the-exchange/" target="_blank">Become a Feeder</a>
+            </div>
+            <div class="header-logo" href="https://www.adsbexchange.com">
+                <a href="https://www.adsbexchange.com" target="_blank">
+                    <img src="/images/logo_background.png"
+                        alt="ADS-B Exchange. World's Largest Source of unfiltered Flight Data.">
+                </a>
+            </div>
+            <div class="learn-more">
+                <a href="https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" target="_blank" download>Learn More</a>
+            </div>
         </div>
         <div id="notification"></div>
         <div id="notification-section"></div>
@@ -81,9 +89,12 @@
         </script>
         <!--To be changed to Javascript Function-->
         <div class="network-statistics-block">
-            <h1>Feeder Network Statistics</h1>
+            <div class="network-statistics-title">
+                <h1>Feeder Network Statistics</h1>
+                <img src="/images/BadgeBeta.svg" alt="beta logo" />
+            </div>
             <div class="data-block">
-                <div><span id="feeder-count">--</span> <small># Feeders</small> </div>
+                <div id="feeder-count-stat"><span id="feeder-count">--</span> <small># Feeders</small> </div>
                 <div><span id="feeders-added">--</span> <small># Feeders Added <br /> (30 days)</small></div>
                 <!-- <div><span id="monthly-positions">--</span> <small># Positions <br /> (30 days)</small></div>
                 <div><span id="countries-count">--</span> <small># Countries</small></div> -->
@@ -97,6 +108,9 @@
                 <div class="search-text-input">
                     <input id="feeder-search-input" type="text" placeholder="Search Feeder Names" />
                     <button class="search-button"></button>
+                </div>
+                <div class="search-input-hint">
+                    <a href="https://adsbexchange.com/myip/"  target="_blank">What's my feeder name?</a>
                 </div>
             </div>
         </div>
@@ -178,6 +192,7 @@
             </div>
         </div>
         <div class="grid-block">
+            <div class="feeder-grid-hint">Calculations based on 30 Days</div>
             <div id="feeder-grid"></div>
         </div>
     </div>
