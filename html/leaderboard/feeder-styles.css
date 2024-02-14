@@ -104,7 +104,7 @@
 
 .network-statistics-block .network-statistics-title img {
   width: 45px;
-  margin: 45px 0px 0px 10px;
+  margin: 40px 0px 0px 10px;
 }
 
 /*Search block container*/
@@ -155,7 +155,7 @@
   flex-direction: row;
   justify-content: center;
   height: 100%;
-  margin-left: 14rem;
+  margin-left: 16rem;
 }
 
 .search-block .search-input input[type="text"] {
@@ -205,7 +205,7 @@
 }
 
 .search-block .search-input-hint {
-  width: 14rem;
+  width: 16rem;
   a {
     text-decoration: none;
     color: #0983ec;
