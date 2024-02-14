@@ -134,7 +134,7 @@ function initializeFeederSearchInput() {
   const feederSearchInput = $('#feeder-search-input');
   feederSearchInput.kendoAutoComplete({
     clearButton: true,
-    placeholder: "Search Feeder Names",
+    placeholder: "Search Feeder Names / UIDs",
     filter: "contains",
     change: onFilterChange
   });

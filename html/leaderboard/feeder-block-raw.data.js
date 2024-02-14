@@ -10,14 +10,12 @@ function handleDataResponse(response) {
     getGeoInfoList(boardData);
     renderboard();
     renderFilter();
-    populateBoardStats(response.data.network_stats);
     setLoaderViewState(false);
     handleGeolocationPermission();
 }
 
 function getGeoInfoList(feederlist) {
     let distinctCountries = new Set();
-    let distinctRegions = new Set();
     let distinctCities = new Set();
     let distinctAircraftTypes = new Set();
     let distinctSignalTypes = new Set();
@@ -26,27 +24,16 @@ function getGeoInfoList(feederlist) {
         if (feeder.country && feeder.country.trim() !== "") {
             distinctCountries.add({ region: feeder.region, country: feeder.country });
         }
-        if (feeder.region && feeder.region.trim() !== "") {
-            distinctRegions.add({ region: feeder.region });
-        }
         if (feeder.city && feeder.city.trim() !== "") {
             distinctCities.add({ city: feeder.city, region: feeder.region, country: feeder.country, state: feeder.state });
         }
         feeder.all_positions_stats.forEach((stats) => {
-            if (stats.make_type_name !== "Undefined") {
+            if (stats.make_type_name !== "Undefined" && stats.make_type_name !== "R - Piston") {
                 distinctAircraftTypes.add(stats.make_type_name);
             }
             distinctSignalTypes.add(stats.signal_type);
         });
     });
-
-    distinctRegions = Array.from(distinctRegions).reduce((acc, curr) => {
-        const existingRegion = acc.find(region => region.region === curr.region);
-        if (!existingRegion) {
-            acc.push(curr);
-        }
-        return acc;
-    }, []);
 
     distinctCountries = Array.from(distinctCountries).reduce((acc, curr) => {
         const existingCountry = acc.find(country => country.region === curr.region && country.country === curr.country);
@@ -64,7 +51,6 @@ function getGeoInfoList(feederlist) {
         return acc;
     }, []);
     countries = Array.from(distinctCountries).sort((a, b) => a.country.localeCompare(b.country));
-    regions = Array.from(distinctRegions).sort((a, b) => a.region.localeCompare(b.region));
     cities = Array.from(distinctCities).sort((a, b) => a.city.localeCompare(b.city));
     aircraftTypes = Array.from(distinctAircraftTypes).sort();
     signalTypes = Array.from(distinctSignalTypes).sort();

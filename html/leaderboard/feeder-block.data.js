@@ -15,7 +15,6 @@ function handleDataResponse(response) {
     getGeoInfoList(boardData);
     renderboard();
     renderFilter();
-    populateBoardStats(response.data.network_stats);
     showDefaultFeederStats();
     handleGeolocationPermission();
 }
