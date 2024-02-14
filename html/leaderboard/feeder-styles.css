@@ -40,44 +40,11 @@
   }
 }
 
-
-
 /*Network Statistics Block container*/
 .network-statistics-block {
-  background-color: #404040;
-  color: white;
   padding: 15px;
   font-size: 1em;
   margin-bottom: 4em;
-}
-
-/*Network statistics block data container, 6 columns*/
-.network-statistics-block .data-block {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  /* grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr; */
-  gap: 0px 0px;
-  text-align: center;
-  margin: 3em 0 1em;
-  color: #a9a9a9;
-}
-
-/*vertical lines on network statistics blocks*/
-.network-statistics-block .data-block div {
-  border-right: 1px solid #a9a9a9;
-}
-
-/*last vertical line on network statistics blocks isn't visible*/
-.network-statistics-block .data-block div:last-child {
-  border-right: 0px solid #404040;
-}
-
-/*Large numbers in network blocks*/
-.network-statistics-block .data-block div span {
-  font-size: 2em;
-  display: block;
-  color: white;
-  font-weight: bold;
 }
 
 .network-statistics-block .network-statistics-title {
@@ -87,10 +54,9 @@
 
 /*Network statistics block titles*/
 .network-statistics-block .network-statistics-title h1 {
-  color: #a9a9a9;
   margin: 0px;
-  font-weight: normal;
-  font-size: 2em;
+  font-weight: 800;
+  font-size: 3em;
 }
 
 .network-statistics-block .network-statistics-title img {
@@ -147,6 +113,7 @@
   flex-direction: row;
   justify-content: center;
   height: 100%;
+  margin-left: 14rem;
 }
 
 .search-block .search-input input[type="text"] {
@@ -195,10 +162,13 @@
   border-width: 0px;
 }
 
-.search-block .search-input-hint a {
-  text-decoration: none;
-  color: #0983ec;
-  margin: 1em;
+.search-block .search-input-hint {
+  width: 14rem;
+  a {
+    text-decoration: none;
+    color: #0983ec;
+    margin: 1em; 
+  }
 }
 
 .grid-block {
@@ -492,4 +462,8 @@ th.k-sorted .k-column-title {
 .k-chip-md {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
+}
+
+.k-grid-content td[role="gridcell"] {
+  cursor: pointer;
 }

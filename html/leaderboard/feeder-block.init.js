@@ -207,14 +207,6 @@ function initializeFeederGrid() {
     }
   }).data("kendoTooltip");
 
-  $("#feeder-count-stat").kendoTooltip({
-    filter: "small",
-    position: "right",
-    width: 300,
-    content: function (e) {
-      return "The total number of feeders contributing to the ADS-B Exchange network.<br/>Feeders obscuring lat/lon will not appear in the leaderboard stats table.";
-    }
-  }).data("kendoTooltip");
   $("#feeder-grid tbody").on("click", "tr", function (e) {
     let row = $(this);
     let grid = $("#feeder-grid").getKendoGrid();
@@ -864,9 +856,9 @@ function initializeFeederChart() {
         let rangeDiff = chartData[1].rank - chartData[0].rank;
         rangeDiff = parseFloat(rangeDiff).toFixed(2);
         if (rangeDiff < 0) {
-          rangeDiff = `${Math.abs(rangeDiff)} &#9660;`;
+          rangeDiff = `&#9660; ${Math.abs(rangeDiff)}%`;
         } else {
-          rangeDiff = `${rangeDiff} &#9650;`;
+          rangeDiff = `&#9650; ${rangeDiff}%`;
         }
 
         let bbox = chart._model.visual.bbox();
@@ -1209,11 +1201,11 @@ function generateChartTooltip(seriesName, category, value) {
   } else if (seriesName === 'Maximum Range') {
     return pretext += 'The further the coverage distance of a receiver, </br>the more likely it is to receive ADS-B transmissions. </br>To improve, you want to have your receiver hardwired and place the </br>antenna as high as possible outside in an area with no obstructions.';
   } else if (seriesName === 'Average Coverage') {
-    return pretext += 'The larger the coverage area of a receiver, the more likely </br>it is to receive ADS - B transmissions. </br>To improve, you want to have your receiver hardwired and place the antenna as high </br>as possible outside in an area with no obstructions.';
+    return pretext += 'The larger the coverage area of a receiver, the more likely </br>it is to receive ADS-B transmissions. </br>To improve, you want to have your receiver hardwired and place the antenna as high </br>as possible outside in an area with no obstructions.';
   } else if (seriesName === 'Position') {
     return pretext += 'The more positions a feeder receives, the more valuable it is to the Exchange.';
   } else if (seriesName === 'Aircraft on Ground') {
-    return pretext += 'Ground activity is a vital signal to the Exchange. </br>To improve, you want to place your receiver as close to an airport runway as possible </br>and / or minimize obstructions between the antenna and the airport.';
+    return pretext += 'Ground activity is a vital signal to the Exchange. </br>To improve, you want to place your receiver as close to an airport runway as possible </br>and/or minimize obstructions between the antenna and the airport.';
   } else if (seriesName === 'Total Aircraft') {
     return pretext += 'The more aircraft a feeder receives, the more valuable it is to the Exchange.';
   } else if (seriesName === 'Unique Aircraft') {
@@ -1221,7 +1213,7 @@ function generateChartTooltip(seriesName, category, value) {
   } else if (seriesName === 'Nearest Airport') {
     return pretext += 'Receivers that are close to airports are particularly valuable to the Exchange. </br>To improve, you want to place your receiver as close to an airport runway as possible.';
   } else if (seriesName === 'Uniqueness') {
-    return pretext += "A feeder's value to the ADS - B Exchange network based on </br>receiver's placement relative to other receivers. </br>To improve, you want to find a location for your receiver </br>that is not already covered by other receivers.";
+    return pretext += "A feeder's value to the ADS-B Exchange network based on </br>receiver's placement relative to other receivers. </br>To improve, you want to find a location for your receiver </br>that is not already covered by other receivers.";
   } else {
     return pretext;
   }

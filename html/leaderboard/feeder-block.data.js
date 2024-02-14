@@ -46,7 +46,7 @@ function getGeoInfoList(feederlist) {
             const make_type_name = stats.get("make_type_name");
             const signal_type = stats.get("signal_type");
 
-            if (make_type_name !== "Undefined") {
+            if (make_type_name !== "Undefined" && make_type_name !== "R - Piston") {
                 distinctAircraftTypes.add(make_type_name);
             }
             distinctSignalTypes.add(signal_type);
