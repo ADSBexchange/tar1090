@@ -4,7 +4,8 @@ let hardwareCenter, hardwareRadius, activityCenter, activityRadius, exchangeCent
 let hardwareAvg, activityAvg, exchangeAvg;
 let lastChartSeriesColour = "none";
 let currentBoardStat = null;
-let pastBoardData = null;
+let pastBoardRanks = null;
+let currentBoardRanks = null;
 
 const boardStartDate = new Date();
 boardStartDate.setDate(boardStartDate.getDate() - 30);
@@ -22,7 +23,8 @@ function fetchData() {
   Promise.all([fetchboardData(), fetchboardDataForDate(boardStartDate)])
     .then(([boardData, pastBoardData]) => {
       setDataSchema(boardData.data.schemas);
-      calculatePastRank(pastBoardData);
+      calculatePastRank(pastBoardData.data.feeders);
+      populateCurrentRankSet(boardData.data.feeders);
       handleDataResponse(boardData);
       setLoaderViewState(false);
     })
@@ -53,12 +55,23 @@ function makeAjaxGetRequest(url) {
   });
 }
 
-function calculatePastRank(response) {
-  let feeders = generateFeederGridData(response.data.feeders);
+function populateCurrentRankSet(currentFeederList) {
+  let feeders = generateFeederGridData(currentFeederList);
+  const currentBoardStat = new FeederStat(feeders);
+  feeders = currentBoardStat.populateScoreRanks(feeders);
+
+  currentBoardRanks = feeders.reduce((acc, feeder) => {
+    acc[feeder.uuid] = feeder.rank;
+    return acc;
+  }, {});
+}
+
+function calculatePastRank(pastFeederList) {
+  let feeders = generateFeederGridData(pastFeederList);
   const pastBoardStat = new FeederStat(feeders);
   feeders = pastBoardStat.populateScoreRanks(feeders);
 
-  pastBoardData = feeders.reduce((acc, feeder) => {
+  pastBoardRanks = feeders.reduce((acc, feeder) => {
     acc[feeder.uuid] = feeder.rank;
     return acc;
   }, {});
@@ -787,73 +800,27 @@ function initializeFeederChart() {
       labels: {
         visible: true,
         position: "center",
-        font: "16px sans-serif",
+        font: "18px sans-serif",
         template: "#: value #%",
-        // visual: function (e) {
-        //   console.log(e);
-        //   let draw = kendo.drawing;
-        //   let geom = kendo.geometry;
-        //   let chart = e.sender;
-        //   if (chart) {
-        //     let bbox = chart._model.visual.bbox();
-        //     let text = new draw.Text(e.text, [0, 0], {
-        //       font: "16px Verdana,Arial,sans-serif"
-        //     });
+        visual: function (e) {
+          let chart = e.sender;
+          if (chart) {
+            const data = e.sender.dataSource.options.data;
+            const seriesName = data.find(f => `${f.rank}%` == e.text).name;
 
-        //     let bboxCenter = bbox.center();
-        //     let textBbox = text.bbox();
-        //     let textCenter = textBbox.center();
-
-        //     let textTop = bbox.top + 10;
-        //     let textLeft = bbox.left + 10;
-
-        //     if (textCenter.y < bbox.top) {
-        //       textTop = bbox.bottom - 20;
-        //     }
-
-        //     if (textCenter.x < bbox.left) {
-        //       textLeft = bbox.right - 20;
-        //     }
-
-        //     text.transform(geom.transform().translate(textLeft, textTop));
-
-        //     draw.align([text], bbox, "center");
-        //     draw.vAlign([text], bbox, "center");
-
-        //     chart.surface.draw(text);
-        //   }
-        //   // let bbox = e.rect;
-        //   // let chart = e.sender;
-        //   // let text = e.text;
-        //   // let label = e.createVisual();
-
-        //   // let bboxCenter = bbox.center();
-        //   // let labelCenter = label.bbox().center();
-        //   // console.log(bbox, label, text, chart, bboxCenter, labelCenter);
-        //   // let labelTop = bbox.top + 10;
-        //   // let labelLeft = bbox.left + 10;
-
-        //   // if (labelCenter.y < bbox.top) {
-        //   //   labelTop = bbox.bottom - 20;
-        //   // }
-
-        //   // if (labelCenter.x < bbox.left) {
-        //   //   labelLeft = bbox.right - 20;
-        //   // }
-
-        //   // label.position([labelLeft, labelTop]);
-        //   // if (chart) {
-        //   //   chart.surface.draw(label);
-        //   // }
-        //   // return label;
-        // }
+            if (seriesName === 'past') {
+              return new kendo.drawing.Text(e.text, [e.rect.origin.x + 30, e.rect.origin.y + 10]);
+            }
+            return new kendo.drawing.Text(e.text, [e.rect.origin.x - 20, e.rect.origin.y + 20]);
+          }
+        }
       }
     },
     series: [{
       name: "Rank",
       field: "rank",
       markers: {
-        visible: true
+        visible: false
       },
       color: "#28cf8a",
     }],
@@ -935,20 +902,25 @@ function calculateFeederPercentile(feeder) {
 function renderRankChart() {
   if (filterState._filterContext && filterState._filterContext.foundFeeder) {
     let feeder = filterState._filterContext.foundFeeder;
-    const currentPct = calculateFeederPercentile(feeder);
+    let currentPct = 0;
+    const currentFeederRank = currentBoardRanks[feeder.uuid] || 0;
+    if (currentFeederRank > 0) {
+      const currentBoardFeederCount = Object.keys(currentBoardRanks).length;
+      currentPct = parseFloat(((currentBoardFeederCount - currentFeederRank) / (currentBoardFeederCount - 1) * 100).toFixed(2));
+    }
 
     let pastPct = 0;
-    const pastFeederRank = pastBoardData[feeder.uuid] || 0;
+    const pastFeederRank = pastBoardRanks[feeder.uuid] || 0;
     if (pastFeederRank > 0) {
-      const pastBoardFeederCount = Object.keys(pastBoardData).length;
+      const pastBoardFeederCount = Object.keys(pastBoardRanks).length;
       pastPct = parseFloat(((pastBoardFeederCount - pastFeederRank) / (pastBoardFeederCount - 1) * 100).toFixed(2));
     }
 
     const rankChart = $("#rank-chart").data("kendoChart");
-    let dataSource = new kendo.data.DataSource({
-      data: [{ rank: pastPct }, { rank: currentPct }]
+    let rankDataSource = new kendo.data.DataSource({
+      data: [{ rank: pastPct, name: 'past' }, { rank: currentPct, name: 'current' }]
     });
-    rankChart.setDataSource(dataSource);
+    rankChart.setDataSource(rankDataSource);
     rankChart.refresh();
   }
 }
