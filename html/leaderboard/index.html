@@ -1,0 +1,213 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta name="description" content="ADS-B Exchange - track aircraft live - aircraft flight history">
+
+    <meta charset="utf-8" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport"
+        content="user-scalable=no, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, minimal-ui" />
+
+    <!-- Google Tag Manager -->
+    <script>(function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({
+                'gtm.start':
+                    new Date().getTime(), event: 'gtm.js'
+            }); var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                    'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-TL4V9RN');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- CSS_ANCHOR -->
+    <link rel="stylesheet" href="/libs/jquery-ui-1.13.2.min.css" type="text/css" />
+    <link rel="stylesheet" href="default-ocean-blue.css" type="text/css" />
+    <link rel="stylesheet" href="/style.css" type="text/css" />
+    <link rel="stylesheet" href="/libs/classic-silver.css" type="text/css" />
+    <link rel="stylesheet" href="feeder-styles.css" type="text/css" />
+
+    <link rel="icon" href="/images/cropped-Stealth-1-32x32.png" sizes="32x32" />
+    <link rel="icon" href="/images/cropped-Stealth-1-192x192.png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/images/apple-touch.png" />
+    <meta name="msapplication-TileImage" content="/images/cropped-Stealth-1-270x270.png" />
+
+    <title>ADS-B Exchange - track aircraft live</title>
+</head>
+
+<body class="scroll feeder-leaderboard">
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TL4V9RN" height="0" width="0"
+            style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <!-- BODY_ANCHOR -->
+    <div class="loadingContainer">
+        <span id="loader"></span>
+    </div>
+    <div id="use-desktop">
+        <div>For the best experience, please use <br/> desktop version of the website or use a wider screen.</div>
+    </div>
+    <div id="container">
+        <div class="header">
+            <div class="become-feeder">
+                <a href="https://www.adsbexchange.com/what-is-the-exchange/" target="_blank">Become a Feeder</a>
+            </div>
+            <div class="header-logo" href="https://www.adsbexchange.com">
+                <a href="https://www.adsbexchange.com" target="_blank">
+                    <img src="/images/logo_background.png"
+                        alt="ADS-B Exchange. World's Largest Source of unfiltered Flight Data.">
+                </a>
+            </div>
+            <div class="learn-more">
+                <a href="https://www.adsbexchange.com/wp-content/uploads/ADSBx-Leaderboard-Features.pdf" target="_blank"
+                    download>Learn More</a>
+            </div>
+        </div>
+        <div id="notification"></div>
+        <div id="notification-section"></div>
+        <script id="ajax-error-template" type="text/x-kendo-template">
+            <div class="ajax-error-section">
+                <span> #= msg # <button id="retry-api-btn" onclick="fetchData()">Retry</button> </span>
+            </div>
+        </script>
+        <script id="tagTemplate" type="text/x-kendo-template">
+            <div class="chip-info-label-w">
+                <span class="chip-info-label">#:values.length#</span> <span> #:values.join() #</span>
+            </div>
+        </script>
+        <script id="chartTemplate" type="text/x-kendo-template">
+            #= generateChartTooltip(series.name, category, value) #
+        </script>
+        <!--To be changed to Javascript Function-->
+        <div class="network-statistics-block">
+            <div class="network-statistics-title">
+                <h1>LEADERBOARD</h1>
+                <img src="/images/BadgeBeta.svg" alt="beta logo" />
+            </div>
+        </div>
+        <div class="search-block">
+            <p>Search any feeder name or click on a feeder in the table below to see its impact.</p>
+            <div class="search-input">
+                <div class="search-text-input">
+                    <input id="feeder-search-input" type="text" placeholder="Search Feeder Names / UID" />
+                    <button class="search-button"></button>
+                </div>
+                <div class="search-input-hint">
+                    <a href="https://adsbexchange.com/myip/"  target="_blank">What's my feeder name / UID?</a>
+                </div>
+            </div>
+        </div>
+        <div id="search-grid">
+            <div class="search-result">
+                <span id="search-text-summary">Showing results for
+                    <span id="selected-feeder"></span>
+                    <span id="filter-summary-pretext"> with filters <span id="filter-summary-text"></span></span>
+                </span>
+                <div class="search-hint-w">
+                    <div class="search-hint">
+                        <div>Tip: Hover over the rings to learn more.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="analysis-w">
+                <div class="analysis-content" style="width: 30%;">
+                    <div class="analysis-content-item">
+                        <div id="rank-chart"></div>
+                    </div>
+                </div>
+                <div class="area-of-impact-w" style="width: 70%;">
+                    <span class="title">Areas of Impact</span>
+                    <div class="area-of-impact-content">
+                        <div class="area-of-impact-content-item">
+                            <div class="area-of-impact-content-item-header">
+                                <span>Hardware</span>
+                            </div>
+                            <div id="hardware-chart"></div>
+                        </div>
+                        <div class="area-of-impact-content-item">
+                            <div class="area-of-impact-content-item-header">
+                                <span>Activity</span>
+                            </div>
+                            <div id="activity-chart"></div>
+                        </div>
+                        <div class="area-of-impact-content-item">
+                            <div class="area-of-impact-content-item-header">
+                                <span>Exchange</span>
+                            </div>
+                            <div id="exchange-chart"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="data-grid-w">
+                <div class="data-grid-info-w">
+                    <div class="data-grid-info-content">
+                        <span>Based on the filter criteria you have selected,</span>
+                        <h1>This feeder is out-performing <span id="feeder-percentile">--</span> of others</h1>
+                        <span>
+                            Ready to improve your feeder? Inspect a feeder and hover on each of the rings for tips
+                            on how to improve each dimension so you can be at the top of the leaderboard.
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="data-grid-filter-w">
+            <div class="data-grid-filter">
+                <span>Filters:</span>
+                <div class="data-grid-filter-content">
+                    <div class="data-grid-filter-item">
+                        <select id="countryselect"></select>
+                    </div>
+                    <div class="data-grid-filter-item">
+                        <select id="municipalityselect"></select>
+                    </div>
+                    <div class="data-grid-filter-item">
+                        <select id="aircraftselect"></select>
+                    </div>
+                    <div class="data-grid-filter-item">
+                        <select id="modeselect"></select>
+                    </div>
+                    <div class="data-grid-filter-item" id="distance-select-w">
+                        <select id="distanceselect" style="width: 180px;"></select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="grid-block">
+            <div class="feeder-grid-hint">Calculations based on 30 days</div>
+            <div id="feeder-grid"></div>
+        </div>
+    </div>
+    <!-- JS_ANCHOR1 -->
+    <script src="/libs/jquery-3.6.1.min.js"></script>
+    <script src="/libs/jquery-ui-1.13.2.min.js"></script>
+    <script src="/libs/jquery.ui.touch-punch-1.0.8.js"></script>
+    <script src="/formatter.js"></script>
+
+    <!-- JS_ANCHOR2 -->
+    <script src="jszip.min.js"></script>
+    <script src="kendo.all.min.js"></script>
+    <script src="/libs/kendo-ui-license.js"></script>
+
+    <!-- JS_ANCHOR3 -->
+    <script src="feeder-vars.js"></script>
+    <script src="feeder-block.model.js"></script>
+    <script src="feeder-block.data.js"></script>
+    <script src="feeder-block.init.js"></script>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WMZZXH53QH"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-WMZZXH53QH');
+    </script>
+
+</body>
+
+</html>
