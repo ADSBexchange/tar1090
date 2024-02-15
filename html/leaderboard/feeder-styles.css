@@ -64,7 +64,13 @@
     border-radius: 5px;
   }
 
-  /*Logo image padding*/
+  .header-logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-right: calc(2.5em * var(--SCALE));
+  }
+
   .header-logo img {
     padding-top: 2.5em;
     padding-bottom: 2.5em;
