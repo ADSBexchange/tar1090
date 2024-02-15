@@ -289,15 +289,15 @@
           <div id="feature_landings">
             <div class="sectionTitle">
                 <div class="badgeContainer full_detail">
-                    <div><img src="images/BadgeBeta.svg" alt="Beta Feature" width="25" height="14" class="svg badgeComing" /></div><a id="show_detail" 
-                    title="Full Details Window" class="pointer">Full Details</a>
+                    <div></div>
+                    <a id="show_detail" title="Full Details Window" class="pointer">Full Details</a>
                     <div class="icon"><a id="show_detail_icon"><img
                                 src="images/NewBrowserTab.svg" title="Full Details Window" class="iconNew" /></a></div>
                 </div>
             </div>
             <div class="sectionTitle pointer" onclick="toggleAPICall();">
                 <div class="section-title-content badgeContainer">
-                    <div><img src="images/BadgeBeta.svg" alt="Beta Feature" width="25" height="14" class="svg" /></div>
+                    <div></div>
                     <div>FLIGHT ACTIVITY</div>
                     <div id="flight_activity_expand" class="icon icon_down"><img src="images/Chevron.svg" alt="Expand"
                             width="10"></div>
@@ -902,6 +902,9 @@
             <div class="buttonSpacer">
             </div>
             <div id="settingsCog" class="settingsCog" title="Settings"></div>
+            <div id="leaderboard" class="leaderboard" title="Leaderboard" onclick="openLeaderboard();">
+              <div class="button-beta-badge" onclick="openLeaderboard();"></div>
+            </div>
             <div class="buttonSpacer">
             </div>
             <div id="L" title="Toggle (L)abels" class="button inActiveButton" onclick="toggleLabels();"><span class="buttonText">L</span></div>
