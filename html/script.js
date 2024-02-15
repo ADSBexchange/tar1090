@@ -8350,6 +8350,18 @@ function printTrace() {
     _printTrace(SelectedPlane.recentTrace.trace);
 }
 
+// Leaderboard
+let leaderboardWindow = null;
+function openLeaderboard() {
+    if (leaderboardWindow && !leaderboardWindow.closed) {
+        leaderboardWindow.focus();
+        return;
+    } else {
+        // open in new tab
+        leaderboardWindow = window.open('leaderboard/', '_blank');
+        leaderboardWindow.focus();
+    }
+}
 
 // Create a "hidden" input
 let shareLinkInput = document.createElement("input");
