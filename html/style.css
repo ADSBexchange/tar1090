@@ -512,6 +512,12 @@ select.error, textarea.error, input.error {
     display: inline-block;
 }
 
+@media only screen and (max-device-width: 899px) {
+    .leaderboard {
+        display: none;
+    }
+}
+
 .button-beta-badge {
     width: calc( 27px * var(--SCALE));
     height: calc( 27px * var(--SCALE));
