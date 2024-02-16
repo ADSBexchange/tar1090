@@ -1,6 +1,27 @@
 // -*- mode: javascript; indent-tabs-mode: nil; c-basic-offset: 8 -*-
 "use strict";
 
+// This function returns the current AIRAC cycle based on date
+// This is used in the skyvector endpoint  
+
+function getAiracCycle(){
+    var list = [
+    '1701','1702','1703','1704','1705','1706','1707','1708','1709','1710','1711','1712','1713',
+    '1801','1802','1803','1804','1805','1806','1807','1808','1809','1810','1811','1812','1813',
+    '1901','1902','1903','1904','1905','1906','1907','1908','1909','1910','1911','1912','1913',
+    '2001','2002','2003','2004','2005','2006','2007','2008','2009','2010','2011','2012','2013','2014',
+    '2101','2102','2103','2104','2105','2106','2107','2108','2109','2110','2111','2112','2113',
+    '2201','2202','2203','2204','2205','2206','2207','2208','2209','2210','2211','2212','2213',
+    '2301','2302','2303','2304','2305','2306','2307','2308','2309','2310','2311','2312','2313',
+    '2401','2402','2403','2404','2405','2406','2407','2408','2409','2410','2411','2412','2413',
+    '2501','2502','2503','2504','2505','2506','2507','2508','2509','2510','2511','2512','2513',
+    '2601','2602','2603','2604','2605','2606','2607','2608','2609','2610','2611','2612','2613'];
+    var today = new Date();
+    var seconds = Math.round( today.getTime() / 1000 );
+    var cycleIndex = Math.floor( (seconds - 1483606860) / 2419200 );
+    return list[cycleIndex];
+}
+
 // Base layers configuration
 //			"url" : "https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 //			"url" : "http://{a-c}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
@@ -153,7 +174,44 @@ function createBaseLayers() {
             title: 'ADSBx Custom (Premium)',
             type: 'base',
         }));
+        // load skyvector maps
+        let skyvector_url = 'https://t.skyvector.com/B7ChdT9SrWMDV8fe/';
+        let airac_cycle = getAiracCycle();  
+        world.push(new ol.layer.Tile({
+            source: new ol.source.XYZ({
+                url: skyvector_url+'vfr/'+airac_cycle+'/{z}/{x}/{y}.jpg',
+                minZoom: 1,
+                maxZoom: 11,
+                transition: tileTransition,
+            }),
+            name: 'skyvector_vfr',
+            title: 'VFR Charts (Premium)',
+            type: 'base',
+        }));
+        world.push(new ol.layer.Tile({
+            source: new ol.source.XYZ({
+                url: skyvector_url+'hi/'+airac_cycle+'/{z}/{x}/{y}.jpg',
+                minZoom: 1,
+                maxZoom: 9,
+                transition: tileTransition,
+            }),
+            name: 'skyvector_hi',
+            title: 'IFR High Charts (Premium)',
+            type: 'base',
+        }));
+        world.push(new ol.layer.Tile({
+            source: new ol.source.XYZ({
+                url: skyvector_url+'lo/'+airac_cycle+'/{z}/{x}/{y}.jpg',
+                minZoom: 1,
+                maxZoom: 10,
+                transition: tileTransition,
+            }),
+            name: 'skyvector_lo',
+            title: 'IFR Low Charts (Premium)',
+            type: 'base',
+        }));
     }
+    /* 
     if (adsbexchange) {
         world.push(new ol.layer.Tile({
             source: new ol.source.XYZ({
@@ -168,6 +226,7 @@ function createBaseLayers() {
             type: 'base',
         }));
     }
+    */
 
     if (!adsbexchange) {
         world.push(new ol.layer.Tile({
@@ -250,6 +309,7 @@ function createBaseLayers() {
         world.push(vtlayer);
     }
 
+    /*
     world.push(new ol.layer.Tile({
         source: new ol.source.OSM({
             url: 'https://gibs-{a-c}.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/EPSG3857_500m/{z}/{y}/{x}.jpeg',
@@ -262,6 +322,7 @@ function createBaseLayers() {
         title: 'GIBS Relief',
         type: 'base',
     }));
+    */
 
     const date = new Date(Date.now() - 86400 * 1000);
     const yesterday = date.getUTCFullYear() + '-' + (date.getUTCMonth() + 1).toString().padStart(2, '0') + '-' + date.getUTCDate().toString().padStart(2, '0');
@@ -280,6 +341,7 @@ function createBaseLayers() {
         title: 'GIBS Clouds ' + yesterday,
         type: 'base',
     }));
+
     // carto.com basemaps, see the following URLs for details on them:
     // http://basemaps.cartocdn.com
     // https://github.com/CartoDB/cartodb/wiki/BaseMaps-available
@@ -339,7 +401,6 @@ function createBaseLayers() {
         let chartbundleTypesDirect = {
             sec: "Sectional Charts",
             enrh: "IFR Enroute High Charts",
-
             tac: "Terminal Area Charts",
             hel: "Helicopter Charts",
             enrl: "IFR Enroute Low Charts",
@@ -350,21 +411,20 @@ function createBaseLayers() {
         };
         if (adsbexchange) {
             chartbundleTypesDirect = {
-                secgrids: "Sect. w/ SAR grid",
             };
             chartbundleTypesAx = {
-                sec: "Sectional Charts",
-                enrh: "IFR Enroute High Charts",
-
-                tac: "Terminal Area Charts",
-                hel: "Helicopter Charts",
-                enrl: "IFR Enroute Low Charts",
-                enra: "IFR Area Charts",
+                VFR_Sectional: "VFR Charts",
+                VFR_Terminal: "VFR TAC Charts",
+                IFR_High: "IFR High Charts",
+                IFR_AreaLow: "IFR Low Charts",
             };
         }
 
+        // ADSBX
         for (let type in chartbundleTypesAx) {
+            let chart_name = chartbundleTypesAx[type];
             us.push(new ol.layer.Tile({
+                /* 
                 source: new ol.source.OSM({
                     url: 'https://map.adsbexchange.com/mapproxy/tiles/1.0.0/'+ type + '/osm_grid/{z}/{x}/{y}.png',
                     projection: 'EPSG:3857',
@@ -373,12 +433,20 @@ function createBaseLayers() {
                     maxZoom: 11,
                     transition: tileTransition,
                 }),
-                name: 'chartbundle_' + type,
+                */
+                source: new ol.source.XYZ({ 
+                    url: 'https://tiles.arcgis.com/tiles/ssFJjBXIUyZDrSYZ/arcgis/rest/services/'+type+'/MapServer/tile/{z}/{y}/{x}',
+                    attributions: 'Tiles courtesy of <a href="http://tiles.arcgis.com/">arcgis.com</a>',
+                    attributionsCollapsible: false,
+                    minZoom: 8,
+                }),
+                name: chart_name,
                 title: chartbundleTypesAx[type],
                 type: 'base',
                 group: 'chartbundle'}));
         }
-
+        
+        // non-ADSBX
         for (let type in chartbundleTypesDirect) {
             us.push(new ol.layer.Tile({
                 source: new ol.source.TileWMS({
