@@ -3,7 +3,7 @@
   overflow: auto;
 }
 
-@media (min-width: 0px) {
+@media only screen and (max-device-width: 899px) {
   #container {
     margin: 15px;
     display: none;
@@ -17,8 +17,16 @@
     margin-right: 20%;
     text-align: center;
   }
+  #use-desktop>div img {
+    object-fit: contain;
+    height: 100%;
+    width: 100%;
+  }
   .loadingContainer {
-    display: none;
+    display: none!important;
+  }
+  .k-child-animation-container {
+    display: none!important;
   }
 }
 
@@ -48,6 +56,13 @@
   }
 }
 
+.big-button-green-fill a{
+  text-decoration: none;
+  background-color: #28CF8A;
+  padding: 20px 40px;
+  color: white;
+  border-radius: 5px;
+}
 
 .header {
   display: flex;
