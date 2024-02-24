@@ -1,0 +1,11 @@
+{
+  "files.associations": {
+    "*.js.tmpl": "javascript",
+    "*sh.tmpl": "shellscript",
+    "*.php.tmpl": "php",
+    "*.py.tmpl": "python",
+    "*.php.bak": "php",
+    "*.css.tmpl": "css",
+    "*.html.tmpl": "html"
+  }
+}
