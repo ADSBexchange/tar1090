@@ -1003,7 +1003,3 @@ input{
     color: white;
     opacity: 1;
 }
-/* removes empty line between browser ribbon and map */
-#adsbexchange_mobile_pushdown-pushdown-cls {
-    display: block!important;
-}
