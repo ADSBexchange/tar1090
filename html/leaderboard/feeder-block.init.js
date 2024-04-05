@@ -546,12 +546,12 @@ function buildFilters(dataItems, selector) {
 }
 
 function onFilterChange() {
-  let country = $("#countryselect").val();
-  let city = $("#municipalityselect").val();
-  let aircraftType = $("#aircraftselect").val();
-  let signalType = $("#modeselect").val();
-  let distance = $("#distanceselect").val();
-  let feederSearchInput = $('#feeder-search-input').val();
+  let country = $("#countryselect").data("kendoMultiSelect").value();
+  let city = $("#municipalityselect").data("kendoMultiSelect").value();
+  let aircraftType = $("#aircraftselect").data("kendoMultiSelect").value();
+  let signalType = $("#modeselect").data("kendoMultiSelect").value();
+  let distance = $("#distanceselect").data("kendoDropDownList").value();
+  let feederSearchInput = $('#feeder-search-input').data("kendoAutoComplete").value();
 
   resetFilterState();
 
