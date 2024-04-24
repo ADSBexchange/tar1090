@@ -154,13 +154,15 @@ function initializeFeederGrid() {
       { field: "rank", title: "Rank", width: 80, attributes: { "data-field": "rank" } },
       { field: "feeder_name", title: "Feeder Name", attributes: { "data-field": "feeder_name", style: "overflow-wrap: break-word;" } },
       { field: "country", title: "Country", attributes: { "data-field": "country" } },
-      { field: "score", title: "Score", width: 80, format: "{0:##,#}", attributes: { "data-field": "score" }, 
-        template: function(dataItem) {
-          if (dataItem.comments === null) {
-            return `${dataItem.score}`;
+      {
+        field: "score", title: "Score", width: 80, attributes: { "data-field": "score", style: "display: flex; justify-content: space-evently;" },
+        template: function (dataItem) {
+          const feederScore = kendo.toString(dataItem.score, "##,#");
+          if (!dataItem.comments) {
+            return feederScore;
           }
-          return `${dataItem.score}&nbsp;<img src="images/lb-feeder-notification.svg" class="row-warning-icon" />
-          <span class="tooltip-content" style="display:none;">${dataItem.comments}</span>`;
+          return `${feederScore}&nbsp;<img src="/images/lb-feeder-notification.svg" class="feeder-row-warning-icon" />
+          <span class="feeder-score-comment" style="display:none;">${dataItem.comments}</span>`;
         }
       },
       {
@@ -215,11 +217,12 @@ function initializeFeederGrid() {
     }
   }).data("kendoTooltip");
 
-  $(".row-warning-icon").kendoTooltip({
-    position: "top",
-    width: 300,
+  $("#feeder-grid").kendoTooltip({
+    filter: "img.feeder-row-warning-icon",
+    position: "right",
     content: function (e) {
-      return e.target.next().html();
+      const nextElement = e.target.next().first();
+      return nextElement.length ? nextElement.html() : '';
     }
   }).data("kendoTooltip");
 
@@ -384,7 +387,8 @@ function setGridDataSources(feederlist) {
           total_aircraft: { type: "number" },
           unique_aircraft: { type: "number" },
           nearest_airport: { type: "number" },
-          uniqueness: { type: "number" }
+          uniqueness: { type: "number" },
+          comments: { type: "string" }
         }
       },
     },
