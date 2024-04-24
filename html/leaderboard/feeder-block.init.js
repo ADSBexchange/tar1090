@@ -154,7 +154,15 @@ function initializeFeederGrid() {
       { field: "rank", title: "Rank", width: 80, attributes: { "data-field": "rank" } },
       { field: "feeder_name", title: "Feeder Name", attributes: { "data-field": "feeder_name", style: "overflow-wrap: break-word;" } },
       { field: "country", title: "Country", attributes: { "data-field": "country" } },
-      { field: "score", title: "Score", width: 80, format: "{0:##,#}", attributes: { "data-field": "score" } },
+      { field: "score", title: "Score", width: 80, format: "{0:##,#}", attributes: { "data-field": "score" }, 
+        template: function(dataItem) {
+          if (dataItem.comments === null) {
+            return `${dataItem.score}`;
+          }
+          return `${dataItem.score}&nbsp;<img src="images/lb-feeder-notification.svg" class="row-warning-icon" />
+          <span class="tooltip-content" style="display:none;">${dataItem.comments}</span>`;
+        }
+      },
       {
         title: "Hardware",
         columns: [
@@ -204,6 +212,14 @@ function initializeFeederGrid() {
     width: 250,
     content: function (e) {
       return fetchHeaderTooltipContent(e.target.text());
+    }
+  }).data("kendoTooltip");
+
+  $(".row-warning-icon").kendoTooltip({
+    position: "top",
+    width: 300,
+    content: function (e) {
+      return e.target.next().html();
     }
   }).data("kendoTooltip");
 

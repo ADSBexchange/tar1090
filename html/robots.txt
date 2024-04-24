@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /api/
+Disallow: /mapproxy/
+Disallow: /re-api/
+
+# Allow all static pages
+Allow: /$
+Allow: /index.html
+Allow: /details.html
+Allow: /leaderboard/index.html
