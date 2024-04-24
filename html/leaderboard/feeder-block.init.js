@@ -220,7 +220,7 @@ function initializeFeederGrid() {
   $("#feeder-grid").kendoTooltip({
     filter: "img.feeder-row-warning-icon",
     position: "right",
-    width: 225,
+    width: 255,
     content: function (e) {
       const nextElement = e.target.next().first();
       return nextElement.length ? nextElement.html() : '';
