@@ -154,7 +154,17 @@ function initializeFeederGrid() {
       { field: "rank", title: "Rank", width: 80, attributes: { "data-field": "rank" } },
       { field: "feeder_name", title: "Feeder Name", attributes: { "data-field": "feeder_name", style: "overflow-wrap: break-word;" } },
       { field: "country", title: "Country", attributes: { "data-field": "country" } },
-      { field: "score", title: "Score", width: 80, format: "{0:##,#}", attributes: { "data-field": "score" } },
+      {
+        field: "score", title: "Score", width: 80, attributes: { "data-field": "score", style: "display: flex; justify-content: space-evently;" },
+        template: function (dataItem) {
+          const feederScore = kendo.toString(dataItem.score, "##,#");
+          if (!dataItem.comments) {
+            return feederScore;
+          }
+          return `${feederScore}&nbsp;<img src="/images/lb-feeder-notification.svg" class="feeder-row-warning-icon" />
+          <span class="feeder-score-comment" style="display:none;">${dataItem.comments}</span>`;
+        }
+      },
       {
         title: "Hardware",
         columns: [
@@ -204,6 +214,16 @@ function initializeFeederGrid() {
     width: 250,
     content: function (e) {
       return fetchHeaderTooltipContent(e.target.text());
+    }
+  }).data("kendoTooltip");
+
+  $("#feeder-grid").kendoTooltip({
+    filter: "img.feeder-row-warning-icon",
+    position: "right",
+    width: 255,
+    content: function (e) {
+      const nextElement = e.target.next().first();
+      return nextElement.length ? nextElement.html() : '';
     }
   }).data("kendoTooltip");
 
@@ -368,7 +388,8 @@ function setGridDataSources(feederlist) {
           total_aircraft: { type: "number" },
           unique_aircraft: { type: "number" },
           nearest_airport: { type: "number" },
-          uniqueness: { type: "number" }
+          uniqueness: { type: "number" },
+          comments: { type: "string" }
         }
       },
     },
@@ -546,12 +567,12 @@ function buildFilters(dataItems, selector) {
 }
 
 function onFilterChange() {
-  let country = $("#countryselect").val();
-  let city = $("#municipalityselect").val();
-  let aircraftType = $("#aircraftselect").val();
-  let signalType = $("#modeselect").val();
-  let distance = $("#distanceselect").val();
-  let feederSearchInput = $('#feeder-search-input').val();
+  let country = $("#countryselect").data("kendoMultiSelect").value();
+  let city = $("#municipalityselect").data("kendoMultiSelect").value();
+  let aircraftType = $("#aircraftselect").data("kendoMultiSelect").value();
+  let signalType = $("#modeselect").data("kendoMultiSelect").value();
+  let distance = $("#distanceselect").data("kendoDropDownList").value();
+  let feederSearchInput = $('#feeder-search-input').data("kendoAutoComplete").value();
 
   resetFilterState();
 
