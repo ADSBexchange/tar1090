@@ -194,6 +194,7 @@ function transformFeeder(feederArray) {
     const uniqueness = feeder.get("uniqueness");
     const uniqueness_pct = feeder.get("uniqueness_percentile");
     const feederUniqueness = uniqueness_pct >= 100 ? 100 : uniqueness_pct;
+    const comments = feeder.get("comments");
     const feederUptime = uptime >= 100 ? 100 : uptime;
     const position = filterPositionStats
         ? all_positions_stats
@@ -231,7 +232,8 @@ function transformFeeder(feederArray) {
         unique_aircraft: uniqueAircraft,
         nearest_airport: nearest_airport_nm,
         uniqueness: uniqueness,
-        uniqueness_pct: feederUniqueness
+        uniqueness_pct: feederUniqueness,
+        comments: comments
     };
 }
 

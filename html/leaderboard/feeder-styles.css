@@ -513,3 +513,7 @@ th.k-sorted .k-column-title {
 .k-grid-content td[role="gridcell"] {
   cursor: pointer;
 }
+
+.feeder-row-warning-icon {
+  max-width: 13px;
+}

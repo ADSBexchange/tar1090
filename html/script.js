@@ -2460,7 +2460,7 @@ function initMap() {
 
     trailLayers = new ol.layer.Group({
         name: 'ac_trail',
-        title: 'Aircraft trails',
+        title: 'Location',
         type: 'overlay',
         layers: trailGroup,
         zIndex: 150,
