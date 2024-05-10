@@ -136,7 +136,14 @@ function initializeFeederSearchInput() {
     clearButton: true,
     placeholder: "Search Feeder Names / UIDs",
     filter: "contains",
-    change: onFilterChange
+    dataTextField: "search_value",
+    change: onFilterChange,
+    template: '#: feeder_name #',
+    select: function (e) {
+      e.preventDefault();
+      e.sender.value(e.dataItem.feeder_name);
+      e.sender.trigger('change');
+    }
   });
   feederSearchInput.on('keyup', function (event) {
     if (event.key === 'Enter') {
@@ -406,7 +413,7 @@ function setGridDataSources(feederlist) {
   const searchInput = $("#feeder-search-input").data("kendoAutoComplete");
   if (!searchInput.value()) {
     searchInput.setDataSource(new kendo.data.DataSource({
-      data: feederlist.map(feeder => feeder.feeder_name)
+      data: feederlist.map(feeder => ({ feeder_name: feeder.feeder_name, search_value: `${feeder.feeder_name}${feeder.sid}` }))
     }));
     searchInput.refresh();
   }
