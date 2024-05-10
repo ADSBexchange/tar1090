@@ -455,6 +455,7 @@ function renderFilter() {
       toggleFilterState();
       let filters = buildFilters(this.dataItems(), "country");
       citiesDataSource.filter(filters);
+      refreshMunicipalities(citiesDataSource);
       onFilterChange();
     }
   });
@@ -469,7 +470,7 @@ function renderFilter() {
     dataSource: citiesDataSource,
     enable: false,
     tagMode: "single",
-    tagTemplate: kendo.template($("#tagTemplate").html()),
+    tagTemplate: kendo.template($("#tagTemplate").html())
   });
 
   $("#aircraftselect").kendoMultiSelect({
@@ -526,8 +527,14 @@ function renderFilter() {
   $("#distanceselect").data("kendoDropDownList").bind("change", onFilterChange);
 }
 
+function refreshMunicipalities(citiesDataSource) {
+  const ms = $("#municipalityselect").data("kendoMultiSelect");
+  ms.setDataSource(citiesDataSource);
+  ms.refresh();
+}
+
 function toggleFilterState() {
-  const country = $("#countryselect").val();
+  const country = $("#countryselect").data("kendoMultiSelect").value();
   const ms = $("#municipalityselect").data("kendoMultiSelect");
 
   if (country.length > 0) {
@@ -540,9 +547,9 @@ function toggleFilterState() {
 }
 
 function multiSelectGroupClick() {
-  var ms = $("#municipalityselect").data("kendoMultiSelect");
-  var data = ms.dataSource.data();
-  var msValue = [];
+  const ms = $("#municipalityselect").data("kendoMultiSelect");
+  const data = ms.dataSource.data();
+  let msValue = [];
 
   for (var i = 0; i < data.length; i++) {
     if (data[i].state == this.textContent) {
