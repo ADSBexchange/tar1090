@@ -183,6 +183,7 @@ function transformFeeder(feederArray) {
     const all_positions_stats = feeder.get("all_positions_stats");
     const unique_positions_stats = feeder.get("unique_positions_stats");
     const uuid = feeder.get("uuid");
+    const sid = feeder.get("sid");
     const user = feeder.get("user");
     const country = feeder.get("country");
     const region = feeder.get("region");
@@ -233,7 +234,8 @@ function transformFeeder(feederArray) {
         nearest_airport: nearest_airport_nm,
         uniqueness: uniqueness,
         uniqueness_pct: feederUniqueness,
-        comments: comments
+        comments: comments,
+        sid: sid
     };
 }
 
