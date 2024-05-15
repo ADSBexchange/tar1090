@@ -136,7 +136,14 @@ function initializeFeederSearchInput() {
     clearButton: true,
     placeholder: "Search Feeder Names / UIDs",
     filter: "contains",
-    change: onFilterChange
+    dataTextField: "search_value",
+    change: onFilterChange,
+    template: '#: feeder_name #',
+    select: function (e) {
+      e.preventDefault();
+      e.sender.value(e.dataItem.feeder_name);
+      e.sender.trigger('change');
+    }
   });
   feederSearchInput.on('keyup', function (event) {
     if (event.key === 'Enter') {
@@ -406,7 +413,7 @@ function setGridDataSources(feederlist) {
   const searchInput = $("#feeder-search-input").data("kendoAutoComplete");
   if (!searchInput.value()) {
     searchInput.setDataSource(new kendo.data.DataSource({
-      data: feederlist.map(feeder => feeder.feeder_name)
+      data: feederlist.map(feeder => ({ feeder_name: feeder.feeder_name, search_value: `${feeder.feeder_name}${feeder.sid}` }))
     }));
     searchInput.refresh();
   }
@@ -448,6 +455,7 @@ function renderFilter() {
       toggleFilterState();
       let filters = buildFilters(this.dataItems(), "country");
       citiesDataSource.filter(filters);
+      refreshMunicipalities(citiesDataSource);
       onFilterChange();
     }
   });
@@ -462,7 +470,7 @@ function renderFilter() {
     dataSource: citiesDataSource,
     enable: false,
     tagMode: "single",
-    tagTemplate: kendo.template($("#tagTemplate").html()),
+    tagTemplate: kendo.template($("#tagTemplate").html())
   });
 
   $("#aircraftselect").kendoMultiSelect({
@@ -519,8 +527,14 @@ function renderFilter() {
   $("#distanceselect").data("kendoDropDownList").bind("change", onFilterChange);
 }
 
+function refreshMunicipalities(citiesDataSource) {
+  const ms = $("#municipalityselect").data("kendoMultiSelect");
+  ms.setDataSource(citiesDataSource);
+  ms.refresh();
+}
+
 function toggleFilterState() {
-  const country = $("#countryselect").val();
+  const country = $("#countryselect").data("kendoMultiSelect").value();
   const ms = $("#municipalityselect").data("kendoMultiSelect");
 
   if (country.length > 0) {
@@ -533,9 +547,9 @@ function toggleFilterState() {
 }
 
 function multiSelectGroupClick() {
-  var ms = $("#municipalityselect").data("kendoMultiSelect");
-  var data = ms.dataSource.data();
-  var msValue = [];
+  const ms = $("#municipalityselect").data("kendoMultiSelect");
+  const data = ms.dataSource.data();
+  let msValue = [];
 
   for (var i = 0; i < data.length; i++) {
     if (data[i].state == this.textContent) {
