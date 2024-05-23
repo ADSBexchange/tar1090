@@ -139,22 +139,18 @@ ul.threeColumns li {
     white-space: pre-line;
 }
 
-.full_details_page .ui-tooltip {
+.full_details_page_background .ui-tooltip {
   background-color: #313131;
   color: #eee;
 }
 
-.full_details_page {
+.full_details_page_background {
   background-color: #404040;
   background-image: url("/images/background_repeat.jpg");
   background-position: left top;
   background-size: auto;
   background-repeat: repeat;
   background-attachment: scroll;
-}
-
-.full_details_iframe_page {
-  display: inline-block;
 }
 
 #full_details_iframe {
