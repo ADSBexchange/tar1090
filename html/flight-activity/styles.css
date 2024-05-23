@@ -155,7 +155,7 @@ ul.threeColumns li {
 
 iframe#full_details_iframe {
   width: 100%;
-  height: 100%;
+  height: 120%;
   border: none;
 }
 
@@ -581,6 +581,8 @@ img.svg.badgeComing {
   height: 100%;
   z-index: 10000;
   background-color: var(--BGCOLOR1);
+  overflow: auto;
+  overflow-x: hidden;
 }
 
 .closeButton {
