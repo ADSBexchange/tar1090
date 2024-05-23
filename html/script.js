@@ -985,6 +985,7 @@ function initPage() {
     if (usp.has('r') || usp.has('replay')) {
         let numbers = (usp.get('r') || usp.get('replay') || "").split(/(?:-|:)/);
         let ts = new Date();
+        // 2024-05-13-16:04
         if (numbers.length == 5) {
             ts.setUTCFullYear(numbers[0]);
             ts.setUTCMonth(numbers[1] - 1);
@@ -993,6 +994,7 @@ function initPage() {
             ts.setUTCMinutes(numbers[4]);
         }
         if (isNaN(ts)) {
+            console.log("Invalid replay timestamp: " + ts);
             ts = new Date();
         }
         console.log(ts);
@@ -7141,6 +7143,7 @@ function replayDefaults(ts) {
         dateText: zDateString(ts),
         hours: ts.getUTCHours(),
         minutes: ts.getUTCMinutes(),
+        seconds: 0, // Always zero as it's not provided via query string
     };
 }
 
@@ -7323,11 +7326,13 @@ function replayJump() {
         return;
     if (!replayJumpEnabled)
         return;
-    let date = new Date(replay.dateText);
+
+    let parts = replay.dateText.split('-'); // YYYY-mm-DD
+    let date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])); // Months are 0-based
+
     date.setUTCHours(Number(replay.hours));
     date.setUTCMinutes(Number(replay.minutes));
-    date.setUTCSeconds(Number(replay.seconds));
-
+    date.setUTCSeconds(0);
     let ts = new Date(replay.ts.getTime());
 
     // diff less 10 seconds
