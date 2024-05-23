@@ -153,6 +153,12 @@ ul.threeColumns li {
   background-attachment: scroll;
 }
 
+iframe#full_details_iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
 div#feature_landings .sectionTitle:first-child {
   border-bottom: 3px solid #313131;
 }
