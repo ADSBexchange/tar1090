@@ -144,7 +144,7 @@ ul.threeColumns li {
   color: #eee;
 }
 
-body.full_details_page {
+.full_details_page {
   background-color: #404040;
   background-image: url("/images/background_repeat.jpg");
   background-position: left top;
