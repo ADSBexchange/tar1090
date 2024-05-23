@@ -34,7 +34,7 @@
     }; 
     let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
     let hide_freestar = () => {
-    for (let id of ['adsbexchange_mobile_pushdown-pushdown-cls', 'tracking_leaderboard_container', 'FreeStarVideoAdContainer', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2']) { hideById(id);};
+    for (let id of ['adsbexchange_mobile_pushdown-pushdown-cls', 'tracking_leaderboard_container', 'FreeStarVideoAdContainer', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2', 'adsbexchange_full_details_leaderboard']) { hideById(id);};
     };
     let load_freestar = () => {
     let ca = decodeURIComponent(document.cookie).split(';');
@@ -123,6 +123,16 @@
 
       <div id="full_details_window" style="display: none">
         <div id="close_full_details" class="pointer closeButton"></div>
+        <!-- freestar body -->
+          <div class="sticky">
+            <!-- Tag ID: adsbexchange_full_details_leaderboard -->
+            <div align="center" data-freestar-ad="__728x90" id="adsbexchange_full_details_leaderboard">
+                <script data-cfasync="false" type="text/javascript">
+                freestar.config.enabled_slots.push({ placementName: "adsbexchange_full_details_leaderboard", slotId: "adsbexchange_full_details_leaderboard" });
+                </script>
+            </div>
+        </div>
+        <!-- end freestar -->
         <iframe id="full_details_iframe" width="100%" height="100%"></iframe>
       </div>
 

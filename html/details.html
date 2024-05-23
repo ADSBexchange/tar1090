@@ -17,39 +17,6 @@
     })(window,document,'script','dataLayer','GTM-TL4V9RN');</script>
     <!-- End Google Tag Manager -->
 
-    <!-- code from Primis - adsbexchange_Slider -->
-    <script type="text/javascript" language="javascript" src="https://live.primis.tech/live/liveView.php?s=117488&schain=1.0,1!freestar.com,1398,1"></script>
-    <!-- code from Primis -->
-    <!-- freestar header -->
-    <script data-cfasync="false" type="text/javascript">
-        var freestar = freestar || {};
-        freestar.queue = freestar.queue || [];
-        freestar.config = freestar.config || {};
-        freestar.config.enabled_slots = [];
-        freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
-        freestar.config.disabledProducts = {
-            stickyFooter: true,
-            googleInterstitial: true
-        };
-        let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
-        let hide_freestar = () => {
-            for (let id of ['adsbexchange_full_details_leaderboard']) { hideById(id);};
-        };
-        let load_freestar = () => {
-        let ca = decodeURIComponent(document.cookie).split(';');
-            for(let i = 0; i < ca.length; i++) {
-                let c = ca[i];
-                while (c.charAt(0) == ' ') { c = c.substring(1); };
-                if (c.indexOf('adsbx_subscriber=') == 0) { hide_freestar(); return; };
-            }
-            let w=window.top,head=w.document.getElementsByTagName('head')[0];
-            let js=w.document.createElement('script'); js.type = 'text/javascript';
-            js.src='https://a.pub.network/adsbexchange-com/pubfig.min.js';js.id='freestarjs';
-            head.appendChild(js, head);
-        };
-    </script>
-    <!-- end freestar -->
-
     <!--Google Recaptcha Script-->
     <script src="https://www.google.com/recaptcha/enterprise.js?render=6LfaIQ0oAAAAAC4GM95h8s4zirnKqJwX2y3L8Bor"></script>
 
@@ -70,14 +37,6 @@
     <link rel="apple-touch-icon" href="images/apple-touch.png" />
     <meta name="msapplication-TileImage" content="images/cropped-Stealth-1-270x270.png" />
 
-    <style>
-        div.sticky {
-            position: -webkit-sticky; /* Safari */
-            position: sticky;
-            top: 0px;
-        }
-    </style>
-
     <title>ADS-B Exchange - track aircraft live</title>
 </head>
 
@@ -86,17 +45,6 @@
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TL4V9RN"
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
-
-    <!-- freestar body -->
-    <div class="sticky">
-        <!-- Tag ID: adsbexchange_full_details_leaderboard -->
-        <div align="center" data-freestar-ad="__728x90" id="adsbexchange_full_details_leaderboard">
-            <script data-cfasync="false" type="text/javascript">
-            freestar.config.enabled_slots.push({ placementName: "adsbexchange_full_details_leaderboard", slotId: "adsbexchange_full_details_leaderboard" });
-            </script>
-        </div>
-    </div>
-    <!-- end freestar -->
 
     <!-- BODY_ANCHOR -->
     <div class="loadingContainer">
@@ -166,8 +114,6 @@
         gtag('js', new Date());
 
         gtag('config', 'G-WMZZXH53QH');
-        // Load freestar
-        (typeof load_freestar != 'undefined') && (load_freestar) && (load_freestar()) && (load_freestar = null);
     </script>
 
 </body>
