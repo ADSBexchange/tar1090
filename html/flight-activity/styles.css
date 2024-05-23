@@ -232,6 +232,7 @@ div#feature_landings .sectionTitle:first-child {
 /*Details Styles Specifically*/
 .scroll {
   overflow: auto;
+  scrollbar-width: none;
 }
 
 .missing_information {
@@ -583,6 +584,7 @@ img.svg.badgeComing {
   background-color: var(--BGCOLOR1);
   overflow: auto;
   overflow-x: hidden;
+  scrollbar-width: none;
 }
 
 .closeButton {
