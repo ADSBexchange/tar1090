@@ -35,6 +35,8 @@
     let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
     let hide_freestar = () => {
     for (let id of ['adsbexchange_mobile_pushdown-pushdown-cls', 'tracking_leaderboard_container', 'FreeStarVideoAdContainer', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2', 'adsbexchange_full_details_leaderboard']) { hideById(id);};
+    // Ensure full details iframe is full height, in case the ad is hidden
+    document.getElementById('full_details_iframe').style.height = '100%';
     };
     let load_freestar = () => {
     let ca = decodeURIComponent(document.cookie).split(';');
