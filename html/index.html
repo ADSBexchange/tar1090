@@ -124,7 +124,6 @@
       </div>
 
       <div id="full_details_window" style="display: none">
-        <div id="close_full_details" class="pointer closeButton"></div>
         <!-- freestar body -->
           <div class="sticky full_details_page">
             <!-- Tag ID: adsbexchange_full_details_leaderboard -->
@@ -133,9 +132,12 @@
                 freestar.config.enabled_slots.push({ placementName: "adsbexchange_full_details_leaderboard", slotId: "adsbexchange_full_details_leaderboard" });
                 </script>
             </div>
+            <div id="close_full_details" class="pointer closeButton"></div>
         </div>
         <!-- end freestar -->
-        <iframe id="full_details_iframe" width="100%"></iframe>
+        <div class="full_details_iframe_page">
+          <iframe id="full_details_iframe"></iframe>
+        </div>
       </div>
 
       <div id="selected_infoblock" style="display: none">
