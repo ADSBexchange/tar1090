@@ -19,6 +19,9 @@
     <!--Google Recaptcha Script-->
     <script src="https://www.google.com/recaptcha/enterprise.js?render=6LfaIQ0oAAAAAC4GM95h8s4zirnKqJwX2y3L8Bor"></script>
 
+    <!-- code from Primis - adsbexchange_Slider -->
+    <script type="text/javascript" language="javascript" src="https://live.primis.tech/live/liveView.php?s=117488&schain=1.0,1!freestar.com,1398,1"></script>
+    <!-- code from Primis -->
     <!-- freestar header -->
     <link rel="stylesheet" href="https://a.pub.network/core/pubfig/cls.css">
     <script data-cfasync="false" type="text/javascript">
@@ -34,7 +37,9 @@
     }; 
     let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
     let hide_freestar = () => {
-    for (let id of ['adsbexchange_mobile_pushdown-pushdown-cls', 'tracking_leaderboard_container', 'FreeStarVideoAdContainer', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2']) { hideById(id);};
+    for (let id of ['adsbexchange_mobile_pushdown-pushdown-cls', 'tracking_leaderboard_container', 'FreeStarVideoAdContainer', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2', 'adsbexchange_full_details_leaderboard']) { hideById(id);};
+    // Ensure full details iframe is full height, in case the ad is hidden
+    document.getElementById('full_details_iframe').style.height = '100%';
     };
     let load_freestar = () => {
     let ca = decodeURIComponent(document.cookie).split(';');
@@ -122,8 +127,18 @@
       </div>
 
       <div id="full_details_window" style="display: none">
-        <div id="close_full_details" class="pointer closeButton"></div>
-        <iframe id="full_details_iframe" width="100%" height="100%"></iframe>
+        <!-- freestar body -->
+          <div class="sticky full_details_page_background">
+            <!-- Tag ID: adsbexchange_full_details_leaderboard -->
+            <div align="center" data-freestar-ad="__728x90" id="adsbexchange_full_details_leaderboard">
+                <script data-cfasync="false" type="text/javascript">
+                freestar.config.enabled_slots.push({ placementName: "adsbexchange_full_details_leaderboard", slotId: "adsbexchange_full_details_leaderboard" });
+                </script>
+            </div>
+            <div id="close_full_details" class="pointer closeButton"></div>
+        </div>
+        <!-- end freestar -->
+        <iframe id="full_details_iframe"></iframe>
       </div>
 
       <div id="selected_infoblock" style="display: none">

@@ -1003,3 +1003,8 @@ input{
     color: white;
     opacity: 1;
 }
+div.sticky {
+    position: -webkit-sticky; /* Safari */
+    position: sticky;
+    top: 0px;
+}

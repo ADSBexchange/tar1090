@@ -139,18 +139,24 @@ ul.threeColumns li {
     white-space: pre-line;
 }
 
-.full_details_page .ui-tooltip {
+.full_details_page_background .ui-tooltip {
   background-color: #313131;
   color: #eee;
 }
 
-body.full_details_page {
+.full_details_page_background {
   background-color: #404040;
   background-image: url("/images/background_repeat.jpg");
   background-position: left top;
   background-size: auto;
   background-repeat: repeat;
   background-attachment: scroll;
+}
+
+#full_details_iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
 }
 
 div#feature_landings .sectionTitle:first-child {
@@ -226,6 +232,7 @@ div#feature_landings .sectionTitle:first-child {
 /*Details Styles Specifically*/
 .scroll {
   overflow: auto;
+  scrollbar-width: none;
 }
 
 .missing_information {
@@ -575,6 +582,9 @@ img.svg.badgeComing {
   height: 100%;
   z-index: 10000;
   background-color: var(--BGCOLOR1);
+  overflow: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
 }
 
 .closeButton {
