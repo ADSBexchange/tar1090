@@ -34,7 +34,7 @@
     }; 
     let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
     let hide_freestar = () => {
-    for (let id of ['adsbexchange_mobile_pushdown-pushdown-cls', 'tracking_leaderboard_container', 'FreeStarVideoAdContainer', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2', 'adsbexchange_full_details_leaderboard', 'FreeStarVideoAdContainer_Slider', 'FreeStarVideoAdContainer_Slider_mw']) { hideById(id);};
+    for (let id of ['tracking_leaderboard_container', 'FreeStarVideoAdContainer', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2', 'adsbexchange_full_details_leaderboard', 'FreeStarVideoAdContainer_Slider', 'FreeStarVideoAdContainer_Slider_mw']) { hideById(id);};
     // Ensure full details iframe is full height, in case the ad is hidden
     document.getElementById('full_details_iframe').style.height = '100%';
     };
@@ -78,7 +78,6 @@
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
 
-    <div align="center" data-freestar-ad="__320x50" id="adsbexchange_mobile_pushdown-pushdown-cls"></div>
     <!-- BODY_ANCHOR -->
     <div id="layout_container">
 
@@ -1223,8 +1222,5 @@
       gtag('js', new Date());
       gtag('config', 'G-WMZZXH53QH');
     </script>
-    <!-- code from Primis - adsbexchange_Slider -->
-    <script type="text/javascript" language="javascript" src="https://live.primis.tech/live/liveView.php?s=117488&schain=1.0,1!freestar.com,1398,1"></script>
-    <!-- code from Primis -->
   </body>
 </html>
