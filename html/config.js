@@ -375,4 +375,3 @@ tableColors = {
 //prefer978 = 0;
 //
 // dynGlobeRate = false; // enable use of globeRates.json in index.html directory to steer client refresh rate
-ax_anywhere_login_url = "https://identity.__ROOT_PUB_DOMAIN_NAME__/";
