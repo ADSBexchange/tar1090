@@ -1,7 +1,45 @@
 "use strict";
-ax_anywhere_login_url = "https://identity.__ROOT_PUB_DOMAIN_NAME__/";
+const ax_anywhere_login_url = "https://identity.__ROOT_PUB_DOMAIN_NAME__/";
 
-function AxAnywhereButtonOnClick(e) {
-    var url = ax_anywhere_login_url + "?returnUrl=" + encodeURIComponent(window.location.href);
-    window.location.href = url;
+let axAnywhereWindow = null;
+function openAxAnywhere() {
+    const isUserLoggedIn = isLoggedIn();
+    if(isUserLoggedIn) {
+        if (axAnywhereWindow && !axAnywhereWindow.closed) {
+            axAnywhereWindow.focus();
+            return;
+        } else {
+            // open in new tab
+            axAnywhereWindow = window.open(ax_anywhere_login_url, '_blank');
+            axAnywhereWindow.focus();
+        }
+    } else {
+        const url = ax_anywhere_login_url + "?returnUrl=" + encodeURIComponent(window.location.href);
+        window.location.href = url;
+    }
 }
+
+function isLoggedIn() {
+    const ax_anywhere_cookie_name = "adsbx_identity_exp";
+    // adsbx_identity_exp=1718730849; expires=Tue, 23 Jul 2024 17:14:09 GMT; Max-Age=3024000; path=/; domain=.adsbexchange.com
+    const axAnywhereCookieExists = document.cookie.indexOf(ax_anywhere_cookie_name) >= 0;
+    // If cookie exists, then user extract the expiration date from the cookie value
+    if (axAnywhereCookieExists) {
+        console.info("AxAnywhere: Cookie exists: " + ax_anywhere_cookie_name);
+        const cookieValue = document.cookie.split('; ').find(row => row.startsWith(`${ax_anywhere_cookie_name}=`)).split('=')[1];
+        const expirationDate = new Date(cookieValue * 1000);
+        // If expiration date is in the future, then user is logged in
+        return expirationDate > new Date();
+    }
+    return false;
+}
+
+jQuery(document).ready(function () {
+    const isUserLoggedIn = isLoggedIn();
+    console.info("AxAnywhere: User is logged in: " + isUserLoggedIn);
+    if (isUserLoggedIn) {
+        // replace class of div with di 'axanywhere' from 'axanywhere-login' to 'axanywhere-logged-in'
+        jQuery('#axanywhere').removeClass('axanywhere-login').addClass('axanywhere-logged-in');
+        jQuery('#axanywhere').prop('title', 'ADS-B Exchange Anywhere');
+    }
+});
