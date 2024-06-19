@@ -1,0 +1,7 @@
+"use strict";
+ax_anywhere_login_url = "https://identity.__ROOT_PUB_DOMAIN_NAME__/";
+
+function AxAnywhereButtonOnClick(e) {
+    var url = ax_anywhere_login_url + "?returnUrl=" + encodeURIComponent(window.location.href);
+    window.location.href = url;
+}
