@@ -512,12 +512,12 @@ select.error, textarea.error, input.error {
     display: inline-block;
 }
 
-.axanywhere-login {
+.identity-login {
     background-color: var(--ACCENT);
     width: calc( 27px * var(--SCALE));
     height: calc( 27px * var(--SCALE));
     cursor: pointer;
-    background-image: url('images/axanywhere-white.svg');
+    background-image: url('images/identity-login-white.svg');
     background-size: 1.3em;
     background-position-x: center;
     background-position-y: center;
@@ -527,12 +527,12 @@ select.error, textarea.error, input.error {
     display: inline-block;
 }
 
-.axanywhere-logged-in {
+.identity-logged-in {
     background-color: var(--ACCENT);
     width: calc( 27px * var(--SCALE));
     height: calc( 27px * var(--SCALE));
     cursor: pointer;
-    background-image: url('images/user-regular-white.svg');
+    background-image: url('images/identity-logged-in-white.svg');
     background-size: 1.4em;
     background-position: calc(5px* var(--SCALE));
     background-repeat: no-repeat;
