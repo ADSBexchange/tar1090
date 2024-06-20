@@ -14,7 +14,7 @@ function openAxIdentity() {
             axEverywhereWindow.focus();
         }
     } else {
-        const url = ax_everywhere_login_url + "?returnUrl=" + encodeURIComponent(window.location.href);
+        const url = ax_everywhere_login_url + "login?returnUrl=" + encodeURIComponent(window.location.href);
         window.location.href = url;
     }
 }
