@@ -990,6 +990,11 @@ input{
     left: calc(20px * var(--SCALE));
     white-space: nowrap;
 }
+.privacy-small {
+    position: fixed!important;
+    left: 22vw!important;;
+    margin-bottom: 10px!important;;
+}
 #pmLink {
     visibility: hidden;
     text-decoration: none;
