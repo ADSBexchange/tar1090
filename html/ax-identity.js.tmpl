@@ -41,4 +41,6 @@ jQuery(document).ready(function () {
         jQuery('#ax-identity').removeClass('identity-login').addClass('identity-logged-in');
         jQuery('#ax-identity').prop('title', 'ADS-B Exchange Everywhere');
     }
+    // Update URL regardless of login status
+    jQuery('#premium_text').attr('href', ax_everywhere_login_url);
 });
