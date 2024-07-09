@@ -4355,10 +4355,12 @@ function adjustInfoBlock() {
             jQuery('#selected_typedesc').parent().parent().hide();
             jQuery('#credits').css('bottom', '295px');
             jQuery('#credits').css('left', '5px');
+            jQuery('#privacy').addClass('privacy-small');
         } else {
             jQuery('#selected_infoblock').css('height', '100%');
             jQuery('#credits').css('bottom', '');
             jQuery('#credits').css('left', '');
+            jQuery('#privacy').removeClass('privacy-small');
         }
 
         jQuery('#selected_infoblock').show();
