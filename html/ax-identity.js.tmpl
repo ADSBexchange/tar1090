@@ -1,0 +1,46 @@
+"use strict";
+const ax_everywhere_login_url = "https://account.__ROOT_PUB_DOMAIN_NAME__/";
+
+let axEverywhereWindow = null;
+function openAxIdentity() {
+    const isUserLoggedIn = isLoggedIn();
+    if(isUserLoggedIn) {
+        if (axEverywhereWindow && !axEverywhereWindow.closed) {
+            axEverywhereWindow.focus();
+            return;
+        } else {
+            // open in new tab
+            axEverywhereWindow = window.open(ax_everywhere_login_url, '_blank');
+            axEverywhereWindow.focus();
+        }
+    } else {
+        const url = ax_everywhere_login_url + "login?returnUrl=" + encodeURIComponent(window.location.href);
+        window.location.href = url;
+    }
+}
+
+function isLoggedIn() {
+    const ax_identity_cookie_name = "adsbx_identity_exp";
+    // adsbx_identity_exp=1718730849; expires=Tue, 23 Jul 2024 17:14:09 GMT; Max-Age=3024000; path=/; domain=.adsbexchange.com
+    const axEverywhereCookieExists = document.cookie.indexOf(ax_identity_cookie_name) >= 0;
+    // If cookie exists, then user extract the expiration date from the cookie value
+    if (axEverywhereCookieExists) {
+        console.info("Ax Identity: Cookie exists: " + ax_identity_cookie_name);
+        const cookieValue = document.cookie.split('; ').find(row => row.startsWith(`${ax_identity_cookie_name}=`)).split('=')[1];
+        const expirationDate = new Date(cookieValue * 1000);
+        // If expiration date is in the future, then user is logged in
+        return expirationDate > new Date();
+    }
+    return false;
+}
+
+jQuery(document).ready(function () {
+    const isUserLoggedIn = isLoggedIn();
+    console.info("Ax Identity: User is logged in: " + isUserLoggedIn);
+    if (isUserLoggedIn) {
+        jQuery('#ax-identity').removeClass('identity-login').addClass('identity-logged-in');
+        jQuery('#ax-identity').prop('title', 'ADS-B Exchange Everywhere');
+    }
+    // Update URL regardless of login status
+    jQuery('#premium_text').attr('href', ax_everywhere_login_url);
+});
