@@ -361,7 +361,7 @@ let tableColors = {
         other:   "#bcbcbc",
     },
     special: {
-		7400: 	   "#ff0000",
+        7400:      "#ff0000",
         7500:      "#ff0000",
         7600:      "#ff0000",
         7700:      "#ff0000",
