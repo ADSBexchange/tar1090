@@ -34,7 +34,7 @@
     }; 
     let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
     let hide_freestar = () => {
-    for (let id of ['tracking_leaderboard_container', 'FreeStarVideoAdContainer', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2', 'adsbexchange_full_details_leaderboard', 'FreeStarVideoAdContainer_Slider', 'FreeStarVideoAdContainer_Slider_mw']) { hideById(id);};
+    for (let id of ['tracking_leaderboard_container', 'FreeStarVideoAdContainer_2', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2', 'adsbexchange_full_details_leaderboard', 'FreeStarVideoAdContainer_Slider', 'FreeStarVideoAdContainer_Slider_mw']) { hideById(id);};
     // Ensure full details iframe is full height, in case the ad is hidden
     document.getElementById('full_details_iframe').style.height = '100%';
     };
@@ -1039,9 +1039,16 @@
         </script>
         </div>
         -->
-        <div id="FreeStarVideoAdContainer">
+        <!-- OLD CONTAINER -->
+        <!-- <div id="FreeStarVideoAdContainer">
           <div id="freestar-primis-parent">
           <div id="freestar-video-child"></div>
+          </div>
+        </div> -->
+        <!-- AX-361 Add video ad floating on globe in addition to side panel for desktop -->
+        <div id="FreeStarVideoAdContainer_2">
+          <div id="freestar-video-parent-2">
+            <div id="freestar-video-child"></div>
           </div>
         </div>
         <!-- ABOVE_TABS_ANCHOR -->
