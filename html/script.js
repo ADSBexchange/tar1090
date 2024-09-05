@@ -325,7 +325,7 @@ function processReceiverUpdate(data, init) {
     // Loop through all the planes in the data packet
     for (let j=0; j < data.aircraft.length; j++) {
         if (otherRanges.has(data.aircraft[j].hex)) {
-            continue
+            continue;
         }
         processAircraft(data.aircraft[j], init, uat);
     }
@@ -5571,6 +5571,9 @@ function processURLParams(){
         }
         for (let i = 0; i < icaos.length; i++) {
             const icao = icaos[i];
+            if (otherRanges.has(icao.toLowerCase())) {
+                continue;
+            }
             console.log('Selected ICAO id: '+ icao + ' traceDate: ' + traceDateString);
             let options = {follow: follow, noDeselect: true};
             if (traceDate != null) {
