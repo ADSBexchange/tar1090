@@ -51,6 +51,7 @@ let traceRate = 0;
 let tfrs = false;
 let initialURL = window.location.href;
 let milRanges = [];
+let otherRanges = new Set()
 let guessModeS = window.location.href.match(/devg/) ? true : false;
 let calcOutlineData = null;
 
@@ -377,7 +378,7 @@ if (uuid) {
     });}
 }
 
-{jQuery.getJSON(databaseFolder + "/ranges.js").done(function(ranges) {
+function processMilitaryRanges(ranges){
     if (!ranges || !ranges.military) {
         console.error("couldn't load milRanges.");
         return;
@@ -390,8 +391,22 @@ if (uuid) {
             continue;
         milRanges.push([a, b]);
     }
-});}
+}
 
+function processOtherRanges(ranges){
+    if (!ranges || !ranges.other) {
+        console.error("couldn't load otherRanges.");
+        return;
+    }
+    for (let i in ranges.other) {
+        otherRanges.add(atob(ranges.other[i]));
+    }
+}
+
+{jQuery.getJSON(databaseFolder + "/ranges.js").done(function(ranges) {
+    processMilitaryRanges(ranges);
+    processOtherRanges(ranges);
+});}
 
 let heatmapLoadingState = {};
 function loadHeatChunk() {

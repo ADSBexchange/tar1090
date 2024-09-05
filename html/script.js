@@ -324,6 +324,9 @@ function processReceiverUpdate(data, init) {
 
     // Loop through all the planes in the data packet
     for (let j=0; j < data.aircraft.length; j++) {
+        if (otherRanges.has(data.aircraft[j].hex)) {
+            continue
+        }
         processAircraft(data.aircraft[j], init, uat);
     }
 }
