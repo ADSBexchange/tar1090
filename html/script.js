@@ -324,7 +324,7 @@ function processReceiverUpdate(data, init) {
 
     // Loop through all the planes in the data packet
     for (let j=0; j < data.aircraft.length; j++) {
-        if (otherRanges.has(data.aircraft[j].hex)) {
+        if (otherRanges.has(btoa(data.aircraft[j].hex))) {
             continue;
         }
         processAircraft(data.aircraft[j], init, uat);
@@ -1932,7 +1932,7 @@ function startPage() {
                 let icao = db.regCache[queries[i].toUpperCase()];
                 if (icao) {
                     icao = icao.toLowerCase();
-                    if (!otherRanges.has(icao)) {
+                    if (!otherRanges.has(btoa(icao))) {
                         urlIcaos.push(icao);
                     }
                 }
@@ -4106,7 +4106,7 @@ function select(plane, options) {
     options = options || {};
     //console.log("select()", plane.icao, options);
     plane.selected = true;
-    if (!SelPlanes.includes(plane) && !otherRanges.has(plane.icao))
+    if (!SelPlanes.includes(plane) && !otherRanges.has(btoa(plane.icao)))
         SelPlanes.push(plane);
 
     sp = SelectedPlane = plane;
@@ -5504,7 +5504,7 @@ function parseURLIcaos() {
         let inArray = usp.get('icao').toLowerCase().split(',');
         for (let i = 0; i < inArray.length; i++) {
             const icao = inArray[i].toLowerCase();
-            if (icao && (icao.length == 7 || icao.length == 6) && icao.toLowerCase().match(/[a-f,0-9]{6}/) && !otherRanges.has(icao)) {
+            if (icao && (icao.length == 7 || icao.length == 6) && icao.toLowerCase().match(/[a-f,0-9]{6}/) && !otherRanges.has(btoa(icao))) {
                 urlIcaos.push(icao);
                 let newPlane = g.planes[icao] || new PlaneObject(icao);
                 newPlane.last_message_time = NaN;

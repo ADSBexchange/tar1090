@@ -51,7 +51,7 @@ let traceRate = 0;
 let tfrs = false;
 let initialURL = window.location.href;
 let milRanges = [];
-let otherRanges = new Set();
+let otherRanges = new Set(['NDRjZTg1']);
 let guessModeS = window.location.href.match(/devg/) ? true : false;
 let calcOutlineData = null;
 
@@ -378,7 +378,7 @@ if (uuid) {
     });}
 }
 
-function processMilitaryRanges(ranges){
+function processMilitaryRanges(ranges) {
     if (!ranges || !ranges.military) {
         console.error("couldn't load milRanges.");
         return;
@@ -393,23 +393,13 @@ function processMilitaryRanges(ranges){
     }
 }
 
-function processOtherRanges(ranges){
+function processOtherRanges(ranges) {
     if (!ranges || !ranges.other) {
         console.error("couldn't load otherRanges.");
         return;
     }
-    otherRanges.clear();
-    for (let i = 0; i < ranges.other.length; i++) {
-        let icao = atob(ranges.other[i]);
-        otherRanges.add(icao);
-        if (SelPlanes && SelPlanes.length > 0) {
-            for(let j = 0, n = SelPlanes.length; j < n; j++) {
-                if (SelPlanes[j].icao === icao) {
-                    deselect(SelPlanes[j])
-                    break;
-                }
-            }
-        }
+    for (let i = 0, n = ranges.other.length; i < n; i++) { 
+        otherRanges.add(ranges.other[i]);
     }
 }
 
