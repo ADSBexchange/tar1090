@@ -51,7 +51,7 @@ let traceRate = 0;
 let tfrs = false;
 let initialURL = window.location.href;
 let milRanges = [];
-let otherRanges = new Set()
+let otherRanges = new Set();
 let guessModeS = window.location.href.match(/devg/) ? true : false;
 let calcOutlineData = null;
 

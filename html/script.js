@@ -1932,7 +1932,9 @@ function startPage() {
                 let icao = db.regCache[queries[i].toUpperCase()];
                 if (icao) {
                     icao = icao.toLowerCase();
-                    urlIcaos.push(icao);
+                    if (!otherRanges.has(icao)) {
+                        urlIcaos.push(icao);
+                    }
                 }
             }
             processURLParams();
@@ -4104,7 +4106,7 @@ function select(plane, options) {
     options = options || {};
     //console.log("select()", plane.icao, options);
     plane.selected = true;
-    if (!SelPlanes.includes(plane))
+    if (!SelPlanes.includes(plane) && !otherRanges.has(plane.icao))
         SelPlanes.push(plane);
 
     sp = SelectedPlane = plane;
@@ -5502,7 +5504,7 @@ function parseURLIcaos() {
         let inArray = usp.get('icao').toLowerCase().split(',');
         for (let i = 0; i < inArray.length; i++) {
             const icao = inArray[i].toLowerCase();
-            if (icao && (icao.length == 7 || icao.length == 6) && icao.toLowerCase().match(/[a-f,0-9]{6}/)) {
+            if (icao && (icao.length == 7 || icao.length == 6) && icao.toLowerCase().match(/[a-f,0-9]{6}/) && !otherRanges.has(icao)) {
                 urlIcaos.push(icao);
                 let newPlane = g.planes[icao] || new PlaneObject(icao);
                 newPlane.last_message_time = NaN;
@@ -5571,9 +5573,6 @@ function processURLParams(){
         }
         for (let i = 0; i < icaos.length; i++) {
             const icao = icaos[i];
-            if (otherRanges.has(icao.toLowerCase())) {
-                continue;
-            }
             console.log('Selected ICAO id: '+ icao + ' traceDate: ' + traceDateString);
             let options = {follow: follow, noDeselect: true};
             if (traceDate != null) {
