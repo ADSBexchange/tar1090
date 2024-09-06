@@ -398,8 +398,20 @@ function processOtherRanges(ranges){
         console.error("couldn't load otherRanges.");
         return;
     }
-    for (let i in ranges.other) {
-        otherRanges.add(atob(ranges.other[i]));
+    otherRanges.clear();
+    for (let i = 0; i < ranges.other.length; i++) {
+        let icao = atob(ranges.other[i]);
+        otherRanges.add(icao);
+        let j = urlIcaos.indexOf(icao);
+        if (j > -1) {
+            urlIcaos.splice(j, 1);
+        }
+        for(let k = 0; k < SelPlanes.length; k++) {
+            if (SelPlanes[k].icao === icao) {
+                SelPlanes.splice(k, 1);
+                break;
+            }
+        }
     }
 }
 
