@@ -402,13 +402,9 @@ function processOtherRanges(ranges){
     for (let i = 0; i < ranges.other.length; i++) {
         let icao = atob(ranges.other[i]);
         otherRanges.add(icao);
-        let j = urlIcaos.indexOf(icao);
-        if (j > -1) {
-            urlIcaos.splice(j, 1);
-        }
-        for(let k = 0; k < SelPlanes.length; k++) {
-            if (SelPlanes[k].icao === icao) {
-                SelPlanes.splice(k, 1);
+        for(let j = 0, n = SelPlanes.length; j < n; j++) {
+            if (SelPlanes[j].icao === icao) {
+                deselect(SelPlanes[j])
                 break;
             }
         }
