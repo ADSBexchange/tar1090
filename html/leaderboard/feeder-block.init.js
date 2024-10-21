@@ -81,7 +81,7 @@ function showDefaultFeederStats() {
   const urlParams = new URLSearchParams(window.location.search);
   let feed = urlParams.get('feed');
   if (feed) {
-    urlParams.delete('feed');
+    window.history.pushState({}, document.title, window.location.pathname);
   } else {
     const topRankedFeeder = $("#feeder-grid").data("kendoGrid").dataSource.at(0);
     feed = topRankedFeeder.feeder_name;
