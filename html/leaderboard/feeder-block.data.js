@@ -10,8 +10,9 @@ function setDataSchema(schemas) {
 }
 
 function handleDataResponse(response) {
-    schema = response.data.schemas;
-    boardData = response.data.feeders;
+    // Note: .data is a nested property used in old server response (NodeJS)
+    schema = response.data?.schemas ?? response.schemas;
+    boardData = response.data?.feeders ?? response.feeders;
     getGeoInfoList(boardData);
     renderboard();
     renderFilter();
