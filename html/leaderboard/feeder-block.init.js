@@ -22,9 +22,10 @@ fetchData();
 function fetchData() {
   Promise.all([fetchboardData(), fetchboardDataForDate(boardStartDate)])
     .then(([boardData, pastBoardData]) => {
-      setDataSchema(boardData.data.schemas);
-      calculatePastRank(pastBoardData.data.feeders);
-      populateCurrentRankSet(boardData.data.feeders);
+      // Note: .data is a nested property used in old server response (NodeJS)
+      setDataSchema(boardData.data?.schemas ?? boardData.schemas);
+      calculatePastRank(pastBoardData.data?.feeders ?? pastBoardData.feeders);
+      populateCurrentRankSet(boardData.data?.feeders ?? boardData.feeders);
       handleDataResponse(boardData);
       setLoaderViewState(false);
     })
