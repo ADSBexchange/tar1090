@@ -1,6 +1,8 @@
 // -*- mode: javascript; indent-tabs-mode: nil; c-basic-offset: 8 -*-
 "use strict";
 
+var oaipv = null;
+
 // This function returns the current AIRAC cycle based on date
 // This is used in the skyvector endpoint  
 
@@ -21,6 +23,8 @@ function getAiracCycle(){
     var cycleIndex = Math.floor( (seconds - 1483606860) / 2419200 );
     return list[cycleIndex];
 }
+
+
 
 // Base layers configuration
 //			"url" : "https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -482,7 +486,7 @@ function createBaseLayers() {
         maxZoom: 13,
     }));
 
-    world.push(new ol.layer.VectorTile({
+    oaipv = new ol.layer.VectorTile({
         source: new ol.source.VectorTile({
             "url" : "https://api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.pbf?apiKey=4672835b0edfe252e92c45a8c4353803",
             "attributions" : "openAIP.net",
@@ -494,11 +498,15 @@ function createBaseLayers() {
         name: 'openaipv',
         title: 'openAIP TMS - Vector',
         type: 'overlay',
-        opacity: 0.7,
+        opacity: 1,
         visible: false,
         zIndex: 99,
         maxZoom: 13,
-    }));
+    });
+
+    ol.applyStyle(oaipv, '/libs/openaip-default-style.json', 'openaip-data');
+
+    world.push(oaipv);
 
     if (tfrs) {
         world.push(new ol.layer.Vector({
