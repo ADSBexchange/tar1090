@@ -504,6 +504,7 @@ function createBaseLayers() {
         maxZoom: 13,
     });
 
+    // ol.applyStyle(oaipv, 'https://api.tiles.openaip.net/api/styles/openaip-default-style.json?apiKey=4672835b0edfe252e92c45a8c4353803', 'openaip-data');
     ol.applyStyle(oaipv, '/libs/openaip-default-style.json', 'openaip-data');
 
     world.push(oaipv);
