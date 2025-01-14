@@ -488,7 +488,7 @@ function createBaseLayers() {
 
     oaipv = new ol.layer.VectorTile({
         source: new ol.source.VectorTile({
-            "url" : "https://api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.pbf?apiKey=4672835b0edfe252e92c45a8c4353803",
+            "url" : "https://api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.pbf?apiKey=4672835b0e********************353803",
             "attributions" : "openAIP.net",
             format: new ol.format.MVT(),
             attributionsCollapsible: false,
@@ -504,8 +504,8 @@ function createBaseLayers() {
         maxZoom: 13,
     });
 
-    // ol.applyStyle(oaipv, 'https://api.tiles.openaip.net/api/styles/openaip-default-style.json?apiKey=4672835b0edfe252e92c45a8c4353803', 'openaip-data');
-    ol.applyStyle(oaipv, '/libs/openaip-default-style.json', 'openaip-data');
+    ol.applyStyle(oaipv, 'https://api.tiles.openaip.net/api/styles/openaip-default-style.json?apiKey=4672835b0e********************353803', 'openaip-data');
+    // ol.applyStyle(oaipv, '/libs/openaip-default-style.json', 'openaip-data');
 
     world.push(oaipv);
 
