@@ -535,8 +535,10 @@
         "text-offset": {
           "stops": [[6, [0, 1.2]], [8, [0, 1.8]], [10, [0, 2.5]]]
         },
-        "text-size": 12,
-        "text-font": ["DIN Offc Pro Regular", "Arial Unicode MS Regular"],
+        "text-size": {
+          "stops": [[6, 12], [8, 10], [10, 8]]
+        },
+        "text-font": ["Helvetica Neue", "Helvetica", "Verdana", "sans-serif"],
         "icon-ignore-placement": false,
         "text-ignore-placement": true
       },
@@ -563,8 +565,10 @@
           "stops": [[6, "{identifier}"], [9, "{name_label_full}"]]
         },
         "symbol-placement": "point",
-        "text-size": 12,
-        "text-font": ["DIN Offc Pro Regular", "Arial Unicode MS Regular"],
+        "text-size": {
+          "stops": [[6, 12], [8, 10], [10, 8]]
+        },
+        "text-font": ["Helvetica Neue", "Helvetica", "Verdana", "sans-serif"],
         "text-justify": "left",
         "visibility": "visible",
         "text-allow-overlap": true,
