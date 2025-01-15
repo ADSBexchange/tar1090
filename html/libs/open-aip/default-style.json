@@ -5,7 +5,7 @@
     "openaip-data": {
       "type": "vector",
       "tiles": [
-        "https://api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.pbf?apiKey=4672835b0edfe252e92c45a8c4353803"
+        "https://api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.pbf?apiKey="
       ],
       "tolerance": 0
     },
@@ -22,7 +22,7 @@
       "data": { "type": "FeatureCollection", "features": [] }
     }
   },
-  "glyphs": "/lib/sprites/0-255.pbf",
+  "sprite": "/libs/open-aip/icons/sprite",
   "layers": [
     {
       "id": "obstacle_clicktarget",

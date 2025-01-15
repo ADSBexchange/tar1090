@@ -474,7 +474,7 @@ function createBaseLayers() {
             "url" : "https://__MAP_PUB_DOMAIN_NAME__/mapproxy/tiles/1.0.0/openaip/ul_grid/{z}/{x}/{y}.png",
             "attributions" : "openAIP.net",
             attributionsCollapsible: false,
-            maxZoom: 12,
+            maxZoom: 11,
             transition: tileTransition,
         }),
         name: 'openaip',
@@ -483,16 +483,16 @@ function createBaseLayers() {
         opacity: 0.7,
         visible: false,
         zIndex: 99,
-        maxZoom: 13,
+        maxZoom: 11,
     }));
 
     oaipv = new ol.layer.VectorTile({
         source: new ol.source.VectorTile({
-            "url" : "https://api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.pbf?apiKey=4672835b0e********************353803",
+            "url" : "https://api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.pbf?apiKey=",
             "attributions" : "openAIP.net",
             format: new ol.format.MVT(),
             attributionsCollapsible: false,
-            maxZoom: 12,
+            maxZoom: 11,
             transition: tileTransition,
         }),
         name: 'openaipv',
@@ -501,11 +501,10 @@ function createBaseLayers() {
         opacity: 1,
         visible: false,
         zIndex: 99,
-        maxZoom: 13,
+        maxZoom: 11,
     });
 
-    ol.applyStyle(oaipv, 'https://api.tiles.openaip.net/api/styles/openaip-default-style.json?apiKey=4672835b0e********************353803', 'openaip-data');
-    // ol.applyStyle(oaipv, '/libs/openaip-default-style.json', 'openaip-data');
+    ol.applyStyle(oaipv, '/libs/open-aip/default-style.json', 'openaip-data');
 
     world.push(oaipv);
 
