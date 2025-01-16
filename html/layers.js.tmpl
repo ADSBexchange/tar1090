@@ -488,7 +488,7 @@ function createBaseLayers() {
 
     oaipv = new ol.layer.VectorTile({
         source: new ol.source.VectorTile({
-            "url" : "https://api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.pbf?apiKey=",
+            "url" : "https://__MAP_PUB_DOMAIN_NAME__/mapproxy/tiles/1.0.0/openaipv/ul_grid/{z}/{x}/{y}.pbf",
             "attributions" : "openAIP.net",
             format: new ol.format.MVT(),
             attributionsCollapsible: false,
