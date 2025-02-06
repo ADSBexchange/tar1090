@@ -27,14 +27,14 @@
     freestar.config = freestar.config || {};
     freestar.config.enabled_slots = [];
     freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
-    <!-- Page Specific -->
+    // Page Specific
     freestar.config.disabledProducts = {
     stickyFooter: true,
     googleInterstitial: true
     };
     let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
     let hide_freestar = () => {
-    for (let id of ['tracking_leaderboard_container', 'adsbexchange_medrec_atf', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2', 'adsbexchange_full_details_leaderboard', 'FreeStarVideoAdContainer_Slider', 'FreeStarVideoAdContainer_Slider_mw']) { hideById(id);};
+    for (let id of ['tracking_leaderboard_container', 'adsbexchange_medrec_atf', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2', 'adsbexchange_full_details_leaderboard', 'FreeStarVideoAdContainer_Slider', 'FreeStarVideoAdContainer_Slider_mw', 'adsbexchange_1x1_bouncex']) { hideById(id);};
     // Ensure full details iframe is full height, in case the ad is hidden
     document.getElementById('full_details_iframe').style.height = '100%';
     };
@@ -80,7 +80,12 @@
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TL4V9RN"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
-
+  <!-- Tag ID: adsbexchange_1x1_bouncex -->
+  <div align="center" style="height: 0px;" id="adsbexchange_1x1_bouncex">
+    <script data-cfasync="false" type="text/javascript">
+      freestar.config.enabled_slots.push({ placementName: "adsbexchange_1x1_bouncex", slotId: "adsbexchange_1x1_bouncex" });
+    </script>
+  </div>
     <!-- BODY_ANCHOR -->
     <div id="layout_container">
 
