@@ -22,35 +22,35 @@
     <!-- freestar header -->
     <link rel="stylesheet" href="https://a.pub.network/core/pubfig/cls.css">
     <script data-cfasync="false" type="text/javascript">
-    var freestar = freestar || {};
-    freestar.queue = freestar.queue || [];
-    freestar.config = freestar.config || {};
-    freestar.config.enabled_slots = [];
-    freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
-    <!-- Page Specific -->
-    freestar.config.disabledProducts = {
-    stickyFooter: true,
-    googleInterstitial: true
-    }; 
-    let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
-    let hide_freestar = () => {
-    for (let id of ['tracking_leaderboard_container', 'adsbexchange_medrec_atf', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2', 'adsbexchange_full_details_leaderboard', 'FreeStarVideoAdContainer_Slider', 'FreeStarVideoAdContainer_Slider_mw']) { hideById(id);};
-    // Ensure full details iframe is full height, in case the ad is hidden
-    document.getElementById('full_details_iframe').style.height = '100%';
-    };
-    let load_freestar = () => {
-    let ca = decodeURIComponent(document.cookie).split(';');
-    for(let i = 0; i < ca.length; i++) { 
-    let c = ca[i];
-    while (c.charAt(0) == ' ') { c = c.substring(1); };
-    if (c.indexOf('adsbx_subscriber=') == 0) { hide_freestar(); return; };
-    }
+      var freestar = freestar || {};
+      freestar.queue = freestar.queue || [];
+      freestar.config = freestar.config || {};
+      freestar.config.enabled_slots = [];
+      freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
+      // Page Specific
+      freestar.config.disabledProducts = {
+        stickyFooter: true,
+        googleInterstitial: true
+      };
+      let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display = "none"); };
+      let hide_freestar = () => {
+        for (let id of ['tracking_leaderboard_container', 'adsbexchange_medrec_atf', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2', 'adsbexchange_full_details_leaderboard', 'FreeStarVideoAdContainer_Slider', 'FreeStarVideoAdContainer_Slider_mw']) { hideById(id); };
+        // Ensure full details iframe is full height, in case the ad is hidden
+        document.getElementById('full_details_iframe').style.height = '100%';
+      };
+      let load_freestar = () => {
+        let ca = decodeURIComponent(document.cookie).split(';');
+        for (let i = 0; i < ca.length; i++) {
+          let c = ca[i];
+          while (c.charAt(0) == ' ') { c = c.substring(1); };
+          if (c.indexOf('adsbx_subscriber=') == 0) { hide_freestar(); return; };
+        }
 
-    let w=window.top,head=w.document.getElementsByTagName('head')[0];
-    let js=w.document.createElement('script'); js.type = 'text/javascript';
-    js.src='https://a.pub.network/adsbexchange-com/pubfig.min.js';js.id='freestarjs';
-    head.appendChild(js, head);
-    };
+        let w = window.top, head = w.document.getElementsByTagName('head')[0];
+        let js = w.document.createElement('script'); js.type = 'text/javascript';
+        js.src = 'https://a.pub.network/adsbexchange-com/pubfig.min.js'; js.id = 'freestarjs';
+        head.appendChild(js, head);
+      };
     </script>
     <!-- end freestar -->
     <!-- HEAD_ANCHOR -->
