@@ -138,6 +138,8 @@ let nextQuerySelected = 0;
 let enableDynamicCachebusting = false;
 g.lastRefreshInt = 1000;
 
+let baroCorrectQNH = 1013.25;
+
 let limitUpdates = -1;
 
 let infoBlockWidth = baseInfoBlockWidth;
@@ -1102,6 +1104,9 @@ function initPage() {
     jQuery("#expand_sidebar_button").click(expandSidebar);
     jQuery("#shrink_sidebar_button").click(showMap);
 
+    jQuery("#altimeter_form").submit(onAltimeterChange);
+    jQuery("#altimeter_set_standard").click(onAltimeterSetStandard);
+
     // Set up altitude filter button event handlers and validation options
     jQuery("#altitude_filter_form").submit(onFilterByAltitude);
     jQuery("#source_filter_form").submit(updateSourceFilter);
@@ -1240,7 +1245,28 @@ jQuery('#selected_altitude_geom1')
             }
         }
     });
-
+    new Toggle({
+        key: "baroUseQNH",
+        display: "Baro. alt.: correct for QNH",
+        container: "#settingsLeft",
+        init: baroUseQNH,
+        setState: function(state) {
+            baroUseQNH = state;
+            if (baroUseQNH) {
+                jQuery('#selected_altitude1_title').updateText('Corr. baro-alt');
+                jQuery('#selected_altitude2_title').updateText('Corr. baro.');
+                jQuery('#infoblock_altimeter').removeClass('hidden');
+            } else {
+                jQuery('#selected_altitude1_title').updateText('Baro. altitude');
+                jQuery('#selected_altitude2_title').updateText('Barometric');
+                jQuery('#infoblock_altimeter').addClass('hidden');
+            }
+            if (loadFinished) {
+                remakeTrails();
+                refreshSelected();
+            }
+        }
+    });
 
     if (usp.has('labelsGeom')) {
         toggles['labelsGeom'].toggle(true, 'init');
@@ -3130,8 +3156,8 @@ function refreshSelected() {
     }
 
 
-    jQuery("#selected_altitude1").updateText(format_altitude_long(selected.altitude, selected.vert_rate, DisplayUnits));
-    jQuery("#selected_altitude2").updateText(format_altitude_long(selected.altitude, selected.vert_rate, DisplayUnits));
+    jQuery("#selected_altitude1").updateText(format_altitude_long(adjust_baro_alt(selected.altitude), selected.vert_rate, DisplayUnits));
+    jQuery("#selected_altitude2").updateText(format_altitude_long(adjust_baro_alt(selected.altitude), selected.vert_rate, DisplayUnits));
 
     jQuery('#selected_onground').updateText(format_onground(selected.altitude));
 
@@ -3469,7 +3495,7 @@ function refreshHighlighted() {
 
     jQuery('#highlighted_speed').text(format_speed_long(highlighted.gs, DisplayUnits));
 
-    jQuery("#highlighted_altitude").text(format_altitude_long(highlighted.altitude, highlighted.vert_rate, DisplayUnits));
+    jQuery("#highlighted_altitude").text(format_altitude_long(adjust_baro_alt(highlighted.altitude), highlighted.vert_rate, DisplayUnits));
 
     jQuery('#highlighted_pf_route').text((highlighted.pfRoute ? highlighted.pfRoute : highlighted.icao.toUpperCase()));
 
@@ -3602,7 +3628,7 @@ function refreshFeatures() {
     cols.altitude = {
         text: 'Altitude',
         sort: function () { sortBy('altitude',compareNumeric, function(x) { return (x.altitude == "ground" ? -100000 : x.altitude); }); },
-        value: function(plane) { return format_altitude_brief(plane.altitude, plane.vert_rate, DisplayUnits); },
+        value: function(plane) { return format_altitude_brief(adjust_baro_alt(plane.altitude), plane.vert_rate, DisplayUnits); },
         align: 'right',
         header: function () { return 'Alt.' + NBSP + '(' + get_unit_label("altitude", DisplayUnits) + ')';},
     };
@@ -8477,6 +8503,46 @@ Please add a disclaimer to any screenshots of this website or better yet just re
 
 function getn(n) {
     limitUpdates=n; RefreshInterval=0; fetchCalls=0;
+}
+
+function onAltimeterSetStandard(e) {
+    e.preventDefault();
+    jQuery("#altimeter_input").val(1013.25);
+    onAltimeterChange(e);
+}
+function onAltimeterChange(e) {
+    e.preventDefault();
+    jQuery("#altimeter_input").blur();
+    let altimeter = parseFloat(jQuery("#altimeter_input").val().trim());
+
+    if (altimeter < 100) {
+        // assume inHg, convert to mbar
+        baroCorrectQNH = 33.8639 * altimeter;
+    } else {
+        // assume mbar / hPa
+        baroCorrectQNH = altimeter;
+    }
+
+    remakeTrails();
+    refreshSelected();
+    refreshFeatures();
+    TAR.planeMan.redraw();
+    refresh();
+}
+
+// Using formula from: https://www.weather.gov/media/epz/wxcalc/pressureAltitude.pdf
+// See also: https://en.wikipedia.org/wiki/Pressure_altitude
+// Inverse equation on wikipedia seems imprecise,
+// used the the weather.gov pdf and inverted the equation myself
+// This uses ISA atmosphere (should be the same as altimeters in planes)
+function adjust_baro_alt(alt) {
+    if (!baroUseQNH || alt == null || alt == "ground") {
+        return alt;
+    }
+    let station_pressure = Math.pow(1 - alt / 145366.45, 5.2553026) * 1013.25;
+
+    let res = ( 1 - Math.pow(station_pressure / baroCorrectQNH, 0.190284) ) * 145366.45;
+    return res;
 }
 
 function globeRateUpdate() {
