@@ -1254,10 +1254,12 @@ jQuery('#selected_altitude_geom1')
             baroUseQNH = state;
             if (baroUseQNH) {
                 jQuery('#selected_altitude1_title').updateText('Corr. baro-alt');
+                jQuery('#selected_altitude1_title').attr('title', 'The corrected pressure-derived height of the aircraft above mean sea level (based on barometric pressure)');
                 jQuery('#selected_altitude2_title').updateText('Corr. baro.');
                 jQuery('#infoblock_altimeter').removeClass('hidden');
             } else {
                 jQuery('#selected_altitude1_title').updateText('Baro. altitude');
+                jQuery('#selected_altitude1_title').attr('title', 'The uncorrected pressure-derived height of the aircraft above mean sea level (based on barometric pressure)');
                 jQuery('#selected_altitude2_title').updateText('Barometric');
                 jQuery('#infoblock_altimeter').addClass('hidden');
             }
