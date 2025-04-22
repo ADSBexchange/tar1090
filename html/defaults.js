@@ -314,7 +314,7 @@ let wideInfoBlock = false;
 let baseInfoBlockWidth = 200;
 
 // enable DWD Radolan (NEXRAD like weather for Germany)
-let enableDWD = true;
+let enableDWD = false;
 
 let lastLeg = true;
 
