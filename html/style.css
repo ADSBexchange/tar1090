@@ -1042,3 +1042,17 @@ div.sticky {
     position: sticky;
     top: 0px;
 }
+#closeIcon svg {
+    display: none;
+}
+#closeIcon::after {
+    content: "Close";
+    display: block;
+    font-family: "Arial", sans-serif;
+    font-size: 12px;
+    text-align: center;
+    text-shadow: rgb(0, 0, 0) 2px 1px 1px;
+    color: rgb(255, 255, 255);
+    cursor: pointer;
+    white-space: nowrap;
+}
