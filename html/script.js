@@ -7360,11 +7360,8 @@ function replayJump() {
         return;
 
     let parts = replay.dateText.split('-'); // YYYY-mm-DD
-    let date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2])); // Months are 0-based
+    let date = new Date(Date.UTC(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), Number(replay.hours), Number(replay.minutes))); // Months are 0-based
 
-    date.setUTCHours(Number(replay.hours));
-    date.setUTCMinutes(Number(replay.minutes));
-    date.setUTCSeconds(0);
     let ts = new Date(replay.ts.getTime());
 
     // diff less 10 seconds
