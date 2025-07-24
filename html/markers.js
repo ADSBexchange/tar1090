@@ -963,7 +963,10 @@ let TypeDesignatorIcons = {
     'J8B': ['hi_perf', 1],
     'JH7': ['hi_perf', 1],
     'LTNG': ['hi_perf', 1],
+    'M346': ['hi_perf', 1],
     'METR': ['hi_perf', 1],
+    'MG15': ['hi_perf', 1],
+    'MG17': ['hi_perf', 1],
     'MG19': ['hi_perf', 1],
     'MG25': ['hi_perf', 1],
     'MG29': ['hi_perf', 1],
@@ -1069,6 +1072,7 @@ let TypeDesignatorIcons = {
     'C2': ['c2', 1],
     'E2': ['c2', 1],
     'H47': ['chinook', 1],
+    'H46': ['chinook', 1],
     'HAWK': ['bae_hawk', 1],
 
     'GYRO': ['gyrocopter', 1],
