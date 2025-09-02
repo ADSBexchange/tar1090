@@ -780,7 +780,7 @@ function initPage() {
         defaultOverlays.push('uka_airspaces');
         defaultOverlays.push('uka_runways');
         defaultOverlays.push('uka_shoreham');
-        MapType_tar1090 = 'carto_light_all';
+        MapType_tar1090 = 'maptiler_custom';
         lineWidth=4;
         g.enableLabels=true;
     }
@@ -8445,12 +8445,6 @@ function setSelectedIcao() {
 function mapTypeSettings() {
     if (MapType_tar1090.startsWith('maptiler_sat') || MapType_tar1090.startsWith('maptiler_hybrid')) {
         layerExtraDim = -0.30;
-    } else if (MapType_tar1090.startsWith('carto_raster')) {
-        layerExtraDim = -0.15;
-        layerExtraContrast = 0.6;
-    } else if (MapType_tar1090.startsWith('carto_light')) {
-        layerExtraDim = -0.05;
-        layerExtraContrast = 0.2;
     } else {
         layerExtraDim = 0;
         layerExtraContrast = 0;
