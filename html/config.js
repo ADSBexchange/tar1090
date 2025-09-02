@@ -63,10 +63,6 @@ MapType_tar1090 = "osm_adsbx";
 // valid values for the above setting:
 // osm
 // esri
-// carto_light_all
-// carto_light_nolabels
-// carto_dark_all
-// carto_dark_nolabels
 // gibs
 // osm_adsbx
 // chartbundle_sec: "Sectional Charts",
