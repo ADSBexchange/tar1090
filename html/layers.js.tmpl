@@ -255,6 +255,60 @@ function createBaseLayers() {
         }));
     }
 
+    // OpenFreeMap layers using ol-mapbox-style
+    let openfreemap_liberty = new ol.layer.VectorTile({
+        declutter: true,
+        type: 'base',
+        name: 'openfreemap_liberty',
+        title: 'OpenFreeMap Liberty',
+    });
+    
+    let openfreemap_positron = new ol.layer.VectorTile({
+        declutter: true,
+        type: 'base',
+        name: 'openfreemap_positron',
+        title: 'OpenFreeMap Positron',
+    });
+    
+    let openfreemap_bright = new ol.layer.VectorTile({
+        declutter: true,
+        type: 'base',
+        name: 'openfreemap_bright',
+        title: 'OpenFreeMap Bright',
+    });
+
+    // Apply OpenFreeMap styles using ol-mapbox-style (fetch style JSON first)
+    jQuery.ajax({
+        url: 'https://tiles.openfreemap.org/styles/liberty',
+        dataType: 'json',
+        layer: openfreemap_liberty,
+        cache: false,
+    }).done(function(glStyle) {
+        ol.mbApplyStyle(this.layer, glStyle, 'openmaptiles');
+    });
+
+    jQuery.ajax({
+        url: 'https://tiles.openfreemap.org/styles/positron',
+        dataType: 'json',
+        layer: openfreemap_positron,
+        cache: false,
+    }).done(function(glStyle) {
+        ol.mbApplyStyle(this.layer, glStyle, 'openmaptiles');
+    });
+
+    jQuery.ajax({
+        url: 'https://tiles.openfreemap.org/styles/bright',
+        dataType: 'json',
+        layer: openfreemap_bright,
+        cache: false,
+    }).done(function(glStyle) {
+        ol.mbApplyStyle(this.layer, glStyle, 'openmaptiles');
+    });
+
+    world.push(openfreemap_liberty);
+    world.push(openfreemap_positron);
+    world.push(openfreemap_bright);
+
     // testing ...
     if (0) {
         let english_map = new ol.layer.VectorTile({
