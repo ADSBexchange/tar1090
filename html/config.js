@@ -77,9 +77,9 @@ MapType_tar1090 = "osm_adsbx";
 // bing_roads
 //
 // OpenFreeMap vector tile styles:
-// openfreemap_liberty
-// openfreemap_positron
-// openfreemap_bright
+// OpenFreeMapLiberty
+// OpenFreeMapPositron
+// OpenFreeMapBright
 
 
 // default these overlays to on for visitors which haven't disabled them in the browser in a previous session

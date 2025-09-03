@@ -255,58 +255,41 @@ function createBaseLayers() {
         }));
     }
 
-    // OpenFreeMap layers using ol-mapbox-style
+    // OpenFreeMap layers using vector tiles
     let openfreemap_liberty = new ol.layer.VectorTile({
-        declutter: true,
         type: 'base',
-        name: 'openfreemap_liberty',
+        name: 'OpenFreeMapLiberty',
         title: 'OpenFreeMap Liberty',
-    });
-    
-    let openfreemap_positron = new ol.layer.VectorTile({
         declutter: true,
-        type: 'base',
-        name: 'openfreemap_positron',
-        title: 'OpenFreeMap Positron',
-    });
-    
-    let openfreemap_bright = new ol.layer.VectorTile({
-        declutter: true,
-        type: 'base',
-        name: 'openfreemap_bright',
-        title: 'OpenFreeMap Bright',
     });
 
-    // Apply OpenFreeMap styles using ol-mapbox-style (fetch style JSON first)
-    jQuery.ajax({
-        url: 'https://tiles.openfreemap.org/styles/liberty',
-        dataType: 'json',
-        layer: openfreemap_liberty,
-        cache: false,
-    }).done(function(glStyle) {
-        ol.mbApplyStyle(this.layer, glStyle, 'openmaptiles');
-    });
-
-    jQuery.ajax({
-        url: 'https://tiles.openfreemap.org/styles/positron',
-        dataType: 'json',
-        layer: openfreemap_positron,
-        cache: false,
-    }).done(function(glStyle) {
-        ol.mbApplyStyle(this.layer, glStyle, 'openmaptiles');
-    });
-
-    jQuery.ajax({
-        url: 'https://tiles.openfreemap.org/styles/bright',
-        dataType: 'json',
-        layer: openfreemap_bright,
-        cache: false,
-    }).done(function(glStyle) {
-        ol.mbApplyStyle(this.layer, glStyle, 'openmaptiles');
-    });
-
+    // ol-mapbox-style plugin packed in with ol ... (kinda ugly)
+    ol.mapboxStyle.applyStyle(openfreemap_liberty, "https://tiles.openfreemap.org/styles/liberty");
+    ol.mapboxStyle.applyBackground(openfreemap_liberty, "https://tiles.openfreemap.org/styles/liberty");
     world.push(openfreemap_liberty);
+
+    let openfreemap_positron = new ol.layer.VectorTile({
+        type: 'base',
+        name: 'OpenFreeMapPositron',
+        title: 'OpenFreeMap Positron',
+        declutter: true,
+    });
+
+    // ol-mapbox-style plugin packed in with ol ... (kinda ugly)
+    ol.mapboxStyle.applyStyle(openfreemap_positron, "https://tiles.openfreemap.org/styles/positron");
+    ol.mapboxStyle.applyBackground(openfreemap_positron, "https://tiles.openfreemap.org/styles/positron");
     world.push(openfreemap_positron);
+
+    let openfreemap_bright = new ol.layer.VectorTile({
+        type: 'base',
+        name: 'OpenFreeMapBright',
+        title: 'OpenFreeMap Bright',
+        declutter: true,
+    });
+    
+    // ol-mapbox-style plugin packed in with ol ... (kinda ugly)
+    ol.mapboxStyle.applyStyle(openfreemap_bright, "https://tiles.openfreemap.org/styles/bright");
+    ol.mapboxStyle.applyBackground(openfreemap_bright, "https://tiles.openfreemap.org/styles/bright");
     world.push(openfreemap_bright);
 
     // testing ...
