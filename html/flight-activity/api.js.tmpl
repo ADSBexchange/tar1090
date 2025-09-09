@@ -436,7 +436,6 @@ Data in italics represents  calculated values when ADS-B coverage is not availab
   if (data?.items.length === 0)
     html += `<tr><td colspan='3'>No Flights Found.</td></tr>`;
   html += "</table>";
-  html += `<div class='flex_center more'><h5>Want more data?</h5><button onclick="window.open('https://www.adsbexchange.com/products/historical-data/')">Get More</button></div>`;
 
   displayLabel.html(html);
 }
