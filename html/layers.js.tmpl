@@ -255,6 +255,55 @@ function createBaseLayers() {
         }));
     }
 
+    // OpenFreeMap layers using vector tiles
+    let openfreemap_liberty = new ol.layer.VectorTile({
+        type: 'base',
+        name: 'OpenFreeMapLiberty',
+        title: 'OpenFreeMap Liberty',
+        declutter: true,
+    });
+
+    // ol-mapbox-style plugin packed in with ol ... (kinda ugly)
+    ol.mapboxStyle.applyStyle(openfreemap_liberty, "https://tiles.openfreemap.org/styles/liberty");
+    ol.mapboxStyle.applyBackground(openfreemap_liberty, "https://tiles.openfreemap.org/styles/liberty");
+    world.push(openfreemap_liberty);
+
+    let openfreemap_positron = new ol.layer.VectorTile({
+        type: 'base',
+        name: 'OpenFreeMapPositron',
+        title: 'OpenFreeMap Positron',
+        declutter: true,
+    });
+
+    // ol-mapbox-style plugin packed in with ol ... (kinda ugly)
+    ol.mapboxStyle.applyStyle(openfreemap_positron, "https://tiles.openfreemap.org/styles/positron");
+    ol.mapboxStyle.applyBackground(openfreemap_positron, "https://tiles.openfreemap.org/styles/positron");
+    world.push(openfreemap_positron);
+
+    let openfreemap_bright = new ol.layer.VectorTile({
+        type: 'base',
+        name: 'OpenFreeMapBright',
+        title: 'OpenFreeMap Bright',
+        declutter: true,
+    });
+    
+    // ol-mapbox-style plugin packed in with ol ... (kinda ugly)
+    ol.mapboxStyle.applyStyle(openfreemap_bright, "https://tiles.openfreemap.org/styles/bright");
+    ol.mapboxStyle.applyBackground(openfreemap_bright, "https://tiles.openfreemap.org/styles/bright");
+    world.push(openfreemap_bright);
+
+    let openfreemap_dark = new ol.layer.VectorTile({
+        type: 'base',
+        name: 'OpenFreeMapDark',
+        title: 'OpenFreeMap Dark',
+        declutter: true
+    });
+    
+    // ol-mapbox-style plugin packed in with ol ... (kinda ugly)
+    ol.mapboxStyle.applyStyle(openfreemap_dark, "https://tiles.openfreemap.org/styles/dark");
+    ol.mapboxStyle.applyBackground(openfreemap_dark, "https://tiles.openfreemap.org/styles/dark");
+    world.push(openfreemap_dark);
+
     // testing ...
     if (0) {
         let english_map = new ol.layer.VectorTile({
