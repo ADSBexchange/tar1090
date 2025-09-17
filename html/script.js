@@ -2063,27 +2063,24 @@ function webglAddLayer() {
     //console.log(spriteSrc);
     try {
         let glStyle = {
-            symbol: {
-                symbolType: 'image',
-                src: spriteSrc,
-                size: [ 'get', 'size' ],
-                offset: [0, 0],
-                textureCoord: [ 'array',
-                    [ 'get', 'cx' ],
-                    [ 'get', 'cy' ],
-                    [ 'get', 'dx' ],
-                    [ 'get', 'dy' ]
-                ],
-                color: [
-                    'color',
-                    [ 'get', 'r' ],
-                    [ 'get', 'g' ],
-                    [ 'get', 'b' ],
-                    1
-                ],
-                rotateWithView: false,
-                rotation: [ 'get', 'rotation' ],
-            },
+            'icon-src': spriteSrc,
+            'icon-color': [
+                'color',
+                [ 'get', 'r' ],
+                [ 'get', 'g' ],
+                [ 'get', 'b' ],
+                1
+            ],
+            'icon-size': [ glIconSize, glIconSize ],
+            'icon-offset': [
+                'array',
+                [ 'get', 'sx' ],
+                [ 'get', 'sy' ]
+            ],
+            'icon-rotation': [ 'get' , 'rotation' ],
+            'icon-rotate-with-view': false,
+            //'icon-scale': [ 'array', ['get', 'scale'], ['get', 'scale'] ],
+            'icon-scale': [ 'abs', ['get', 'scale']],
         };
         if (heatmap) {
             glStyle = {
