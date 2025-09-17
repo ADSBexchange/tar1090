@@ -75,12 +75,6 @@ MapType_tar1090 = "osm_adsbx";
 // only with bing key:
 // bing_aerial
 // bing_roads
-//
-// OpenFreeMap vector tile styles:
-// OpenFreeMapLiberty
-// OpenFreeMapPositron
-// OpenFreeMapBright
-
 
 // default these overlays to on for visitors which haven't disabled them in the browser in a previous session
 // defaultOverlays = ['radolan', 'nexrad'];
