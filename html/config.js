@@ -75,6 +75,11 @@ MapType_tar1090 = "osm_adsbx";
 // only with bing key:
 // bing_aerial
 // bing_roads
+//
+// OpenFreeMap vector tile styles:
+// OpenFreeMapLiberty
+// OpenFreeMapPositron
+// OpenFreeMapBright
 
 
 
