@@ -80,7 +80,7 @@ function createBaseLayers() {
         }));
     }
 
-    if (adsbexchange) {
+    if (aggregator) {
         world.push(new ol.layer.Tile({
             source: new ol.source.OSM({
                 "url" : "https://__MAP_PUB_DOMAIN_NAME__/mapproxy/tiles/1.0.0/osm/osm_grid/{z}/{x}/{y}.png",
@@ -105,7 +105,7 @@ function createBaseLayers() {
         }));
     }
 
-    if (!adsbexchange) {
+    if (!aggregator) {
         world.push(new ol.layer.Tile({
             source: new ol.source.OSM({
                 "url" : "https://{a-d}.tile.openstreetmap.de/{z}/{x}/{y}.png",
@@ -132,7 +132,7 @@ function createBaseLayers() {
         type: 'base',
     }));
 
-    if (adsbexchange && getCookie("adsbx_subscriber")) {
+    if (aggregator && getCookie("adsbx_subscriber")) {
         jQuery('#premium_text').updateText('Premium active!');
         world.push(new ol.layer.Tile({
             source: new ol.source.XYZ({
@@ -197,7 +197,7 @@ function createBaseLayers() {
         }));
     }
     /* 
-    if (adsbexchange) {
+    if (aggregator) {
         world.push(new ol.layer.Tile({
             source: new ol.source.XYZ({
                 url: "https://api.maptiler.com/maps/256/{z}/{x}/{y}.png?key=HyIQ6A88uTDdX4n4MNVY",
@@ -213,7 +213,7 @@ function createBaseLayers() {
     }
     */
 
-    if (!adsbexchange) {
+    if (!aggregator) {
         world.push(new ol.layer.Tile({
             source: new ol.source.XYZ({
                 url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -271,7 +271,7 @@ function createBaseLayers() {
     if (0) {
         let vtlayer = new ol.layer.VectorTile({
             source: new ol.source.VectorTile({
-                url: "http://test02.dev.adsbexchange.com/tiles/{z}/{x}/{y}.pbf",
+                url: "http://test02.dev.aggregator.com/tiles/{z}/{x}/{y}.pbf",
                 format: new ol.format.MVT(),
                 maxZoom: 9,
                 transition: tileTransition,
@@ -366,7 +366,7 @@ function createBaseLayers() {
         };
         let chartbundleTypesAx = {
         };
-        if (adsbexchange) {
+        if (aggregator) {
             chartbundleTypesDirect = {
             };
             chartbundleTypesAx = {
