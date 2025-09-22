@@ -965,6 +965,8 @@ let TypeDesignatorIcons = {
     'LTNG': ['hi_perf', 1],
     'M346': ['hi_perf', 1],
     'METR': ['hi_perf', 1],
+    'MG15': ['hi_perf', 1],
+    'MG17': ['hi_perf', 1],
     'MG19': ['hi_perf', 1],
     'MG25': ['hi_perf', 1],
     'MG29': ['hi_perf', 1],
