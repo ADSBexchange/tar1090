@@ -80,7 +80,7 @@ function createBaseLayers() {
         }));
     }
 
-    if (aggregator) {
+    if (adsbexchange) {
         world.push(new ol.layer.Tile({
             source: new ol.source.OSM({
                 "url" : "https://__MAP_PUB_DOMAIN_NAME__/mapproxy/tiles/1.0.0/osm/osm_grid/{z}/{x}/{y}.png",
@@ -105,7 +105,7 @@ function createBaseLayers() {
         }));
     }
 
-    if (!aggregator) {
+    if (!adsbexchange) {
         world.push(new ol.layer.Tile({
             source: new ol.source.OSM({
                 "url" : "https://{a-d}.tile.openstreetmap.de/{z}/{x}/{y}.png",
@@ -116,33 +116,6 @@ function createBaseLayers() {
             name: 'osm_de',
             title: 'OpenStreetMap DE',
             type: 'base',
-            name: 'OpenFreeMapLiberty',
-            title: 'OpenFreeMap Liberty',
-            declutter: true,
-            onVisible: (layer) => {
-                if (!layer.get('styleApplied')) {
-                    // ol-mapbox-style plugin packed in with ol ... (kinda ugly)
-                    ol.mapboxStyle.applyStyle(layer, "https://tiles.openfreemap.org/styles/liberty");
-                    ol.mapboxStyle.applyBackground(layer, "https://tiles.openfreemap.org/styles/liberty");
-                    layer.set('styleApplied', true);
-                }
-            },
-        }));
-    }
-    if (1) {
-        world.push(new ol.layer.VectorTile({
-            type: 'base',
-            name: 'OpenFreeMapPositron',
-            title: 'OpenFreeMap Positron',
-            declutter: true,
-            onVisible: (layer) => {
-                if (!layer.get('styleApplied')) {
-                    // ol-mapbox-style plugin packed in with ol ... (kinda ugly)
-                    ol.mapboxStyle.applyStyle(layer, "https://tiles.openfreemap.org/styles/positron");
-                    ol.mapboxStyle.applyBackground(layer, "https://tiles.openfreemap.org/styles/positron");
-                    layer.set('styleApplied', true);
-                }
-            },
         }));
     }
     
@@ -159,7 +132,7 @@ function createBaseLayers() {
         type: 'base',
     }));
 
-    if (aggregator && getCookie("adsbx_subscriber")) {
+    if (adsbexchange && getCookie("adsbx_subscriber")) {
         jQuery('#premium_text').updateText('Premium active!');
         world.push(new ol.layer.Tile({
             source: new ol.source.XYZ({
@@ -240,7 +213,7 @@ function createBaseLayers() {
     }
     */
 
-    if (1) {
+    if (!adsbexchange) {
         world.push(new ol.layer.Tile({
             source: new ol.source.XYZ({
                 url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
@@ -298,7 +271,7 @@ function createBaseLayers() {
     if (0) {
         let vtlayer = new ol.layer.VectorTile({
             source: new ol.source.VectorTile({
-                url: "http://test02.dev.adsf.com/tiles/{z}/{x}/{y}.pbf",
+                url: "http://test02.dev.adsbexchange.com/tiles/{z}/{x}/{y}.pbf",
                 format: new ol.format.MVT(),
                 maxZoom: 9,
                 transition: tileTransition,
@@ -321,7 +294,7 @@ function createBaseLayers() {
         world.push(vtlayer);
     }
 
-    /* seems defunct
+    /*
     world.push(new ol.layer.Tile({
         source: new ol.source.OSM({
             url: 'https://gibs-{a-c}.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/EPSG3857_500m/{z}/{y}/{x}.jpeg',
@@ -330,7 +303,7 @@ function createBaseLayers() {
             maxZoom: 8,
             transition: tileTransition,
         }),
-        name: 'gibs_relief',
+        name: 'gibs_reliev',
         title: 'GIBS Relief',
         type: 'base',
     }));
@@ -380,107 +353,7 @@ function createBaseLayers() {
         }));
     }
 
-    if (loStore['mapboxKey'] != undefined)
-        MapboxAPIKey = loStore['mapboxKey'];
-
-    if (MapboxAPIKey) {
-        world.push(new ol.mapboxStyle.MapboxVectorLayer({
-            styleUrl: 'mapbox://styles/mapbox/streets-v10',
-            accessToken: MapboxAPIKey,
-            properties: {
-                name: 'mapbox_streets',
-                title: 'Mapbox Streets',
-                type: 'base',
-            },
-        }));
-        world.push(new ol.mapboxStyle.MapboxVectorLayer({
-            styleUrl: 'mapbox://styles/mapbox/light-v11',
-            accessToken: MapboxAPIKey,
-            properties: {
-                name: 'mapbox_light',
-                title: 'Mapbox Light',
-                type: 'base',
-            },
-        }));
-        world.push(new ol.mapboxStyle.MapboxVectorLayer({
-            styleUrl: 'mapbox://styles/mapbox/dark-v11',
-            accessToken: MapboxAPIKey,
-            properties: {
-                name: 'mapbox_dark',
-                title: 'Mapbox Dark',
-                type: 'base',
-            },
-        }));
-        world.push(new ol.mapboxStyle.MapboxVectorLayer({
-            styleUrl: 'mapbox://styles/mapbox/outdoors-v10',
-            accessToken: MapboxAPIKey,
-            properties: {
-                name: 'mapbox_outdoors',
-                title: 'Mapbox Outdoors',
-                type: 'base',
-            },
-        }));
-    }
-
-    if (1) {
-        us.push(new ol.layer.Tile({
-            source: new ol.source.XYZ({
-                url: "https://tiles.arcgis.com/tiles/ssFJjBXIUyZDrSYZ/arcgis/rest/services/VFR_Sectional/MapServer/tile/{z}/{y}/{x}",
-                attributions: 'Tiles courtesy of <a href="http://tiles.arcgis.com/">arcgis.com</a>',
-                attributionsCollapsible: false,
-                minZoom: 8,
-                maxZoom: 12,
-                transition: tileTransition,
-            }),
-            name: 'VFR_Sectional',
-            title: 'VFR Sectional Chart',
-            type: 'base'
-        }));
-
-        us.push(new ol.layer.Tile({
-            source: new ol.source.XYZ({
-                url: "https://tiles.arcgis.com/tiles/ssFJjBXIUyZDrSYZ/arcgis/rest/services/VFR_Terminal/MapServer/tile/{z}/{y}/{x}",
-                attributions: 'Tiles courtesy of <a href="http://tiles.arcgis.com/">arcgis.com</a>',
-                attributionsCollapsible: false,
-                minZoom: 10,
-                maxZoom: 12,
-                transition: tileTransition,
-            }),
-            name: 'VFR_Terminal',
-            title: 'VFR Terminal Chart',
-            type: 'base'
-        }));
-
-        us.push(new ol.layer.Tile({
-            source: new ol.source.XYZ({
-                url: "https://tiles.arcgis.com/tiles/ssFJjBXIUyZDrSYZ/arcgis/rest/services/IFR_AreaLow/MapServer/tile/{z}/{y}/{x}",
-                attributions: 'Tiles courtesy of <a href="http://tiles.arcgis.com/">arcgis.com</a>',
-                attributionsCollapsible: false,
-                minZoom: 8,
-                maxZoom: 11,
-                transition: tileTransition,
-            }),
-            name: 'IFR_AreaLow',
-            title: 'IFR Enroute Chart Low',
-            type: 'base'
-        }));
-
-        us.push(new ol.layer.Tile({
-            source: new ol.source.XYZ({
-                url: "https://tiles.arcgis.com/tiles/ssFJjBXIUyZDrSYZ/arcgis/rest/services/IFR_High/MapServer/tile/{z}/{y}/{x}",
-                attributions: 'Tiles courtesy of <a href="http://tiles.arcgis.com/">arcgis.com</a>',
-                attributionsCollapsible: false,
-                minZoom: 7,
-                maxZoom: 11,
-                transition: tileTransition,
-            }),
-            name: 'IFR_High',
-            title: 'IFR Enroute Chart High',
-            type: 'base'
-        }));
-    }
-
-/*     if (ChartBundleLayers) {
+    if (ChartBundleLayers) {
 
         let chartbundleTypesDirect = {
             sec: "Sectional Charts",
@@ -547,7 +420,7 @@ function createBaseLayers() {
                 type: 'base',
                 group: 'chartbundle'}));
         }
-    } */
+    }
 
     world.push(new ol.layer.Tile({
         source: new ol.source.XYZ({
@@ -560,11 +433,27 @@ function createBaseLayers() {
         name: 'openaip',
         title: 'openAIP TMS',
         type: 'overlay',
-        opacity: openAIPOpacity,
+        opacity: 0.7,
         visible: false,
         zIndex: 99,
         maxZoom: 13,
     }));
+
+    if (tfrs) {
+        world.push(new ol.layer.Vector({
+            source: new ol.source.Vector({
+                url: 'tfrs.kml',
+                format: new ol.format.KML(),
+                transition: tileTransition,
+            }),
+            name: 'tfr',
+            title: 'TFRs',
+            type: 'overlay',
+            opacity: 0.7,
+            visible: true,
+            zIndex: 99,
+        }));
+    }
 
     if (true) {
         let tfrLayer = new ol.layer.Vector({
