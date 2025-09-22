@@ -30,11 +30,8 @@ let deferHistory;
 let historyLoaded = jQuery.Deferred();
 let zstdDefer = jQuery.Deferred();
 let configureReceiver = jQuery.Deferred();
-<<<<<<< HEAD
 let dynGlobeRate = false;
-=======
 let historyQueued = jQuery.Deferred();
->>>>>>> wiedehopf/master
 let historyTimeout = 60;
 let haveTraces = false;
 let globeIndex = 0;
