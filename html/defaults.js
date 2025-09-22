@@ -28,9 +28,6 @@ let DisplayUnits = "nautical";
 // provided by dump1090 itself. All positions are in decimal
 // degrees.
 
-// Default center of the map.
-let DefaultCenterLat = 40.56;
-let DefaultCenterLon = -73.66
 // The google maps zoom level, 0 - 16, lower is further out
 let DefaultZoomLvl   = 9;
 
@@ -38,12 +35,8 @@ let autoselectCoords = null;
 
 let showGrid = false;
 
-// Center marker. If dump1090 provides a receiver location,
-// that location is used and these settings are ignored.
 
 let SiteShow    = true;           // true to show a center marker
-let SiteLat     = null;            // position of the marker
-let SiteLon     = null;
 let SiteName    = "My Radar Site"; // tooltip of the marker
 
 // Update GPS location (keep map centered on GPS location)
@@ -54,11 +47,13 @@ let range_outline_color = '#0000DD';
 let range_outline_alpha = 1.0;
 let range_outline_width = 1.7;
 let range_outline_colored_by_altitude = false;
+// NOTE: dashed lines cause slowdown when zooming in, not recommended
 let range_outline_dash = null; // null - solid line, [5, 5] - dashed line with 5 pixel lines and spaces in between
 
 // Style controls for the actal range outline:
 let actual_range_outline_color = '#00596b';
 let actual_range_outline_width = 1.7;
+// NOTE: dashed lines cause slowdown when zooming in, not recommended
 let actual_range_outline_dash = null; // null - solid line, [5, 5] - dashed line with 5 pixel lines and spaces in between
 //
 let actual_range_show = true;
@@ -66,16 +61,35 @@ let actual_range_show = true;
 // which map is displayed to new visitors
 let MapType_tar1090 = "osm_adsbx";
 let defaultOverlays = [];
-let dwdLayers = 'dwd:RX-Produkt';
+let dwdLayers = 'dwd:RADOLAN-RY';
 
 // Default map dim state
 let MapDim = true;
 let mapDimPercentage = 0.45;
 let mapContrastPercentage = 0;
 
+// opacities for various overlays
+let nexradOpacity = 0.35
+let dwdRadolanOpacity = 0.30;
+let rainViewerRadarOpacity = 0.30;
+let rainViewerCloudsOpacity = 0.30;
+let noaaInfraredOpacity = 0.35;
+let noaaRadarOpacity = 0.35;
+let openAIPOpacity = 0.70;
+let tfrOpacity = 0.70;
+
 let offlineMapDetail = -1;
 
 // -- Marker settings -------------------------------------
+// (marker == aircraft icon)
+
+// aircraft icon opacity (normal and while the user is moving the map)
+let webglIconOpacity = 1.0;
+let webglIconMapMoveOpacity = 1.0;
+
+// if more than by default 2000 aircraft are on the screen, reduce icon opacity when moving the screen:
+let webglIconMapMoveOpacityCrowded = 0.25;
+let webglIconMapMoveOpacityCrowdedThreshold = 2000;
 
 // different marker size depending on zoom lvl
 let markerZoomDivide = 8.5;
@@ -104,7 +118,7 @@ let altitudeChartDefaultState = true;
 // All color values are given as Hue (0-359) / Saturation (0-100) / Lightness (0-100)
 let ColorByAlt = {
 	// HSL for planes with unknown altitude:
-	unknown : { h: 0,   s: 0,   l: 20 },
+	unknown : { h: 0,   s: 0,   l: 75 },
 
 	// HSL for planes that are on the ground:
 	ground  : { h: 220, s: 0, l: 30 },
@@ -201,8 +215,8 @@ let PageName = "ADS-B Exchange - track aircraft live";
 // Show country flags by ICAO addresses?
 let ShowFlags = true;
 
-// Path to country flags (can be a relative or absolute URL; include a trailing /)
-let FlagPath = "flags-tiny/";
+// UNUSED, kept here so config.js doesn't break for potential users
+let FlagPath = "";
 
 // Set to false to disable the ChartBundle base layers (US coverage only)
 let ChartBundleLayers = true;
@@ -215,6 +229,15 @@ let ChartBundleLayers = true;
 //   BingMapsAPIKey = "your key here";
 //
 let BingMapsAPIKey = null;
+
+// Provide a Mapbox API key here to enable the Mapbox vector layers.
+// You can obtain a free key (with usage limits) at
+// https://www.mapbox.com/
+//
+// Be sure to quote your key:
+//   MapboxAPIKey = "your key here";
+//
+let MapboxAPIKey = null;
 
 let pf_data = ["chunks/pf.json"]
 
@@ -233,7 +256,19 @@ let utcTimesHistoric = true;
 let labelZoom = 0;
 let labelZoomGround = 14.8;
 
-let labelFont = 'bold 12px tahoma';
+// font family for labels, default bold, could be empty or italic as well
+let labelStyle = 'bold';
+let labelFamily = 'Tahoma, Verdana, Helvetica, sans-serif';
+let labelScale = 1;
+
+// labelFont this is now generated from the detailed settings above, setting this in config.js won't
+// have ANY effect
+let labelFont;
+
+// some scaling for fonts and things
+let globalScale = 1;
+let userScale = 1;
+let iconScale = 1;
 
 let displayUATasADSB = false;
 let uatNoTISB = false;
@@ -276,7 +311,29 @@ let tempTrailsTimeout = 90;
 let squareMania = false;
 
 // Columns that have a // in front of them are shown.
-let HideCols = ["#registration", "#squawk", "#vert_rate", "#track", "#msgs", "#seen", "#rssi", "#lat", "#lon", "#data_source", "#military"]
+let HideCols = [
+//	"#icao",
+//	"#country",
+//	"#flight",
+//	"#route",
+	"#registration",
+//	"#type",
+	"#squawk",
+//	"#altitude",
+//	"#speed",
+	"#vert_rate",
+//	"#sitedist",
+	"#track",
+	"#msgs",
+	"#seen",
+	"#rssi",
+	"#lat",
+	"#lon",
+	"#data_source",
+	"#military",
+    "#wd",
+    "#ws",
+]
 
 
 // show aircraft pictures
@@ -287,10 +344,16 @@ let planespottersAPIurl = "https://api.planespotters.net/pub/photos/";
 // get pictures from planespotting.be
 let planespottingAPI = false;
 
-// get flight route from routeApi service
+// get flight route from routeApi service default setting (toggle via settings checkbox)
 let useRouteAPI = false;
+// show IATA airport codes instead of ICAO when using the route API
+let useIataAirportCodes = true; // DEPRECATED, forces routeDisplay to icao when set to false
+// configure route display, possible values: iata, icao, city (can use multiple like this: 'iata,city')
+let routeDisplay = 'iata';
 // which routeApi service to use
-let routeApiUrl = "https://api.adsb.lol/api/0/routeset";
+let routeApiUrl = "https://adsb.im/api/0/routeset";
+// alternative: "https://api.adsb.lol/api/0/routeset";
+// routeApiUrl = ""; // to disable route API so it can't be enabled by a website visitor
 
 // show a link to jetphotos, only works if planespottersAPI is disabled
 let jetphotoLinks = false;
@@ -325,6 +388,7 @@ let askLocation = false; // requires https for geolocation
 let filterMaxRange = 1e8; // 100 000 km should include all planes on earth ;)
 
 let jaeroTimeout = 35 * 60; // in seconds
+let jaeroLabel = "ADS-C"; // relabel the ADS-C data if used for other purposes (i.e. HFDL / acars2pos)
 
 let seenTimeout = 45; // in seconds
 let seenTimeoutMlat = 60; // in seconds
@@ -332,6 +396,20 @@ let seenTimeoutMlat = 60; // in seconds
 let darkModeDefault = true; // turn on dark mode by default (change in browser possible)
 
 let tableInView = false; // only show aircraft in current view (V button)
+
+let audio_url = ["", "", "", "", "", ""]; // show html5 audio player for these URLs
+// example with titles: audio_url = [ ["URL1", "title1" ], ["URL2", "title2"] ];
+
+let aiscatcher_server = "";
+let aiscatcher_refresh = 15;
+let aiscatcher_test = true; // unused
+let aisTimeout = 1200;
+
+let droneJson = "";
+let droneRefresh = 1;
+
+let icaoFilter = null;
+let icaoBlacklist = null;
 
 // legacy variables
 let OutlineMlatColor = null;
@@ -344,22 +422,24 @@ let tableColors = {
         mlat:      "#FDF7DD",
         uat:       "#C4FFDC",
         adsr:      "#C4FFDC",
-        adsc:      "#C4FFDC",
+        adsc:      "#9efa9e",
         modeS:     "#d8d8ff",
         tisb:      "#ffd8e6",
         unknown:   "#dcdcdc",
         other:   "#dcdcdc",
+        ais:     "#dcdcdc",
     },
     selected: {
         adsb:      "#88DDFF",
         mlat:      "#F1DD83",
         uat:       "#66FFA6",
         adsr:      "#66FFA6",
-        adsc:      "#66FFA6",
+        adsc:      "#75f075",
         modeS:     "#BEBEFF",
         tisb:      "#FFC1D8",
         unknown:   "#bcbcbc",
         other:   "#bcbcbc",
+        ais:   "#bcbcbc",
     },
     special: {
         7400:      "#ff0000",
@@ -373,3 +453,20 @@ let disableGeoLocation = false;
 
 // when data is available from both 1090 and 978, give some preference to the 978 data for up to X seconds old 978 data (set this to 15 or 30 for example)
 let prefer978 = 0;
+
+
+let dynGlobeRate = false; // enable use of globeRates.json in index.html directory to steer client refresh rate
+
+let multiOutline = false;
+let inhibitIframe = false;
+
+
+// !!! Please set the latitude / longitude in the decoder rather than
+// setting it here !!!
+// (graphs1090 will get the location from the decoder)
+let SiteLat     = null;            // position of the marker
+let SiteLon     = null;
+
+// Default center of the map if no Site location is set
+let DefaultCenterLat = 40.56;
+let DefaultCenterLon = -73.66

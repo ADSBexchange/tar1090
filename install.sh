@@ -1,5 +1,6 @@
 #!/bin/bash
 # shellcheck shell=bash disable=SC2016
+umask 022
 
 
 set -e
@@ -23,9 +24,13 @@ if [[ -n "$4" ]] && grep -qs -e 'tar1090' "$4/install.sh"; then git_source="$4";
 
 lighttpd=no
 nginx=no
-function useSystemd () { command -v systemd &>/dev/null; }
+function useSystemd () { command -v systemctl &>/dev/null; }
+
+gpath="$TAR1090_UPDATE_DIR"
+if [[ -z "$gpath" ]]; then gpath="$ipath"; fi
 
 mkdir -p "$ipath"
+mkdir -p "$gpath"
 
 if useSystemd && ! id -u tar1090 &>/dev/null
 then
@@ -33,7 +38,7 @@ then
 fi
 
 # terminate with /
-command_package="git git/jq jq/"
+command_package="git git/jq jq/curl curl"
 packages=()
 
 while read -r -d '/' CMD PKG
@@ -86,9 +91,15 @@ fi
 
 dir=$(pwd)
 
-if (( $( { du -s "$ipath/git-db" 2>/dev/null || echo 0; } | cut -f1) > 150000 )); then
-    rm -rf "$ipath/git-db"
+if (( $( { du -s "$gpath/git-db" 2>/dev/null || echo 0; } | cut -f1) > 150000 )); then
+    rm -rf "$gpath/git-db"
 fi
+
+function copyNoClobber() {
+    if ! [[ -f "$2" ]]; then
+        cp "$1" "$2"
+    fi
+}
 
 function getGIT() {
     # getGIT $REPO $BRANCH $TARGET (directory)
@@ -107,11 +118,14 @@ function revision() {
     git rev-parse --short HEAD 2>/dev/null || echo "$RANDOM-$RANDOM"
 }
 
-if ! { [[ "$1" == "test" ]] && cd "$ipath/git-db"; }; then
-    getGIT "$db_repo" "master" "$ipath/git-db" || true
+if ! { [[ "$1" == "test" ]] && cd "$gpath/git-db"; }; then
+    DB_VERSION_NEW=$(curl --silent --show-error "https://raw.githubusercontent.com/wiedehopf/tar1090-db/master/version")
+    if  [[ "$(cat "$gpath/git-db/version" 2>/dev/null)" != "$DB_VERSION_NEW" ]]; then
+        getGIT "$db_repo" "master" "$gpath/git-db" || true
+    fi
 fi
 
-if ! cd "$ipath/git-db"
+if ! cd "$gpath/git-db"
 then
     echo "Unable to download files, exiting! (Maybe try again?)"
     exit 1
@@ -122,22 +136,28 @@ DB_VERSION=$(revision)
 cd "$dir"
 
 if [[ "$1" == "test" ]] || [[ -n "$git_source" ]]; then
-    mkdir -p "$ipath/git"
-    rm -rf "$ipath/git"/* || true
+    mkdir -p "$gpath/git"
+    rm -rf "$gpath/git"/* || true
     if [[ -n "$git_source" ]]; then
-        cp -r "$git_source"/* "$ipath/git"
+        cp -r "$git_source"/* "$gpath/git"
     else
-        cp -r ./* "$ipath/git"
+        cp -r ./* "$gpath/git"
     fi
-    cd "$ipath/git"
-    TAR_VERSION="$(date +%s)_${RANDOM}${RANDOM}"
+    cd "$gpath/git"
+    TAR_VERSION="$(cat version)_dirty"
 else
-    if ! getGIT "$repo" "master" "$ipath/git" || ! cd "$ipath/git"
-    then
+    VERSION_NEW=$(curl --silent --show-error "https://raw.githubusercontent.com/wiedehopf/tar1090/master/version")
+    if  [[ "$(cat "$gpath/git/version" 2>/dev/null)" != "$VERSION_NEW" ]]; then
+        if ! getGIT "$repo" "master" "$gpath/git"; then
+            echo "Unable to download files, exiting! (Maybe try again?)"
+            exit 1
+        fi
+    fi
+    if ! cd "$gpath/git"; then
         echo "Unable to download files, exiting! (Maybe try again?)"
         exit 1
     fi
-    TAR_VERSION="$(revision)"
+    TAR_VERSION="$(cat version)"
 fi
 
 
@@ -157,6 +177,8 @@ elif [[ -f /run/dump1090-mutability/aircraft.json ]]; then
     srcdir=/run/dump1090-mutability
 elif [[ -f /run/skyaware978/aircraft.json ]]; then
     srcdir=/run/skyaware978
+elif [[ -f /run/shm/aircraft.json ]]; then
+    srcdir=/run/shm
 else
     echo --------------
     echo FATAL: could not find aircraft.json in any of the usual places!
@@ -201,6 +223,7 @@ if ! diff tar1090.sh "$ipath"/tar1090.sh &>/dev/null; then
             systemctl stop "$service" 2>/dev/null || true
         fi
     done < <(echo "$instances")
+    rm -f "$ipath"/tar1090.sh
     cp tar1090.sh "$ipath"
 fi
 
@@ -244,7 +267,7 @@ do
     names+="$instance "
 
     # don't overwrite existing configuration
-    useSystemd && cp -n default /etc/default/"$service"
+    useSystemd && copyNoClobber default /etc/default/"$service"
 
     sed -i.orig -e "s?SOURCE_DIR?$srcdir?g" -e "s?SERVICE?${service}?g" \
         -e "s?/INSTANCE??g" -e "s?HTMLPATH?$html_path?g" 95-tar1090-otherport.conf
@@ -275,7 +298,7 @@ do
     sed -i.orig -e "s?SOURCE_DIR?$srcdir?g" -e "s?SERVICE?${service}?g" tar1090.service
 
     cp -r -T html "$TMP"
-    cp -r -T "$ipath/git-db/db" "$TMP/db-$DB_VERSION"
+    cp -r -T "$gpath/git-db/db" "$TMP/db-$DB_VERSION"
     sed -i -e "s/let databaseFolder = .*;/let databaseFolder = \"db-$DB_VERSION\";/" "$TMP/index.html"
     echo "{ \"tar1090Version\": \"$TAR_VERSION\", \"databaseVersion\": \"$DB_VERSION\" }" > "$TMP/version.json"
 
@@ -305,9 +328,9 @@ do
     dir=$(pwd)
     cd "$TMP"
 
-    sed -i -e "s/tar1090 on github/tar1090 on github ($(date +%y%m%d))/" index.html
+    sed -i -e "s/tar1090 on github/tar1090 on github (${TAR_VERSION})/" index.html
 
-    "$ipath/git/cachebust.sh" "$ipath/git/cachebust.list" "$TMP"
+    "$gpath/git/cachebust.sh" "$gpath/git/cachebust.list" "$TMP"
 
     rm -rf "$html_path"
     mv "$TMP" "$html_path"
@@ -362,7 +385,6 @@ do
     mv nginx.conf.orig nginx.conf
     mv tar1090.service.orig tar1090.service
 done < <(echo "$instances")
-
 
 if [[ $lighttpd == yes ]]; then
     if lighttpd -tt -f /etc/lighttpd/lighttpd.conf 2>&1 | grep -i duplicate >/dev/null; then
