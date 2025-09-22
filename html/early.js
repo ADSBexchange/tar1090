@@ -16,7 +16,7 @@ let loadFinished = false;
 let Dump1090Version = "unknown version";
 let RefreshInterval = 1000;
 let globeSimLoad = 6;
-let aggregator = false;
+let aggregator = true;
 let enable_uat = false;
 let enable_pf_data = false;
 let HistoryChunks = false;
@@ -155,7 +155,7 @@ var fakeLocalStorage = function() {
 };
 
 
-if (window.location.href.match(/aggregator.com/) && window.location.pathname == '/') {
+if (window.location.href.match(/adsbexchange.com/) && window.location.pathname == '/') {
     aggregator = true;
 }
 if (0 && window.self != window.top) {
