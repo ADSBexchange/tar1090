@@ -30,7 +30,6 @@ let deferHistory;
 let historyLoaded = jQuery.Deferred();
 let zstdDefer = jQuery.Deferred();
 let configureReceiver = jQuery.Deferred();
-let dynGlobeRate = false;
 let historyQueued = jQuery.Deferred();
 let historyTimeout = 60;
 let haveTraces = false;
@@ -520,17 +519,6 @@ if (!heatmap) {
     loadHeatChunk();
     setTimeout(loadHeatChunk, 500);
 
-}
-
-function globeRateUpdate() {
-    if (aggregator) {
-        dynGlobeRate = !0;
-        const cookieExp = getCookie("adsbx_sid").split("_")[0], ts = (new Date).getTime();
-        (!cookieExp || cookieExp < ts + 36e5) && setCookie("adsbx_sid", ts + 1728e5 + "_" + Math.random().toString(36).substring(2, 15), 2)
-    }
-    return dynGlobeRate ? jQuery.ajax({url: "/globeRates.json", cache: !1, dataType: "json"}).done((function (data) {
-        null != data.simload && (globeSimLoad = data.simload), null != data.refresh && globeIndex && (RefreshInterval = data.refresh)
-    })) : jQuery.Deferred().resolve()
 }
 
 if (uuid != null) {
