@@ -1,7 +1,7 @@
 //This function runs when the left hand navigation changes or the search functionality is used. Resets flight activity block.
 //Runs small check to see if full details is set, if it is, opens the window.
 function resetFunction() {
-  if (adsbexchange) {
+  if (aggregator) {
     resetFlightPanel();
 
     //If this variable is set, the user is trying to see the full details page. Once the infoblock is closed, this mutation will trigger
