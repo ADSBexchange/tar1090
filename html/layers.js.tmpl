@@ -119,19 +119,6 @@ function createBaseLayers() {
         }));
     }
     
-    world.push(new ol.layer.Tile({
-        source: new ol.source.XYZ({
-            url: "https://api.maptiler.com/maps/777ad15e-3e64-4edf-8e86-84ba16e50961/256/{z}/{x}/{y}.png?key=geutV4UHZB7QFdlzE3w4",
-            attributions: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
-            attributionsCollapsible: false,
-            maxZoom: 19,
-            transition: tileTransition,
-        }),
-        name: 'maptiler_custom',
-        title: 'ADSBx Custom (Preview)',
-        type: 'base',
-    }));
-
     if (aggregator && getCookie("adsbx_subscriber")) {
         jQuery('#premium_text').updateText('Premium active!');
         world.push(new ol.layer.Tile({
@@ -156,6 +143,18 @@ function createBaseLayers() {
             }),
             name: 'maptiler_hybrid',
             title: 'Hybrid Sat. (Premium)',
+            type: 'base',
+        }));
+        world.push(new ol.layer.Tile({
+            source: new ol.source.XYZ({
+                url: "https://api.maptiler.com/maps/777ad15e-3e64-4edf-8e86-84ba16e50961/256/{z}/{x}/{y}.png?key=geutV4UHZB7QFdlzE3w4",
+                attributions: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>',
+                attributionsCollapsible: false,
+                maxZoom: 19,
+                transition: tileTransition,
+            }),
+            name: 'maptiler_custom',
+            title: 'ADSBx Custom (Premium)',
             type: 'base',
         }));
 
@@ -254,6 +253,47 @@ function createBaseLayers() {
             type: 'base',
         }));
     }
+
+      // OpenFreeMap layers using vector tiles
+      let openfreemap_liberty = new ol.layer.VectorTile({
+        type: 'base',
+        name: 'OpenFreeMapLiberty',
+        title: 'OpenFreeMap Liberty'
+    });
+
+    ol.mapboxStyle.applyStyle(openfreemap_liberty, "https://tiles.openfreemap.org/styles/liberty");
+    ol.mapboxStyle.applyBackground(openfreemap_liberty, "https://tiles.openfreemap.org/styles/liberty");
+    world.push(openfreemap_liberty);
+
+    let openfreemap_positron = new ol.layer.VectorTile({
+        type: 'base',
+        name: 'OpenFreeMapPositron',
+        title: 'OpenFreeMap Positron'
+    });
+
+    ol.mapboxStyle.applyStyle(openfreemap_positron, "https://tiles.openfreemap.org/styles/positron");
+    ol.mapboxStyle.applyBackground(openfreemap_positron, "https://tiles.openfreemap.org/styles/positron");
+    world.push(openfreemap_positron);
+
+    let openfreemap_bright = new ol.layer.VectorTile({
+        type: 'base',
+        name: 'OpenFreeMapBright',
+        title: 'OpenFreeMap Bright'
+    });
+    
+    ol.mapboxStyle.applyStyle(openfreemap_bright, "https://tiles.openfreemap.org/styles/bright");
+    ol.mapboxStyle.applyBackground(openfreemap_bright, "https://tiles.openfreemap.org/styles/bright");
+    world.push(openfreemap_bright);
+
+    let openfreemap_dark = new ol.layer.VectorTile({
+        type: 'base',
+        name: 'OpenFreeMapDark',
+        title: 'OpenFreeMap Dark'
+    });
+    
+    ol.mapboxStyle.applyStyle(openfreemap_dark, "https://tiles.openfreemap.org/styles/dark");
+    ol.mapboxStyle.applyBackground(openfreemap_dark, "https://tiles.openfreemap.org/styles/dark");
+    world.push(openfreemap_dark);
 
     // testing ...
     if (0) {
