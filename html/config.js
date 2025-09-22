@@ -6,7 +6,7 @@
 "use strict";
 // -- Title Settings --------------------------------------
 // Show number of aircraft and/or messages per second in the page title
-PlaneCountInTitle = false;
+// PlaneCountInTitle = false;
 //MessageRateInTitle = false;
 
 // -- Output Settings -------------------------------------
@@ -52,7 +52,7 @@ PlaneCountInTitle = false;
 // actual_range_show = true;
 
 // which map is displayed to new visitors
-MapType_tar1090 = "osm_adsbx";
+// MapType_tar1090 = "osm_adsbx";
 //
 // valid values for the above setting:
 // osm
@@ -196,7 +196,7 @@ ColorByAlt = {
 //SiteCirclesLineDash = [5, 5]; // null - solid line, [5, 5] - dashed line with 5 pixel lines and spaces in between
 
 // Controls page title, righthand pane when nothing is selected
-PageName = "ADS-B Exchange - track aircraft live";
+// PageName = "ADS-B Exchange - track aircraft live";
 
 // Show country flags by ICAO addresses?
 //ShowFlags = true;
@@ -211,7 +211,7 @@ PageName = "ADS-B Exchange - track aircraft live";
 // Be sure to quote your key:
 //   BingMapsAPIKey = "your key here";
 //
-BingMapsAPIKey = null;
+// BingMapsAPIKey = null;
 
 // Provide a Mapbox API key here to enable the Mapbox vector layers.
 // You can obtain a free key (with usage limits) at
@@ -220,7 +220,7 @@ BingMapsAPIKey = null;
 // Be sure to quote your key:
 //   MapboxAPIKey = "your key here";
 //
-MapboxAPIKey = null;
+// MapboxAPIKey = null;
 
 // This determines what is up, default is north (0 degrees)
 //mapOrientation = 0;
@@ -317,11 +317,11 @@ HideCols = [
     "#ws",
 ]
 */ // remove this line to modify columns (and the one at the start)
-aggregator = true;
+// aggregator = true;
 // show aircraft pictures
-showPictures = true;
+// showPictures = true;
 // get pictures from planespotters.net
-planespottersAPI = true;
+// planespottersAPI = true;
 // get pictures from planespotting.be
 // planespottingAPI = true;
 
@@ -337,7 +337,7 @@ planespottersAPI = true;
 // show a link to jetphotos, only works if planespottersAPI is disabled
 // jetphotoLinks = false;
 
-showSil = true;
+// showSil = true;
 // this shows small pictures in the details but they need to be provided by the user in the folder /usr/local/share/tar1090/aircraft_sil
 // showPictures needs to be enabled as well
 // to only get these pictures disable the planespottersAPI
@@ -373,8 +373,8 @@ showSil = true;
 //jaeroTimeout = 35 * 60; // in seconds
 //jaeroLabel = "ADS-C"; // relabel the ADS-C data if used for other purposes (i.e. HFDL / acars2pos)
 
-seenTimeout = 45; // in seconds
-seenTimeoutMlat = 60; // in seconds
+// seenTimeout = 45; // in seconds
+// seenTimeoutMlat = 60; // in seconds
 
 //tableInView = false; // only show aircraft in current view (V button)
 
