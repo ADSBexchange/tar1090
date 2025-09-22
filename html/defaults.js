@@ -312,17 +312,17 @@ let squareMania = false;
 
 // Columns that have a // in front of them are shown.
 let HideCols = [
-//	"#icao",
-//	"#country",
-//	"#flight",
-//	"#route",
+	//	"#icao",
+	//	"#country",
+	//	"#flight",
+	"#route",
 	"#registration",
-//	"#type",
+	//	"#type",
 	"#squawk",
-//	"#altitude",
-//	"#speed",
+	//	"#altitude",
+	//	"#speed",
 	"#vert_rate",
-//	"#sitedist",
+	"#sitedist",
 	"#track",
 	"#msgs",
 	"#seen",
@@ -331,8 +331,8 @@ let HideCols = [
 	"#lon",
 	"#data_source",
 	"#military",
-    "#wd",
-    "#ws",
+	// "#wd",
+	// "#ws",
 ]
 
 
