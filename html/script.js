@@ -521,6 +521,16 @@ function afterFirstFetch() {
 
         console.timeEnd('afterFirstFetch()');
     }, 30);
+    
+    setTimeout(() => {
+        if (limitUpdates !== 0) {
+            (typeof load_gt != 'undefined') && (load_gt) && (load_gt()) && (load_gt = null);
+            (typeof load_fi != 'undefined') && (load_fi) && (load_fi()) && (load_fi = null);
+            (typeof load_freestar != 'undefined') && (load_freestar) && (load_freestar()) && (load_freestar = null);
+        } else {
+            (typeof hide_freestar != 'undefined') && (hide_freestar) && (hide_freestar());
+        }
+    }, 150);
 }
 
 let debugFetch = false;
