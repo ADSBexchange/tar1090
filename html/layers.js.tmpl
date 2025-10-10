@@ -254,15 +254,15 @@ function createBaseLayers() {
         }));
     }
 
-      // OpenFreeMap layers using vector tiles
+      // OpenFreeMap layers using vector tiles from adsbexchange.openfreemap.org
       let openfreemap_liberty = new ol.layer.VectorTile({
         type: 'base',
         name: 'OpenFreeMapLiberty',
         title: 'OpenFreeMap Liberty'
     });
 
-    ol.mapboxStyle.applyStyle(openfreemap_liberty, "https://tiles.openfreemap.org/styles/liberty");
-    ol.mapboxStyle.applyBackground(openfreemap_liberty, "https://tiles.openfreemap.org/styles/liberty");
+    ol.mapboxStyle.applyStyle(openfreemap_liberty, "https://adsbexchange.openfreemap.org/styles/liberty");
+    ol.mapboxStyle.applyBackground(openfreemap_liberty, "https://adsbexchange.openfreemap.org/styles/liberty");
     world.push(openfreemap_liberty);
 
     let openfreemap_positron = new ol.layer.VectorTile({
@@ -271,8 +271,8 @@ function createBaseLayers() {
         title: 'OpenFreeMap Positron'
     });
 
-    ol.mapboxStyle.applyStyle(openfreemap_positron, "https://tiles.openfreemap.org/styles/positron");
-    ol.mapboxStyle.applyBackground(openfreemap_positron, "https://tiles.openfreemap.org/styles/positron");
+    ol.mapboxStyle.applyStyle(openfreemap_positron, "https://adsbexchange.openfreemap.org/styles/positron");
+    ol.mapboxStyle.applyBackground(openfreemap_positron, "https://adsbexchange.openfreemap.org/styles/positron");
     world.push(openfreemap_positron);
 
     let openfreemap_bright = new ol.layer.VectorTile({
@@ -281,8 +281,8 @@ function createBaseLayers() {
         title: 'OpenFreeMap Bright'
     });
     
-    ol.mapboxStyle.applyStyle(openfreemap_bright, "https://tiles.openfreemap.org/styles/bright");
-    ol.mapboxStyle.applyBackground(openfreemap_bright, "https://tiles.openfreemap.org/styles/bright");
+    ol.mapboxStyle.applyStyle(openfreemap_bright, "https://adsbexchange.openfreemap.org/styles/bright");
+    ol.mapboxStyle.applyBackground(openfreemap_bright, "https://adsbexchange.openfreemap.org/styles/bright");
     world.push(openfreemap_bright);
 
     let openfreemap_dark = new ol.layer.VectorTile({
@@ -291,8 +291,8 @@ function createBaseLayers() {
         title: 'OpenFreeMap Dark'
     });
     
-    ol.mapboxStyle.applyStyle(openfreemap_dark, "https://tiles.openfreemap.org/styles/dark");
-    ol.mapboxStyle.applyBackground(openfreemap_dark, "https://tiles.openfreemap.org/styles/dark");
+    ol.mapboxStyle.applyStyle(openfreemap_dark, "https://adsbexchange.openfreemap.org/styles/dark");
+    ol.mapboxStyle.applyBackground(openfreemap_dark, "https://adsbexchange.openfreemap.org/styles/dark");
     world.push(openfreemap_dark);
 
     // testing ...
