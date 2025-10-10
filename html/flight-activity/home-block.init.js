@@ -1,7 +1,7 @@
 jQuery(document).ready(function () {
   jQuery("#feature_landings").tooltip(); //Init jquery tooltip just on flight activity blocks. 
 
-  if (adsbexchange) {
+  if (aggregator) {
     if (usp.has("icao")) { //This runs just if you pass an icao on page load.
       let icao = usp.get("icao");
       runAPI(icao, false, jQuery("#feature_landings"), function (data) { //Running the API and passing the display function in the callback.

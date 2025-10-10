@@ -3,6 +3,7 @@
 
 let NBSP='\u00a0';
 let NNBSP='\u202f';
+let NUMSP='\u2007';
 let DEGREES='\u00b0'
 let ENDASH='\u2013';
 let UP_TRIANGLE='\u25b2'; // U+25B2 BLACK UP-POINTING TRIANGLE
@@ -109,10 +110,10 @@ function format_altitude_brief(alt, vr, displayUnits, withUnits) {
 	} else if (vr < -245){
 		verticalRateTriangle = DOWN_TRIANGLE;
 	} else {
-		verticalRateTriangle = NNBSP;
+		verticalRateTriangle = ''
 	}
 
-	return alt_text + verticalRateTriangle;
+	return verticalRateTriangle + alt_text.padStart(5, NUMSP);
 }
 
 // alt in feet
@@ -318,10 +319,12 @@ function format_data_source(source) {
 			return "TIS-B";
 		case 'modeS':
 			return "Mode S";
+		case 'ais':
+			return "AIS";
 		case 'mode_ac':
 			return "Mode A/C";
         case 'adsc':
-            return "Sat. ADS-C";
+            return jaeroLabel;
         case 'other':
             return "Other";
 	}
@@ -425,7 +428,12 @@ function wqi(data) {
 
     const binCraftVersion = u32[10];
 
-    if (0 != receiver_lat && 0 != receiver_lon) {
+    data.messageRate = u32[11] / 10;
+
+    const flags = u32[12];
+    const useMessageRate = flags & (1 << 0);
+
+    if (receiver_lat != 0 && receiver_lon != 0) {
         //console.log("receiver_lat: " + receiver_lat + " receiver_lon: " + receiver_lon);
         let position = {
             coords: {
@@ -449,8 +457,14 @@ function wqi(data) {
         let t = s32[0] & (1<<24);
         ac.hex = (s32[0] & ((1<<24) - 1)).toString(16).padStart(6, '0');
         ac.hex = t ? ('~' + ac.hex) : ac.hex;
-        ac.seen_pos = u16[2] / 10;
-        ac.seen = u16[3] / 10;
+
+        if (binCraftVersion >= 20240218) {
+            ac.seen = s32[1] / 10;
+            ac.seen_pos = s32[27] / 10;
+        } else {
+            ac.seen_pos = u16[2] / 10;
+            ac.seen = u16[3] / 10;
+        }
 
         ac.lon = s32[2] / 1e6;
         ac.lat = s32[3] / 1e6;
@@ -489,7 +503,7 @@ function wqi(data) {
         ac.ias = u16[29];
         ac.rc  = u16[30];
 
-        if (globeIndex && binCraftVersion >= 20220916) {
+        if (useMessageRate) {
             ac.messageRate = u16[31] / 10;
         } else {
             ac.messages = u16[31];
@@ -539,7 +553,12 @@ function wqi(data) {
         }
         ac.receiverCount = u8[104];
 
-        ac.rssi = 10 * Math.log(u8[105]*u8[105]/65025 + 1.125e-5)/Math.log(10);
+        if (binCraftVersion >= 20250403) {
+            ac.rssi = (u8[105] * (50 / 255)) - 50;
+        } else {
+            let level = u8[105]*u8[105]/65025 + 1.125e-5;
+            ac.rssi = 10 * Math.log(level)/Math.log(10);
+        }
 
         ac.extraFlags = u8[106];
         ac.nogps = ac.extraFlags & 1;
@@ -636,9 +655,15 @@ function wqi(data) {
         } else if (type4 == 'tisb') {
             ac.version = ac.tisb_version;
         }
-        if (stride == 112) {
-            ac.rId = u32[27].toString(16).padStart(8, '0');
-            //ac.rId = ac.rId.slice(0, 4) + '-' + ac.rId.slice(4);
+
+        if (binCraftVersion >= 20240218) {
+            if (stride == 116) {
+                ac.rId = u32[28].toString(16).padStart(8, '0');
+            }
+        } else {
+            if (stride == 112) {
+                ac.rId = u32[27].toString(16).padStart(8, '0');
+            }
         }
 
         data.aircraft.push(ac);
