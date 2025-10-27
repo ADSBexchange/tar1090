@@ -258,7 +258,8 @@ function createBaseLayers() {
       let openfreemap_liberty = new ol.layer.VectorTile({
         type: 'base',
         name: 'OpenFreeMapLiberty',
-        title: 'OpenFreeMap Liberty'
+        title: 'OpenFreeMap Liberty',
+        declutter: true
     });
 
     ol.mapboxStyle.applyStyle(openfreemap_liberty, "https://adsbexchange.openfreemap.org/styles/liberty");
@@ -268,7 +269,8 @@ function createBaseLayers() {
     let openfreemap_positron = new ol.layer.VectorTile({
         type: 'base',
         name: 'OpenFreeMapPositron',
-        title: 'OpenFreeMap Positron'
+        title: 'OpenFreeMap Positron',
+        declutter: true
     });
 
     ol.mapboxStyle.applyStyle(openfreemap_positron, "https://adsbexchange.openfreemap.org/styles/positron");
@@ -278,7 +280,8 @@ function createBaseLayers() {
     let openfreemap_bright = new ol.layer.VectorTile({
         type: 'base',
         name: 'OpenFreeMapBright',
-        title: 'OpenFreeMap Bright'
+        title: 'OpenFreeMap Bright',
+        declutter: true
     });
     
     ol.mapboxStyle.applyStyle(openfreemap_bright, "https://adsbexchange.openfreemap.org/styles/bright");
@@ -288,7 +291,8 @@ function createBaseLayers() {
     let openfreemap_dark = new ol.layer.VectorTile({
         type: 'base',
         name: 'OpenFreeMapDark',
-        title: 'OpenFreeMap Dark'
+        title: 'OpenFreeMap Dark',
+        declutter: true
     });
     
     ol.mapboxStyle.applyStyle(openfreemap_dark, "https://adsbexchange.openfreemap.org/styles/dark");
