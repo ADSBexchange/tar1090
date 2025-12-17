@@ -859,7 +859,10 @@ function createBaseLayers() {
         });
 
         world.push(rainviewerRadar);
+    }
 
+    // RainViewer Clouds disabled due to bugs
+    if (false) {
         const rainviewerClouds = new ol.layer.Tile({
             name: 'rainviewer_clouds',
             title: 'RainViewer Clouds',
