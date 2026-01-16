@@ -309,6 +309,14 @@ let shapes = {
         strokeScale: 0.9,
         path: 'M16.8 15.57v-1.08s1.8-5.07-.74-5.58c-2.44.59-.67 5.58-.67 5.58h0v1.08l-2.6.15-10.23.54v1.08l10.26.46 2.55.07v3.86h-3.05v1.38h3.25v.34l-1.81.25v.14h1.98c.15.49.35.47.35.47s.2.02.35-.47h1.99v-.14l-1.81-.25v-.34h3.24v-1.38h-3.05v-3.86l2.55-.07 10.26-.46v-1.08l-10.22-.54z',
     },
+    // Quadcopter drone icon for $ prefix UAVs
+    'uav_quad': {
+        w: 28,
+        h: 28,
+        viewBox: '0 0 32 32',
+        strokeScale: 1.0,
+        path: 'M16 10 L16 22 M10 16 L22 16 M6 6 A 3 3 0 0 1 6 12 A 3 3 0 0 1 6 6 Z M26 6 A 3 3 0 0 1 26 12 A 3 3 0 0 1 26 6 Z M6 26 A 3 3 0 0 1 6 20 A 3 3 0 0 1 6 26 Z M26 26 A 3 3 0 0 1 26 20 A 3 3 0 0 1 26 26 Z M13 13 L19 13 L19 19 L13 19 Z',
+    },
     'typhoon': {
         viewBox:'-4.8 -3.5 34 34',
         w: 25,
@@ -726,6 +734,11 @@ let shapes = {
         let shape = kv[i][1];
         shape.name = key;
         shape.id = Number(i);
+    }
+
+    // uav_quad sprite is at index 92 (row 5, column 12) in sprites.png
+    if (shapes['uav_quad']) {
+        shapes['uav_quad'].id = 92;
     }
 }
 
@@ -1249,9 +1262,14 @@ let CategoryIcons = {
     'C3' : ['ground_tower', 1],
 };
 
-function getBaseMarker(category, typeDesignator, typeDescription, wtc, addrtype, altitude, eastbound) {
+function getBaseMarker(category, typeDesignator, typeDescription, wtc, addrtype, altitude, eastbound, isQuadUAV) {
 
     //return ['f5_tiger', 1];
+
+    // Check for $ prefix quadcopter UAVs first (before other checks)
+    if (isQuadUAV) {
+        return ['uav_quad', 1];
+    }
 
     if (addrtype == 'ais') {
         return ['ground_square', 0.001];

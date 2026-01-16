@@ -1742,7 +1742,7 @@ PlaneObject.prototype.updateMarker = function(moved) {
         this.baseMarkerKey = baseMarkerKey;
         let baseMarker = null;
         try {
-            baseMarker = getBaseMarker(this.category, icaoType, this.typeDescription, this.wtc, this.addrtype, this.altitude, eastbound);
+            baseMarker = getBaseMarker(this.category, icaoType, this.typeDescription, this.wtc, this.addrtype, this.altitude, eastbound, this.isUAV());
         } catch (error) {
             console.error(error);
             console.log(baseMarkerKey);
