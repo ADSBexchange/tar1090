@@ -3361,7 +3361,8 @@ function displayPhoto() {
 }
 
 function refreshPhoto(selected) {
-    if (!showPictures || selected.icao[0] == '~' || (!planespottingAPI && !planespottersAPI)) {
+    // Allow photos for UAV ($), but block for non-ICAO (~)
+    if (!showPictures || (selected.icao[0] == '~' && selected.icao[0] != '$') || (!planespottingAPI && !planespottersAPI)) {
         displaySil();
         return;
     }
@@ -3485,17 +3486,30 @@ function refreshSelected() {
         jQuery('#selected_flightaware_link').html(getFlightAwareModeSLink(selected.icao, selected.flight, "Visit Flight Page"));
     }
 
-    if (selected.isNonIcao() && selected.source != 'mlat') {
+    // Show appropriate info panel based on aircraft type
+    if (selected.isUAV()) {
+        // UAV/drone - show UAV info panel
+        jQuery('#anon_mlat_info').addClass('hidden');
+        jQuery('#tisb_info').addClass('hidden');
+        jQuery('#reg_info').addClass('hidden');
+        jQuery('#uav_info').removeClass('hidden');
+    } else if (selected.isNonIcao() && selected.source != 'mlat') {
+        // Non-ICAO TIS-B
         jQuery('#anon_mlat_info').addClass('hidden');
         jQuery('#reg_info').addClass('hidden');
+        jQuery('#uav_info').addClass('hidden');
         jQuery('#tisb_info').removeClass('hidden');
     } else if (selected.isNonIcao() && selected.source == 'mlat') {
+        // Non-ICAO MLAT
         jQuery('#reg_info').addClass('hidden');
         jQuery('#tisb_info').addClass('hidden');
+        jQuery('#uav_info').addClass('hidden');
         jQuery('#anon_mlat_info').removeClass('hidden');
     } else {
+        // Standard ICAO aircraft
         jQuery('#tisb_info').addClass('hidden');
         jQuery('#anon_mlat_info').addClass('hidden');
+        jQuery('#uav_info').addClass('hidden');
         jQuery('#reg_info').removeClass('hidden');
     }
 
