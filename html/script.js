@@ -3487,29 +3487,20 @@ function refreshSelected() {
     }
 
     // Show appropriate info panel based on aircraft type
-    if (selected.isUAV()) {
-        // UAV/drone - show UAV info panel
-        jQuery('#anon_mlat_info').addClass('hidden');
-        jQuery('#tisb_info').addClass('hidden');
-        jQuery('#reg_info').addClass('hidden');
-        jQuery('#uav_info').removeClass('hidden');
-    } else if (selected.isNonIcao() && selected.source != 'mlat') {
+    if (selected.isNonIcao() && selected.source != 'mlat') {
         // Non-ICAO TIS-B
         jQuery('#anon_mlat_info').addClass('hidden');
         jQuery('#reg_info').addClass('hidden');
-        jQuery('#uav_info').addClass('hidden');
         jQuery('#tisb_info').removeClass('hidden');
     } else if (selected.isNonIcao() && selected.source == 'mlat') {
         // Non-ICAO MLAT
         jQuery('#reg_info').addClass('hidden');
         jQuery('#tisb_info').addClass('hidden');
-        jQuery('#uav_info').addClass('hidden');
         jQuery('#anon_mlat_info').removeClass('hidden');
     } else {
-        // Standard ICAO aircraft
+        // Standard ICAO aircraft (and UAVs)
         jQuery('#tisb_info').addClass('hidden');
         jQuery('#anon_mlat_info').addClass('hidden');
-        jQuery('#uav_info').addClass('hidden');
         jQuery('#reg_info').removeClass('hidden');
     }
 
