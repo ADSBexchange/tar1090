@@ -3329,11 +3329,15 @@ function displaySil() {
     }
     let selected = SelectedPlane;
     let new_html="";
-    let type = selected.icaoType ? selected.icaoType : 'ZZZZ';
-    let hex = selected.icao.toUpperCase();
-    new_html = "<img id='silhouette' width='"+ 151 * globalScale + "' src='aircraft_sil/" + type + ".png' />";
+    
+    // Use custom drone image for UAV aircraft ($ prefix)
+    if (selected.icao[0] == '$') {
+        new_html = "<img id='silhouette' width='"+ 151 * globalScale + "' src='images/sifly-drone.png' />";
+    } else {
+        let type = selected.icaoType ? selected.icaoType : 'ZZZZ';
+        new_html = "<img id='silhouette' width='"+ 151 * globalScale + "' src='aircraft_sil/" + type + ".png' />";
+    }
     setPhotoHtml(new_html);
-    selected.icao.toUpperCase();
 }
 
 function displayPhoto() {

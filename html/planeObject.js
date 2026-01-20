@@ -2338,6 +2338,41 @@ PlaneObject.prototype.altBad = function(newAlt, oldAlt, oldTime, data) {
     return fpm > max_fpm;
 };
 
+PlaneObject.prototype.loadCountryFromDB = function() {
+    if (this.countryLoad) {
+        return;
+    }
+    this.countryLoad = true;
+
+    let req = dbLoad(this.icao);
+
+    req.then(
+        data => {
+            delete this.countryLoad;
+            if (data == null || data == "strange") {
+                this.countryLoadedFromDB = true;
+                return;
+            }
+
+            // Update country from database if present (for UAVs with $ prefix)
+            if (data[4]) {
+                this.country = `${data[4]}`;
+            }
+            if (data[5]) {
+                this.country_code = `${data[5]}`;
+            }
+
+            this.countryLoadedFromDB = true;
+            this.dataChanged();
+
+            data = null;
+        },
+        e => {
+            delete this.countryLoad;
+            this.countryLoadedFromDB = true;
+        });
+};
+
 PlaneObject.prototype.getAircraftData = function() {
     if (0) {
         this.dbinfoLoaded = true;
@@ -2390,6 +2425,14 @@ PlaneObject.prototype.getAircraftData = function() {
 
             if (data[0]) {
                 this.registration = `${data[0]}`;
+            }
+
+            // Update country from database if present (for UAVs with $ prefix)
+            if (data[4]) {
+                this.country = `${data[4]}`;
+            }
+            if (data[5]) {
+                this.country_code = `${data[5]}`;
             }
 
             this.dataChanged();
@@ -2848,6 +2891,11 @@ PlaneObject.prototype.checkForDB = function(data) {
     if (!this.dbinfoLoaded && (!dbServer || replay || pTracks || heatmap)) {
         this.getAircraftData();
         return;
+    }
+    // For UAVs, also load country from client-side database even when dbServer is true
+    // (readsb's aircraft.json doesn't include country fields)
+    if (this.isUAV() && !this.countryLoadedFromDB && (!this.dbLoad)) {
+        this.loadCountryFromDB();
     }
     this.dataChanged();
 };
