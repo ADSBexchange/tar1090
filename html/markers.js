@@ -1045,6 +1045,9 @@ let TypeDesignatorIcons = {
     'Q9': ['uav', 1],
     'Q25': ['uav', 1],
     'HRON': ['uav', 1],
+    'MR4': ['uav_quad', 1],   // Multi-rotor quadcopter
+    'MR6': ['uav_quad', 1],   // Hexacopter
+    'FWU': ['uav', 1],        // Fixed-wing UAV
 
     'A400': ['a400', 1],
 
@@ -1266,8 +1269,8 @@ function getBaseMarker(category, typeDesignator, typeDescription, wtc, addrtype,
 
     //return ['f5_tiger', 1];
 
-    // Check for $ prefix quadcopter UAVs first (before other checks)
-    if (isQuadUAV) {
+    // Check for $ prefix quadcopter UAVs - but only if no type designator
+    if (isQuadUAV && !(typeDesignator in TypeDesignatorIcons)) {
         return ['uav_quad', 1];
     }
 
