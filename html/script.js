@@ -3457,6 +3457,20 @@ function refreshSelected() {
     } else {
         jQuery('#altimeter_set_selected').prop("disabled", false);
     }
+    
+    // Hide Full Details, Flight Activity, and History for UAVs
+    if (selected && selected.isUAV()) {
+        jQuery('#feature_landings').hide();
+        jQuery('#show_trace').hide();
+    } else if (selected) {
+        // Show them for regular aircraft (only if aggregator mode or haveTraces)
+        if (aggregator || haveTraces) {
+            jQuery('#feature_landings').show();
+        }
+        if (haveTraces || globeIndex) {
+            jQuery('#show_trace').show();
+        }
+    }
 
     if (!selected) {
         if (somethingSelected) {
@@ -4822,6 +4836,20 @@ function adjustInfoBlock() {
         }
 
         jQuery('#selected_infoblock').show();
+        
+        // Hide Full Details, Flight Activity, and History for UAVs
+        if (SelectedPlane && SelectedPlane.isUAV()) {
+            jQuery('#feature_landings').hide();
+            jQuery('#show_trace').hide();
+        } else {
+            // Show them for regular aircraft (only if aggregator mode or haveTraces)
+            if (aggregator || haveTraces) {
+                jQuery('#feature_landings').show();
+            }
+            if (haveTraces || globeIndex) {
+                jQuery('#show_trace').show();
+            }
+        }
     } else {
         if (!mapIsVisible)
             jQuery("#sidebar_container").css('margin-left', '0');
