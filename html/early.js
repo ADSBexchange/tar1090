@@ -231,6 +231,12 @@ if (feed != null) {
         for (let i in split) {
             uuid.push(encodeURIComponent(split[i]));
         }
+        if (uuid[0].length > 18 && window.location.href.match(/adsbexchange.com/)) {
+            let URL = 'https://www.adsbexchange.com/api/feeders/tar1090/?feed=' + uuid[0];
+            console.log(URL);
+            //window.history.pushState(URL, "Title", URL);
+            window.location.href = URL;
+        }
     } else {
         console.error('uuid / feed fail!');
     }
