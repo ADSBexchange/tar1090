@@ -23,7 +23,7 @@
 - filterIcao=^a - filter icao that start with a (escape with %5Ea).
 - filterSources=adsb,uat,adsr,mlat,tisb,modeS - filter planes by source type.
 - filterDbFlag=military,pia,ladd - filter planes by the db flags.
-- sortBy=column - (possible values: icao, flag, flight, registration, aircraft_type, squawk, altitude, speed, vert_rate, distance, track, msgs, seen, rssi, lat, lon, data_source, military, ws, wd
+- sortBy=column - (possible values: icao, flag, flight, registration, aircraft_type, squawk, altitude, speed, vert_rate, distance, track, msgs, seen, rssi, lat, lon, data_source, military, ws, wd, noSort)
 - sortByReverse - reverse the sorting specified using sortBy
 
 There is a setting in the webinterface to update the URL according to used filters, this can be simpler than building the query string by hand.
