@@ -1292,6 +1292,11 @@ function getBaseMarker(category, typeDesignator, typeDescription, wtc, addrtype,
         return [shape, scaling];
     }
 
+    // Default to quadcopter icon for UAVs ($ prefix) when no specific type designator is found
+    if (isQuadUAV) {
+        return ['uav_quad', 1];
+    }
+
     if (typeDescription != null && typeDescription.length === 3) {
         if (typeDescription === "L1P" && category === "B4") {
             return _ulac;
