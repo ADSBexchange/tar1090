@@ -1045,6 +1045,22 @@ input{
   grid-area: speedHint;
 }
 
+/* Trace panel spinner */
+.trace-spinner {
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top: 3px solid rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: trace-spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes trace-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 #privacy {
     display: block;
     align-items: center;

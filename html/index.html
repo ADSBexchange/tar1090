@@ -340,51 +340,63 @@
           <!--End TAKEOFF/LANDINGS-->
           <button id="show_trace" type="button" class="greyButton">History</button>
           <div id="history_collapse" class="infoBlockSection" style="display: none">
-            <div class="identSmall" id="trace_date">UTC day:
+            <div id="trace_panel_loading" style="display: none;">
+              <div class="identSmall" style="text-align: center; padding: 40px;">
+                <div class="trace-spinner"></div>
+              </div>
             </div>
-            <div class="rSpacer">
+            <div id="trace_panel_content" style="display: none;">
+              <div class="identSmall" id="trace_date">UTC day:
+              </div>
+              <div class="rSpacer">
+              </div>
+              <div>
+                <input id=histDatePicker class="identSmall datepicker" value="Pick a date">
+              </div>
+              <div class="rSpacer">
+              </div>
+              <div>
+                <button class="formButton" id="trace_back_1d">previous</button>
+                <button class="formButton" id="trace_jump_1d">next</button>
+              </div>
+              <div class="rSpacer">
+              </div>
+              <div class="identSmall" id="leg_sel">
+              </div>
+              <div class="rSpacer">
+              </div>
+              <div>
+                <button class="formButton" id="leg_prev">previous</button>
+                <button class="formButton" id="leg_next">next</button>
+              </div>
+              <div class="rSpacer">
+              </div>
+              <div class="identSmall" id="trace_time">
+              </div>
+              <div class="rSpacer">
+              </div>
+              <div>
+                <button class="formButton" id="tStop">stop</button>
+                <button class="formButton" id="t1x">1x</button>
+                <button class="formButton" id="t5x">5x</button>
+              </div>
+              <div class="rSpacer">
+              </div>
+              <div>
+                <button class="formButton" id="t10x">10x</button>
+                <button class="formButton" id="t20x">20x</button>
+                <button class="formButton" id="t40x">40x</button>
+              </div>
+              <div class="rSpacer">
+              </div>
+              <div>
+                Click on the trace line to start playback!
+              </div>
             </div>
-            <div>
-              <input id=histDatePicker class="identSmall datepicker" value="Pick a date">
-            </div>
-            <div class="rSpacer">
-            </div>
-            <div>
-              <button class="formButton" id="trace_back_1d">previous</button>
-              <button class="formButton" id="trace_jump_1d">next</button>
-            </div>
-            <div class="rSpacer">
-            </div>
-            <div class="identSmall" id="leg_sel">
-            </div>
-            <div class="rSpacer">
-            </div>
-            <div>
-              <button class="formButton" id="leg_prev">previous</button>
-              <button class="formButton" id="leg_next">next</button>
-            </div>
-            <div class="rSpacer">
-            </div>
-            <div class="identSmall" id="trace_time">
-            </div>
-            <div class="rSpacer">
-            </div>
-            <div>
-              <button class="formButton" id="tStop">stop</button>
-              <button class="formButton" id="t1x">1x</button>
-              <button class="formButton" id="t5x">5x</button>
-            </div>
-            <div class="rSpacer">
-            </div>
-            <div>
-              <button class="formButton" id="t10x">10x</button>
-              <button class="formButton" id="t20x">20x</button>
-              <button class="formButton" id="t40x">40x</button>
-            </div>
-            <div class="rSpacer">
-            </div>
-            <div>
-              Click on the trace line to start playback!
+            <div id="trace_no_data" style="display: none;">
+              <div class="identSmall" style="text-align: center; padding: 40px;">
+                No Data Available
+              </div>
             </div>
           </div>
           <div class="sectionTitle">
@@ -1240,6 +1252,7 @@
 
     <!-- JS_ANCHOR3 -->
     <script src="planeObject.js"></script>
+    <script src="activityHistory.js"></script>
     <script src="script.js"></script>
     <script src="ax-identity.js"></script>
     <script src="flight-activity/api.js"></script>

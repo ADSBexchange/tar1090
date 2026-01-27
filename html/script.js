@@ -119,207 +119,6 @@ let autoselect = false;
 let nogpsOnly = false;
 let spritesDataURL = null;
 
-// ActivityHistory module for smart history navigation
-const ActivityHistory = {
-    cache: {},              // { icao: { dates: [...], fetchedAt: timestamp, exhausted: bool } }
-    cacheTTL: 300000,       // 5 minutes
-    windowMonths: 6,        // Each API request covers 6 months
-    maxSearchYears: 10,     // Give up after searching 10 years back
-    maxRequests: 20,        // 10 years ÷ 6 months = 20 requests max
-    apiBaseUrl: (typeof apiBaseUrl !== 'undefined' && apiBaseUrl) ? apiBaseUrl : 'http://localhost:8090/api/aircraft/v2',
-    inFlightRequests: {},   // Track in-flight requests to prevent duplicates
-
-    hasValidCache(icao) {
-        const cached = this.cache[icao];
-        if (!cached) return false;
-        const age = Date.now() - cached.fetchedAt;
-        return age < this.cacheTTL && !cached.exhausted;
-    },
-
-    isExhausted(icao) {
-        return this.cache[icao]?.exhausted === true;
-    },
-
-    async requestActiveDates(icao, startDate, endDate) {
-        const timeFrom = Math.floor(startDate.getTime() / 1000);
-        const timeTo = Math.floor(endDate.getTime() / 1000);
-        
-        const startDateStr = startDate.toISOString().split('T')[0];
-        const endDateStr = endDate.toISOString().split('T')[0];
-        console.log(`ActivityHistory.requestActiveDates: ICAO=${icao}, time_from=${timeFrom} (${startDateStr}), time_to=${timeTo} (${endDateStr})`);
-
-        // Get cookie for authentication
-        let cookie = this.getCookie('adsbx_api');
-        if (!cookie) {
-            // For development: set a test cookie if missing
-            const futureTimestamp = Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60); // 1 year from now
-            const testCookie = `${futureTimestamp}_dev_test_token`;
-            document.cookie = `adsbx_api=${testCookie}; path=/; max-age=${365 * 24 * 60 * 60}`;
-            cookie = testCookie;
-            console.log('ActivityHistory: Set test cookie for development');
-        }
-
-        const payload = {
-            user_token: cookie,
-            payload: {
-                icao: icao,
-                time_from: timeFrom,
-                time_to: timeTo
-            }
-        };
-
-        try {
-            console.log(`ActivityHistory: Sending POST to ${this.apiBaseUrl}/operations/icao/active-dates with payload:`, JSON.stringify(payload, null, 2));
-            const response = await fetch(`${this.apiBaseUrl}/operations/icao/active-dates`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',  // Required for cross-origin requests to send cookies
-                body: JSON.stringify(payload)
-            });
-
-            console.log('ActivityHistory: Received response', response.status, response.statusText);
-
-            if (!response.ok) {
-                console.warn(`ActivityHistory: API returned ${response.status} ${response.statusText}`);
-                const errorText = await response.text().catch(() => '');
-                console.warn('ActivityHistory: Error response:', errorText);
-                return [];
-            }
-
-            const data = await response.json();
-            console.log('ActivityHistory: Received', data.active_dates?.length || 0, 'active dates');
-            return data.active_dates || [];
-        } catch (error) {
-            console.error('ActivityHistory: Request failed', error);
-            console.error('ActivityHistory: Error details:', error.message, error.stack);
-            return [];
-        }
-    },
-
-    getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-        return null;
-    },
-
-    async fetchActiveDates(icao) {
-        console.log(`ActivityHistory.fetchActiveDates called for ${icao}`);
-        // Check cache first
-        if (this.hasValidCache(icao)) {
-            console.log(`ActivityHistory: Using cached data for ${icao}`);
-            return this.cache[icao].dates;
-        }
-
-        // Check if exhausted
-        if (this.isExhausted(icao)) {
-            console.log(`ActivityHistory: Already exhausted for ${icao}`);
-            return [];
-        }
-
-        // Prevent duplicate concurrent requests for the same ICAO
-        if (this.inFlightRequests[icao]) {
-            console.log('ActivityHistory: Request already in flight for', icao, '- waiting...');
-            return await this.inFlightRequests[icao];
-        }
-
-        // Create a promise for this request
-        const requestPromise = (async () => {
-            try {
-                let attempts = 0;
-                let endDate = new Date();
-                let allDates = [];
-
-                console.log(`ActivityHistory: Starting search for ${icao}, will search up to ${this.maxRequests} windows of ${this.windowMonths} months each`);
-
-                while (attempts < this.maxRequests) {
-                    const startDate = new Date(endDate);
-                    startDate.setMonth(startDate.getMonth() - this.windowMonths);
-
-                    const startDateStr = startDate.toISOString().split('T')[0];
-                    const endDateStr = endDate.toISOString().split('T')[0];
-                    console.log(`ActivityHistory: Attempt ${attempts + 1}/${this.maxRequests} - Searching from ${startDateStr} to ${endDateStr}`);
-                    
-                    const dates = await this.requestActiveDates(icao, startDate, endDate);
-
-                    if (dates.length > 0) {
-                        allDates = allDates.concat(dates);
-                        console.log(`ActivityHistory: Found ${dates.length} dates in this window, total: ${allDates.length}`);
-                        // Found activity - cache and return
-                        this.cache[icao] = { dates: allDates, fetchedAt: Date.now(), exhausted: false };
-                        delete this.inFlightRequests[icao];
-                        return allDates;
-                    }
-
-                    console.log(`ActivityHistory: No dates found in window ${startDateStr} to ${endDateStr}, shifting back 6 months...`);
-                    // Shift window back 6 months and try again
-                    const oldEndDate = endDate.toISOString().split('T')[0];
-                    endDate = new Date(startDate); // Create new Date object to avoid reference issues
-                    const newEndDate = endDate.toISOString().split('T')[0];
-                    console.log(`ActivityHistory: Window shifted: endDate changed from ${oldEndDate} to ${newEndDate}`);
-                    attempts++;
-                }
-
-                // Gave up after 10 years - mark as exhausted
-                console.log(`ActivityHistory: Exhausted all ${this.maxRequests} attempts, no dates found. Marking as exhausted.`);
-                this.cache[icao] = { dates: [], fetchedAt: Date.now(), exhausted: true };
-                delete this.inFlightRequests[icao];
-                return [];
-            } catch (error) {
-                console.error('ActivityHistory: Error in fetchActiveDates loop:', error);
-                delete this.inFlightRequests[icao];
-                throw error;
-            }
-        })();
-
-        // Store the promise BEFORE awaiting, so concurrent calls can wait for it
-        this.inFlightRequests[icao] = requestPromise;
-        
-        try {
-            const result = await requestPromise;
-            return result;
-        } catch (error) {
-            // If the promise was deleted, it means it completed (success or exhausted)
-            // Only delete if it's still our promise
-            if (this.inFlightRequests[icao] === requestPromise) {
-                delete this.inFlightRequests[icao];
-            }
-            throw error;
-        }
-    },
-
-    getNextDate(icao, currentDate) {
-        const cached = this.cache[icao];
-        if (!cached || !cached.dates || cached.dates.length === 0) return null;
-
-        // Find the next date after currentDate
-        const current = currentDate instanceof Date ? currentDate.toISOString().split('T')[0] : currentDate;
-        const dates = cached.dates.sort(); // Ensure sorted ascending
-        const idx = dates.findIndex(d => d > current);
-        return idx >= 0 ? dates[idx] : null;
-    },
-
-    getPrevDate(icao, currentDate) {
-        const cached = this.cache[icao];
-        if (!cached || !cached.dates || cached.dates.length === 0) return null;
-
-        // Find the previous date before currentDate
-        const current = currentDate instanceof Date ? currentDate.toISOString().split('T')[0] : currentDate;
-        const dates = cached.dates.sort().reverse(); // Ensure sorted descending
-        const idx = dates.findIndex(d => d < current);
-        return idx >= 0 ? dates[idx] : null;
-    },
-
-    clear(icao) {
-        if (icao) {
-            delete this.cache[icao];
-        } else {
-            this.cache = {};
-        }
-    }
-};
 let trace_hist_only = false;
 let traces_high_res = false;
 let show_rId = false;
@@ -6850,27 +6649,58 @@ async function toggleShowTrace() {
         showTraceWasIsolation = onlySelected;
         toggleIsolation("on", "noRefresh");
         
-        // Proactively fetch active dates when history panel opens
+        // Show the panel first so spinner is visible
+        jQuery('#history_collapse').show();
+        jQuery('#show_trace').addClass('active');
+        
+        // Proactively fetch active dates when history panel opens (non-blocking)
         const icao = SelectedPlane?.icao;
-        console.log('toggleShowTrace: icao=', icao, 'replay=', replay, 'hasCache=', icao ? ActivityHistory.hasValidCache(icao) : 'N/A', 'exhausted=', icao ? ActivityHistory.isExhausted(icao) : 'N/A');
+        
+        // Show loading spinner initially, hide other states
+        jQuery('#trace_panel_loading').show();
+        jQuery('#trace_panel_content').hide();
+        jQuery('#trace_no_data').hide();
+
         if (icao && !replay) {
-            if (!ActivityHistory.hasValidCache(icao) && !ActivityHistory.isExhausted(icao)) {
-                console.log('ActivityHistory: Fetching active dates on history open for', icao);
-                jQuery('#leg_sel').text('Checking flight history...');
-                try {
-                    await ActivityHistory.fetchActiveDates(icao);
-                    console.log('ActivityHistory: Fetch completed, dates:', ActivityHistory.cache[icao]?.dates?.length || 0);
-                } catch (error) {
+            // Fire and forget - don't await
+            ActivityHistory.fetchActiveDates(icao)
+                .then(() => {
+                    // Check if activity was found
+                    const hasActivity = ActivityHistory.hasActivity(icao);
+                    if (hasActivity) {
+                        // Show panel content, hide loading and no data
+                        jQuery('#trace_panel_loading').hide();
+                        jQuery('#trace_panel_content').show();
+                        jQuery('#trace_no_data').hide();
+                        jQuery('#trace_back_1d, #trace_jump_1d').prop('disabled', false);
+                        jQuery('#trace_back_1d').attr('title', 'Jump to previous flight day');
+                        jQuery('#trace_jump_1d').attr('title', 'Jump to next flight day');
+                        shiftTrace();
+                    } else {
+                        // Show no data message, hide loading and panel content
+                        jQuery('#trace_panel_loading').hide();
+                        jQuery('#trace_panel_content').hide();
+                        jQuery('#trace_no_data').show();
+                        jQuery('#trace_back_1d, #trace_jump_1d').prop('disabled', true);
+                    }
+                })
+                .catch(error => {
                     console.warn('ActivityHistory fetch failed on history open', error);
-                }
-            } else {
-                console.log('ActivityHistory: Skipping fetch - hasCache:', ActivityHistory.hasValidCache(icao), 'exhausted:', ActivityHistory.isExhausted(icao));
-            }
+                    // On error, show no data
+                    jQuery('#trace_panel_loading').hide();
+                    jQuery('#trace_panel_content').hide();
+                    jQuery('#trace_no_data').show();
+                    jQuery('#trace_back_1d, #trace_jump_1d').prop('disabled', true);
+                });
         } else {
-            console.log('ActivityHistory: Skipping fetch - no icao or replay mode');
+            // No ICAO or replay mode - show panel immediately (replay mode always has data)
+            jQuery('#trace_panel_loading').hide();
+            jQuery('#trace_panel_content').show();
+            jQuery('#trace_no_data').hide();
+            jQuery('#trace_back_1d, #trace_jump_1d').prop('disabled', false);
+            shiftTrace();
         }
         
-        shiftTrace();
         refreshFilter();
     } else {
         jQuery("#selected_showTrace_hide").show();
@@ -6896,10 +6726,11 @@ async function toggleShowTrace() {
         if (replay) {
             replayStep();
         }
+        
+        // Hide the panel when closing
+        jQuery('#history_collapse').hide();
+        jQuery('#show_trace').removeClass('active');
     }
-
-    jQuery('#history_collapse').toggle();
-    jQuery('#show_trace').toggleClass('active');
 }
 
 function legShift(offset, plane) {
@@ -6983,6 +6814,7 @@ function legShift(offset, plane) {
     updateAddressBar();
 }
 
+
 function setTraceDate(options) {
     options = options || {};
     let numbers = options.string ? options.string.split('-') : [];
@@ -7025,35 +6857,24 @@ async function shiftTrace(offset) {
     const icao = SelectedPlane?.icao;
     let targetDate = null;
 
-    // Try activity-aware navigation if we have a selected plane and not replay mode
+    // Use activity-aware navigation if we have a selected plane and not replay mode
     if (icao && offset !== "today" && !replay) {
-        // Check if we have cached dates or need to fetch
-        if (!ActivityHistory.hasValidCache(icao) && !ActivityHistory.isExhausted(icao)) {
-            jQuery('#leg_sel').text('Checking flight history...');
-            jQuery('#trace_back_1d, #trace_jump_1d').prop('disabled', true);
-
-            try {
-                await ActivityHistory.fetchActiveDates(icao);
-            } catch (error) {
-                console.warn('ActivityHistory fetch failed, falling back to day-by-day', error);
-            } finally {
-                jQuery('#trace_back_1d, #trace_jump_1d').prop('disabled', false);
-            }
+        if (!ActivityHistory.hasActivity(icao)) {
+            // No activity found - buttons should be disabled, but guard against it
+            return;
         }
+        
+        // Use smart navigation with active dates
+        const currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
 
-        // Try to get next/prev date from ActivityHistory
-        if (ActivityHistory.hasValidCache(icao) || ActivityHistory.isExhausted(icao)) {
-            const currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
-
-            if (offset > 0) {
-                targetDate = ActivityHistory.getNextDate(icao, currentDateStr);
-            } else if (offset < 0) {
-                targetDate = ActivityHistory.getPrevDate(icao, currentDateStr);
-            }
+        if (offset > 0) {
+            targetDate = ActivityHistory.getNextDate(icao, currentDateStr);
+        } else if (offset < 0) {
+            targetDate = ActivityHistory.getPrevDate(icao, currentDateStr);
         }
     }
 
-    // If ActivityHistory didn't provide a date, fall back to original behavior
+    // If ActivityHistory didn't provide a date, use today or replay date
     if (!targetDate) {
         jQuery('#leg_sel').text('Loading ...');
         if (!traceDate || offset == "today") {
@@ -7062,7 +6883,8 @@ async function shiftTrace(offset) {
             } else {
                 setTraceDate({ ts: new Date().getTime() });
             }
-        } else if (offset) {
+        } else {
+            // This shouldn't happen with active-dates only, but handle gracefully
             setTraceDate({ ts: traceDate.getTime() + offset * 86400 * 1000 });
         }
     } else {
