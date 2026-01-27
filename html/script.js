@@ -143,6 +143,10 @@ const ActivityHistory = {
     async requestActiveDates(icao, startDate, endDate) {
         const timeFrom = Math.floor(startDate.getTime() / 1000);
         const timeTo = Math.floor(endDate.getTime() / 1000);
+        
+        const startDateStr = startDate.toISOString().split('T')[0];
+        const endDateStr = endDate.toISOString().split('T')[0];
+        console.log(`ActivityHistory.requestActiveDates: ICAO=${icao}, time_from=${timeFrom} (${startDateStr}), time_to=${timeTo} (${endDateStr})`);
 
         // Get cookie for authentication
         let cookie = this.getCookie('adsbx_api');
@@ -165,7 +169,7 @@ const ActivityHistory = {
         };
 
         try {
-            console.log('ActivityHistory: Sending request to', `${this.apiBaseUrl}/operations/icao/active-dates`, 'for ICAO', icao);
+            console.log(`ActivityHistory: Sending POST to ${this.apiBaseUrl}/operations/icao/active-dates with payload:`, JSON.stringify(payload, null, 2));
             const response = await fetch(`${this.apiBaseUrl}/operations/icao/active-dates`, {
                 method: 'POST',
                 headers: {
@@ -202,13 +206,16 @@ const ActivityHistory = {
     },
 
     async fetchActiveDates(icao) {
+        console.log(`ActivityHistory.fetchActiveDates called for ${icao}`);
         // Check cache first
         if (this.hasValidCache(icao)) {
+            console.log(`ActivityHistory: Using cached data for ${icao}`);
             return this.cache[icao].dates;
         }
 
         // Check if exhausted
         if (this.isExhausted(icao)) {
+            console.log(`ActivityHistory: Already exhausted for ${icao}`);
             return [];
         }
 
@@ -220,37 +227,67 @@ const ActivityHistory = {
 
         // Create a promise for this request
         const requestPromise = (async () => {
-            let attempts = 0;
-            let endDate = new Date();
-            let allDates = [];
+            try {
+                let attempts = 0;
+                let endDate = new Date();
+                let allDates = [];
 
-            while (attempts < this.maxRequests) {
-                const startDate = new Date(endDate);
-                startDate.setMonth(startDate.getMonth() - this.windowMonths);
+                console.log(`ActivityHistory: Starting search for ${icao}, will search up to ${this.maxRequests} windows of ${this.windowMonths} months each`);
 
-                const dates = await this.requestActiveDates(icao, startDate, endDate);
+                while (attempts < this.maxRequests) {
+                    const startDate = new Date(endDate);
+                    startDate.setMonth(startDate.getMonth() - this.windowMonths);
 
-                if (dates.length > 0) {
-                    allDates = allDates.concat(dates);
-                    // Found activity - cache and return
-                    this.cache[icao] = { dates: allDates, fetchedAt: Date.now(), exhausted: false };
-                    delete this.inFlightRequests[icao];
-                    return allDates;
+                    const startDateStr = startDate.toISOString().split('T')[0];
+                    const endDateStr = endDate.toISOString().split('T')[0];
+                    console.log(`ActivityHistory: Attempt ${attempts + 1}/${this.maxRequests} - Searching from ${startDateStr} to ${endDateStr}`);
+                    
+                    const dates = await this.requestActiveDates(icao, startDate, endDate);
+
+                    if (dates.length > 0) {
+                        allDates = allDates.concat(dates);
+                        console.log(`ActivityHistory: Found ${dates.length} dates in this window, total: ${allDates.length}`);
+                        // Found activity - cache and return
+                        this.cache[icao] = { dates: allDates, fetchedAt: Date.now(), exhausted: false };
+                        delete this.inFlightRequests[icao];
+                        return allDates;
+                    }
+
+                    console.log(`ActivityHistory: No dates found in window ${startDateStr} to ${endDateStr}, shifting back 6 months...`);
+                    // Shift window back 6 months and try again
+                    const oldEndDate = endDate.toISOString().split('T')[0];
+                    endDate = new Date(startDate); // Create new Date object to avoid reference issues
+                    const newEndDate = endDate.toISOString().split('T')[0];
+                    console.log(`ActivityHistory: Window shifted: endDate changed from ${oldEndDate} to ${newEndDate}`);
+                    attempts++;
                 }
 
-                // Shift window back 6 months and try again
-                endDate = startDate;
-                attempts++;
+                // Gave up after 10 years - mark as exhausted
+                console.log(`ActivityHistory: Exhausted all ${this.maxRequests} attempts, no dates found. Marking as exhausted.`);
+                this.cache[icao] = { dates: [], fetchedAt: Date.now(), exhausted: true };
+                delete this.inFlightRequests[icao];
+                return [];
+            } catch (error) {
+                console.error('ActivityHistory: Error in fetchActiveDates loop:', error);
+                delete this.inFlightRequests[icao];
+                throw error;
             }
-
-            // Gave up after 10 years - mark as exhausted
-            this.cache[icao] = { dates: [], fetchedAt: Date.now(), exhausted: true };
-            delete this.inFlightRequests[icao];
-            return [];
         })();
 
+        // Store the promise BEFORE awaiting, so concurrent calls can wait for it
         this.inFlightRequests[icao] = requestPromise;
-        return await requestPromise;
+        
+        try {
+            const result = await requestPromise;
+            return result;
+        } catch (error) {
+            // If the promise was deleted, it means it completed (success or exhausted)
+            // Only delete if it's still our promise
+            if (this.inFlightRequests[icao] === requestPromise) {
+                delete this.inFlightRequests[icao];
+            }
+            throw error;
+        }
     },
 
     getNextDate(icao, currentDate) {
