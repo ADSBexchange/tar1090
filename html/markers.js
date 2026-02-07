@@ -314,8 +314,11 @@ let shapes = {
         w: 28,
         h: 28,
         viewBox: '0 0 32 32',
-        strokeScale: 1.0,
-        path: 'M16 10 L16 22 M10 16 L22 16 M6 6 A 3 3 0 0 1 6 12 A 3 3 0 0 1 6 6 Z M26 6 A 3 3 0 0 1 26 12 A 3 3 0 0 1 26 6 Z M6 26 A 3 3 0 0 1 6 20 A 3 3 0 0 1 6 26 Z M26 26 A 3 3 0 0 1 26 20 A 3 3 0 0 1 26 26 Z M13 13 L19 13 L19 19 L13 19 Z',
+        strokeScale: 1.2,
+        path: [
+            'M13.5 13 L8 8 M18.5 13 L24 8 M13.5 19 L8 24 M18.5 19 L24 24',
+            'M5 8 A3 3 0 1 1 11 8 A3 3 0 1 1 5 8 Z M21 8 A3 3 0 1 1 27 8 A3 3 0 1 1 21 8 Z M5 24 A3 3 0 1 1 11 24 A3 3 0 1 1 5 24 Z M21 24 A3 3 0 1 1 27 24 A3 3 0 1 1 21 24 Z M16 10 L18.5 13 L18.5 19 L13.5 19 L13.5 13 Z',
+        ],
     },
     'typhoon': {
         viewBox:'-4.8 -3.5 34 34',
@@ -736,10 +739,6 @@ let shapes = {
         shape.id = Number(i);
     }
 
-    // uav_quad sprite is at index 92 (row 5, column 12) in sprites.png
-    if (shapes['uav_quad']) {
-        shapes['uav_quad'].id = 92;
-    }
 }
 
 const _ulac = ["cessna", 0.92];
