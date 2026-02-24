@@ -277,6 +277,9 @@ let uatNoTISB = false;
 // Don't display any TIS-B planes
 let filterTISB = false;
 
+// Enable UAV/drone support ($ prefix toggle button, disclaimer, icons)
+let enableUAV = false;
+
 // image configuration link (back to a webUI for feeder setup)
 let imageConfigLink = "";
 let imageConfigText = "";

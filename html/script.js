@@ -1787,6 +1787,10 @@ jQuery('#selected_altitude_geom1')
         showHideButtons();
         runAfterLoad(showHideButtons);
     }
+
+    if (enableUAV) {
+        jQuery('#UAVToggle').removeClass('hidden');
+    }
 }
 
 function initLegend(colors) {
@@ -3332,7 +3336,7 @@ function displaySil() {
     let new_html="";
     
     // Use custom drone image for UAV aircraft ($ prefix)
-    if (selected.icao[0] == '$') {
+    if (enableUAV && selected.icao[0] == '$') {
         new_html = "<img id='silhouette' width='"+ 151 * globalScale + "' src='images/sifly-drone.png' />";
     } else {
         let type = selected.icaoType ? selected.icaoType : 'ZZZZ';
@@ -3460,7 +3464,7 @@ function refreshSelected() {
     }
     
     // Hide Full Details, Flight Activity, and History for UAVs
-    if (selected && selected.isUAV()) {
+    if (enableUAV && selected && selected.isUAV()) {
         jQuery('#feature_landings').hide();
         jQuery('#show_trace').hide();
     } else if (selected) {
@@ -3523,7 +3527,7 @@ function refreshSelected() {
         jQuery('#reg_info').removeClass('hidden');
 
         // Show/hide UAV disclaimer
-        if (selected.isUAV()) {
+        if (enableUAV && selected.isUAV()) {
             jQuery('#uav_disclaimer').removeClass('hidden');
         } else {
             jQuery('#uav_disclaimer').addClass('hidden');
@@ -4846,7 +4850,7 @@ function adjustInfoBlock() {
         jQuery('#selected_infoblock').show();
         
         // Hide Full Details, Flight Activity, and History for UAVs
-        if (SelectedPlane && SelectedPlane.isUAV()) {
+        if (enableUAV && SelectedPlane && SelectedPlane.isUAV()) {
             jQuery('#feature_landings').hide();
             jQuery('#show_trace').hide();
         } else {
@@ -5017,6 +5021,7 @@ function toggleMilitary() {
 }
 
 function toggleUAV() {
+    if (!enableUAV) return;
     showUAV = !showUAV;
     buttonActive('#UAVToggle', showUAV);
     refreshFilter();
