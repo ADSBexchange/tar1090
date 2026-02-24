@@ -1789,7 +1789,7 @@ jQuery('#selected_altitude_geom1')
     }
 
     if (enableUAV) {
-        jQuery('#UAVToggle').removeClass('hidden');
+        jQuery('#UAVToggle').show();
     }
 }
 
