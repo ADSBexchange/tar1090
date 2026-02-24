@@ -62,6 +62,7 @@ g.enableLabels = false;
 g.extendedLabels = 0;
 let mapIsVisible = true;
 let onlyMilitary = false;
+let showUAV = false;
 let onlySelected = false;
 let debug = false;
 let debugJump = false;
@@ -3520,6 +3521,13 @@ function refreshSelected() {
         jQuery('#tisb_info').addClass('hidden');
         jQuery('#anon_mlat_info').addClass('hidden');
         jQuery('#reg_info').removeClass('hidden');
+
+        // Show/hide UAV disclaimer
+        if (selected.isUAV()) {
+            jQuery('#uav_disclaimer').removeClass('hidden');
+        } else {
+            jQuery('#uav_disclaimer').addClass('hidden');
+        }
     }
 
     let checkReg = selected.registration + ' ' + selected.dbinfoLoaded;
@@ -5003,6 +5011,14 @@ function toggleMilitary() {
     onlyMilitary = !onlyMilitary;
     buttonActive('#U', onlyMilitary);
 
+    refreshFilter();
+    active();
+    fetchData({force: true});
+}
+
+function toggleUAV() {
+    showUAV = !showUAV;
+    buttonActive('#UAVToggle', showUAV);
     refreshFilter();
     active();
     fetchData({force: true});

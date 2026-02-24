@@ -279,6 +279,10 @@ PlaneObject.prototype.isFiltered = function() {
         return true;
     }
 
+    if (!showUAV && this.isUAV()) {
+        return true;
+    }
+
     if (nogpsOnly && !this.nogps) {
         return true;
     }
