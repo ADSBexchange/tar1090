@@ -250,8 +250,6 @@ ColorByAlt = {
 // Don't display any TIS-B planes
 // filterTISB = false;
 
-// Enable UAV/drone support ($ toggle button, disclaimer, quad icons)
-// enableUAV = false;
 
 // image configuration link (back to a webUI for feeder setup)
 // if the link is supposed to point to the same host that tar1090

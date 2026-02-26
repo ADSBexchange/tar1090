@@ -279,10 +279,6 @@ PlaneObject.prototype.isFiltered = function() {
         return true;
     }
 
-    if (!showUAV && this.isUAV()) {
-        return true;
-    }
-
     if (nogpsOnly && !this.nogps) {
         return true;
     }
@@ -2423,6 +2419,7 @@ PlaneObject.prototype.getAircraftData = function() {
                 this.interesting = (data[2][1] == '1');
                 this.pia = (data[2][2] == '1');
                 this.ladd = (data[2][3] == '1');
+                this.uav = (data[2][4] == '1');
                 if (this.pia)
                     this.registration = null;
             }
@@ -2869,6 +2866,7 @@ PlaneObject.prototype.setTypeFlagsReg = function(data) {
         this.interesting = data.dbFlags & 2;
         this.pia = data.dbFlags & 4;
         this.ladd = data.dbFlags & 8;
+        this.uav = data.dbFlags & 16;
         if (this.pia)
             this.registration = null;
     }

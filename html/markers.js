@@ -1285,7 +1285,7 @@ function getBaseMarker(category, typeDesignator, typeDescription, wtc, addrtype,
     //return ['f5_tiger', 1];
 
     // Check for $ prefix quadcopter UAVs - but only if no type designator
-    if (enableUAV && isQuadUAV && !(typeDesignator in TypeDesignatorIcons)) {
+    if (isQuadUAV && !(typeDesignator in TypeDesignatorIcons)) {
         return ['uav_quad', 1];
     }
 

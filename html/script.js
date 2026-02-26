@@ -62,7 +62,6 @@ g.enableLabels = false;
 g.extendedLabels = 0;
 let mapIsVisible = true;
 let onlyMilitary = false;
-let showUAV = false;
 let onlySelected = false;
 let debug = false;
 let debugJump = false;
@@ -89,7 +88,7 @@ let pathName = window.location.pathname.replace(/\/+/, '/') || "/";
 let sourcesFilter = null;
 let sources = ['adsb', ['uat', 'adsr'], 'mlat', 'tisb', 'modeS', 'other', 'adsc', 'ais'];
 let flagFilter = null;
-let flagFilterValues = ['military', 'pia', 'ladd'];
+let flagFilterValues = ['military', 'pia', 'ladd', 'uav'];
 let showTrace = false;
 let showTraceExit = false;
 let showTraceWasIsolation = false;
@@ -1788,9 +1787,6 @@ jQuery('#selected_altitude_geom1')
         runAfterLoad(showHideButtons);
     }
 
-    if (enableUAV) {
-        jQuery('#UAVToggle').show();
-    }
 }
 
 function initLegend(colors) {
@@ -1860,6 +1856,7 @@ function initFlagFilter(colors) {
     //html += createFilter(colors['mlat'], 'Interesting');
     html += createFilter(colors['uat'], 'PIA', flagFilterValues[1]);
     html += createFilter(colors['adsb'], 'LADD', flagFilterValues[2]);
+    html += createFilter(colors['other'], 'UAV', flagFilterValues[3]);
 
     document.getElementById('flagFilter').innerHTML = html;
 
@@ -3336,7 +3333,7 @@ function displaySil() {
     let new_html="";
     
     // Use custom drone image for UAV aircraft ($ prefix)
-    if (enableUAV && selected.icao[0] == '$') {
+    if (selected.icao[0] == '$') {
         new_html = "<img id='silhouette' width='"+ 151 * globalScale + "' src='images/sifly-drone.png' />";
     } else {
         let type = selected.icaoType ? selected.icaoType : 'ZZZZ';
@@ -3464,7 +3461,7 @@ function refreshSelected() {
     }
     
     // Hide Full Details, Flight Activity, and History for UAVs
-    if (enableUAV && selected && selected.isUAV()) {
+    if (selected && selected.isUAV()) {
         jQuery('#feature_landings').hide();
         jQuery('#show_trace').hide();
     } else if (selected) {
@@ -3527,7 +3524,7 @@ function refreshSelected() {
         jQuery('#reg_info').removeClass('hidden');
 
         // Show/hide UAV disclaimer
-        if (enableUAV && selected.isUAV()) {
+        if (selected.isUAV()) {
             jQuery('#uav_disclaimer').removeClass('hidden');
         } else {
             jQuery('#uav_disclaimer').addClass('hidden');
@@ -4850,7 +4847,7 @@ function adjustInfoBlock() {
         jQuery('#selected_infoblock').show();
         
         // Hide Full Details, Flight Activity, and History for UAVs
-        if (enableUAV && SelectedPlane && SelectedPlane.isUAV()) {
+        if (SelectedPlane && SelectedPlane.isUAV()) {
             jQuery('#feature_landings').hide();
             jQuery('#show_trace').hide();
         } else {
@@ -5015,15 +5012,6 @@ function toggleMilitary() {
     onlyMilitary = !onlyMilitary;
     buttonActive('#U', onlyMilitary);
 
-    refreshFilter();
-    active();
-    fetchData({force: true});
-}
-
-function toggleUAV() {
-    if (!enableUAV) return;
-    showUAV = !showUAV;
-    buttonActive('#UAVToggle', showUAV);
     refreshFilter();
     active();
     fetchData({force: true});
