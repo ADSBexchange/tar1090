@@ -277,6 +277,8 @@ let uatNoTISB = false;
 // Don't display any TIS-B planes
 let filterTISB = false;
 
+// UAV contact URL shown in aircraft details for drone/UAV aircraft
+let uavContactUrl = "https://www.adsbexchange.com/contact/";
 
 // image configuration link (back to a webUI for feeder setup)
 let imageConfigLink = "";
