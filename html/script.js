@@ -3525,11 +3525,6 @@ function refreshSelected() {
 
         // Show/hide UAV disclaimer
         if (selected.isUAV()) {
-            let disclaimerHtml = 'UAV data is experimental.';
-            if (uavContactUrl) {
-                disclaimerHtml += ' <a class="link" href="' + uavContactUrl + '" target="_blank">Contact us</a> to register your UAV.';
-            }
-            jQuery('#uav_disclaimer_text').html(disclaimerHtml);
             jQuery('#uav_disclaimer').removeClass('hidden');
         } else {
             jQuery('#uav_disclaimer').addClass('hidden');
