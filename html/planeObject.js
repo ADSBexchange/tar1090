@@ -322,6 +322,11 @@ PlaneObject.prototype.isFiltered = function() {
     if (this.sitedist && this.sitedist > filterMaxRange)
         return true;
 
+    // Hide UAV aircraft when feature flag is off
+    if (!enableUAV && this.isUAV()) {
+        return true;
+    }
+
     return false;
 };
 
