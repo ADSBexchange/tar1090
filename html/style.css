@@ -579,11 +579,11 @@ select.error, textarea.error, input.error {
     }
 }
 
-.button-beta-badge {
+.button-join-badge {
     width: calc( 27px * var(--SCALE));
     height: calc( 27px * var(--SCALE));
     cursor: pointer;
-    background-image: url('images/button-badge-beta.svg');
+    background-image: url('images/button-badge-join.svg');
     background-size: 2em;
     background-position-x: left;
     background-position-y: bottom;
