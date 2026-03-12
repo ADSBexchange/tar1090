@@ -6,7 +6,7 @@ const ActivityHistory = {
     windowMonths: 6,        // Each API request covers 6 months
     maxSearchYears: 10,     // Give up after searching 10 years back
     maxRequests: 20,        // 10 years ÷ 6 months = 20 requests max
-    apiBaseUrl: (typeof apiBaseUrl !== 'undefined' && apiBaseUrl) ? apiBaseUrl : 'http://localhost:8090/api/aircraft/v2',
+    apiBaseUrl: '/api/aircraft/v2',
     inFlightRequests: {},   // Track in-flight requests to prevent duplicates
 
     hasValidCache(icao) {
@@ -45,19 +45,8 @@ const ActivityHistory = {
         const timeFrom = Math.floor(startDate.getTime() / 1000);
         const timeTo = Math.floor(endDate.getTime() / 1000);
         
-        const startDateStr = startDate.toISOString().split('T')[0];
-        const endDateStr = endDate.toISOString().split('T')[0];
-
         // Get cookie for authentication
-        let cookie = this.getCookie('adsbx_api');
-        if (!cookie) {
-            // For development: set a test cookie if missing
-            const futureTimestamp = Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60); // 1 year from now
-            const testCookie = `${futureTimestamp}_dev_test_token`;
-            document.cookie = `adsbx_api=${testCookie}; path=/; max-age=${365 * 24 * 60 * 60}`;
-            cookie = testCookie;
-            console.log('ActivityHistory: Set test cookie for development');
-        }
+        const cookie = this.getCookie('adsbx_api');
 
         const payload = {
             user_token: cookie,
