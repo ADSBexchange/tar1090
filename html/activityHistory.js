@@ -7,7 +7,7 @@ const ActivityHistory = {
     cache: {},              // { icao: { dates: [...], oldestFetched: epoch, fetchedAt: timestamp, prevExhausted: bool } }
     cacheTTL: 300000,       // 5 minutes
     maxCacheSize: 50,       // LRU eviction threshold
-    windowMonths: 6,        // Each API request covers 6 months
+    windowMonths: 12,       // Each API request covers 1 year
     apiBaseUrl: '/api/aircraft/v2',
     inFlightRequests: {},   // Dedup concurrent requests per ICAO
 
@@ -27,13 +27,6 @@ const ActivityHistory = {
         }
     },
 
-    getCookie: function(name) {
-        var value = '; ' + document.cookie;
-        var parts = value.split('; ' + name + '=');
-        if (parts.length === 2) return parts.pop().split(';').shift();
-        return null;
-    },
-
     // Safe month subtraction — avoids overflow by clamping to 1st of month
     subtractMonths: function(date, months) {
         var d = new Date(date);
@@ -51,9 +44,15 @@ const ActivityHistory = {
     },
 
     // Fetch a single time window from the API
+    getCookie: function(name) {
+        var value = '; ' + document.cookie;
+        var parts = value.split('; ' + name + '=');
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    },
+
     requestWindow: async function(icao, startDate, endDate) {
         var cookie = this.getCookie('adsbx_api');
-
         try {
             var response = await fetch(this.apiBaseUrl + '/operations/icao/active-dates', {
                 method: 'POST',
@@ -98,7 +97,7 @@ const ActivityHistory = {
         var self = this;
         var promise = (async function() {
             try {
-                var maxWindows = 20; // 20 * 6 months = 10 years
+                var maxWindows = 1; // 1 * 12 months = 1 year
                 var endDate = new Date();
 
                 for (var i = 0; i < maxWindows; i++) {
@@ -154,7 +153,7 @@ const ActivityHistory = {
         var self = this;
         var promise = (async function() {
             try {
-                var maxWindows = 20;
+                var maxWindows = 5; // 5 * 12 months = 5 more years back
                 var windowEnd = new Date(cached.oldestFetched);
 
                 for (var i = 0; i < maxWindows; i++) {
