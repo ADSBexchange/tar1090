@@ -6888,7 +6888,7 @@ async function shiftTrace(offset) {
                 }
             }
         } else if (offset < 0) {
-            targetDate = await ActivityHistory.getPrevDate(icao, currentDateStr);
+            targetDate = ActivityHistory.getPrevDate(icao, currentDateStr);
         }
 
         // If no date found, stay put
