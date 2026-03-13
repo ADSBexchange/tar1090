@@ -6702,18 +6702,30 @@ async function toggleShowTrace() {
         jQuery('#history_collapse').show();
         jQuery('#show_trace').addClass('active');
         
-        // Show trace panel immediately and load today's trace
-        jQuery('#trace_panel_loading').hide();
-        jQuery('#trace_panel_content').show();
-        jQuery('#trace_no_data').hide();
-        shiftTrace();
-
-        // Fetch active dates in background — influences prev/next button behavior
         const icao = SelectedPlane ? SelectedPlane.icao : null;
+
         if (icao && !replay) {
-            ActivityHistory.fetchActiveDates(icao).catch(error => {
-                console.warn('ActivityHistory: fetch failed on history open', error);
+            // Show spinner while fetching active dates
+            jQuery('#trace_panel_loading').show();
+            jQuery('#trace_panel_content').hide();
+            jQuery('#trace_no_data').hide();
+
+            ActivityHistory.fetchActiveDates(icao).then(function() {
+                jQuery('#trace_panel_loading').hide();
+                jQuery('#trace_panel_content').show();
+                shiftTrace();
+            }).catch(function() {
+                // API failed — hide spinner, show panel, fall back to day stepping
+                jQuery('#trace_panel_loading').hide();
+                jQuery('#trace_panel_content').show();
+                shiftTrace();
             });
+        } else {
+            // No ICAO or replay mode — show panel immediately
+            jQuery('#trace_panel_loading').hide();
+            jQuery('#trace_panel_content').show();
+            jQuery('#trace_no_data').hide();
+            shiftTrace();
         }
         
         refreshFilter();
