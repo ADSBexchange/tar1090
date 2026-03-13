@@ -6702,52 +6702,18 @@ async function toggleShowTrace() {
         jQuery('#history_collapse').show();
         jQuery('#show_trace').addClass('active');
         
-        // Proactively fetch active dates when history panel opens (non-blocking)
-        const icao = SelectedPlane?.icao;
-        
-        // Show loading spinner initially, hide other states
-        jQuery('#trace_panel_loading').show();
-        jQuery('#trace_panel_content').hide();
+        // Show trace panel immediately and load today's trace
+        jQuery('#trace_panel_loading').hide();
+        jQuery('#trace_panel_content').show();
         jQuery('#trace_no_data').hide();
+        shiftTrace();
 
+        // Fetch active dates in background — influences prev/next button behavior
+        const icao = SelectedPlane?.icao;
         if (icao && !replay) {
-            // Fire and forget - don't await
-            ActivityHistory.fetchActiveDates(icao)
-                .then(() => {
-                    // Check if activity was found
-                    const hasActivity = ActivityHistory.hasActivity(icao);
-                    if (hasActivity) {
-                        // Show panel content, hide loading and no data
-                        jQuery('#trace_panel_loading').hide();
-                        jQuery('#trace_panel_content').show();
-                        jQuery('#trace_no_data').hide();
-                        jQuery('#trace_back_1d, #trace_jump_1d').prop('disabled', false);
-                        jQuery('#trace_back_1d').attr('title', 'Jump to previous flight day');
-                        jQuery('#trace_jump_1d').attr('title', 'Jump to next flight day');
-                        shiftTrace();
-                    } else {
-                        // Show no data message, hide loading and panel content
-                        jQuery('#trace_panel_loading').hide();
-                        jQuery('#trace_panel_content').hide();
-                        jQuery('#trace_no_data').show();
-                        jQuery('#trace_back_1d, #trace_jump_1d').prop('disabled', true);
-                    }
-                })
-                .catch(error => {
-                    console.warn('ActivityHistory fetch failed on history open', error);
-                    // On error, show no data
-                    jQuery('#trace_panel_loading').hide();
-                    jQuery('#trace_panel_content').hide();
-                    jQuery('#trace_no_data').show();
-                    jQuery('#trace_back_1d, #trace_jump_1d').prop('disabled', true);
-                });
-        } else {
-            // No ICAO or replay mode - show panel immediately (replay mode always has data)
-            jQuery('#trace_panel_loading').hide();
-            jQuery('#trace_panel_content').show();
-            jQuery('#trace_no_data').hide();
-            jQuery('#trace_back_1d, #trace_jump_1d').prop('disabled', false);
-            shiftTrace();
+            ActivityHistory.fetchActiveDates(icao).catch(error => {
+                console.warn('ActivityHistory: fetch failed on history open', error);
+            });
         }
         
         refreshFilter();
@@ -6906,19 +6872,35 @@ async function shiftTrace(offset) {
     const icao = SelectedPlane?.icao;
     let targetDate = null;
 
-    // Use activity-aware navigation if we have a selected plane, not replay mode, and we have active dates
-    if (icao && offset !== "today" && !replay && ActivityHistory.hasActivity(icao)) {
+    // Use activity-aware navigation if we have active dates cached
+    const useActivityNav = icao && offset !== "today" && offset && !replay && ActivityHistory.hasActivity(icao);
+
+    if (useActivityNav) {
         const currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
 
         if (offset > 0) {
             targetDate = ActivityHistory.getNextDate(icao, currentDateStr);
+            // No next active date — if before today, jump to today
+            if (!targetDate) {
+                const todayStr = ActivityHistory.toDateStr(new Date());
+                if (currentDateStr < todayStr) {
+                    targetDate = todayStr;
+                }
+            }
         } else if (offset < 0) {
             targetDate = await ActivityHistory.getPrevDate(icao, currentDateStr);
         }
-    }
 
-    // If ActivityHistory didn't provide a date, fall back to stepping one day at a time
-    if (!targetDate) {
+        // If no date found, stay put
+        if (!targetDate) {
+            updateHistoryNavButtons();
+            return;
+        }
+
+        jQuery('#leg_sel').text('Loading ...');
+        setTraceDate({ string: targetDate });
+    } else {
+        // No activity data, API unreachable, or initial load — original day stepping
         jQuery('#leg_sel').text('Loading ...');
         if (!traceDate || offset == "today") {
             if (replay) {
@@ -6929,10 +6911,6 @@ async function shiftTrace(offset) {
         } else {
             setTraceDate({ ts: traceDate.getTime() + offset * 86400 * 1000 });
         }
-    } else {
-        // Use the date from ActivityHistory
-        jQuery('#leg_sel').text('Loading ...');
-        setTraceDate({ string: targetDate });
     }
 
     //jQuery('#trace_date').text('UTC day:\n' + traceDateString);
