@@ -6906,24 +6906,18 @@ async function shiftTrace(offset) {
     const icao = SelectedPlane?.icao;
     let targetDate = null;
 
-    // Use activity-aware navigation if we have a selected plane and not replay mode
-    if (icao && offset !== "today" && !replay) {
-        if (!ActivityHistory.hasActivity(icao)) {
-            // No activity found - buttons should be disabled, but guard against it
-            return;
-        }
-        
-        // Use smart navigation with active dates
+    // Use activity-aware navigation if we have a selected plane, not replay mode, and we have active dates
+    if (icao && offset !== "today" && !replay && ActivityHistory.hasActivity(icao)) {
         const currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
 
         if (offset > 0) {
             targetDate = ActivityHistory.getNextDate(icao, currentDateStr);
         } else if (offset < 0) {
-            targetDate = ActivityHistory.getPrevDate(icao, currentDateStr);
+            targetDate = await ActivityHistory.getPrevDate(icao, currentDateStr);
         }
     }
 
-    // If ActivityHistory didn't provide a date, use today or replay date
+    // If ActivityHistory didn't provide a date, fall back to stepping one day at a time
     if (!targetDate) {
         jQuery('#leg_sel').text('Loading ...');
         if (!traceDate || offset == "today") {
@@ -6933,7 +6927,6 @@ async function shiftTrace(offset) {
                 setTraceDate({ ts: new Date().getTime() });
             }
         } else {
-            // This shouldn't happen with active-dates only, but handle gracefully
             setTraceDate({ ts: traceDate.getTime() + offset * 86400 * 1000 });
         }
     } else {
@@ -6950,6 +6943,17 @@ async function shiftTrace(offset) {
     }
 
     updateAddressBar();
+    updateHistoryNavButtons();
+}
+
+function updateHistoryNavButtons() {
+    const icao = SelectedPlane?.icao;
+    if (!icao || !ActivityHistory.hasActivity(icao)) return;
+
+    const currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
+    if (!currentDateStr) return;
+
+    jQuery('#trace_back_1d').prop('disabled', !ActivityHistory.hasPrevDate(icao, currentDateStr));
 }
 
 

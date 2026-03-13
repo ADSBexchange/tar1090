@@ -1,83 +1,26 @@
 // ActivityHistory module for smart history navigation
+// Fetches active dates in 6-month windows from the API. The client accumulates
+// dates as the user navigates backwards, avoiding large upfront payloads.
 const ActivityHistory = {
-    cache: {},              // { icao: { dates: [...], fetchedAt: timestamp, exhausted: bool } }
+    cache: {},              // { icao: { dates: [...], oldestFetched: Date, fetchedAt: timestamp } }
     cacheTTL: 300000,       // 5 minutes
-    maxCacheSize: 50,       // Limit cache entries
+    maxCacheSize: 50,       // LRU eviction threshold
     windowMonths: 6,        // Each API request covers 6 months
-    maxSearchYears: 10,     // Give up after searching 10 years back
-    maxRequests: 20,        // 10 years ÷ 6 months = 20 requests max
     apiBaseUrl: '/api/aircraft/v2',
-    inFlightRequests: {},   // Track in-flight requests to prevent duplicates
+    inFlightRequests: {},   // Dedup concurrent requests per ICAO
 
-    hasValidCache(icao) {
-        const cached = this.cache[icao];
-        if (!cached) return false;
-        const age = Date.now() - cached.fetchedAt;
-        return age < this.cacheTTL && !cached.exhausted;
-    },
-
-    isExhausted(icao) {
-        return this.cache[icao]?.exhausted === true;
-    },
-
-    // Check if activity was found for an ICAO
-    // Returns: true if activity dates found, false if exhausted or not checked yet
     hasActivity(icao) {
-        const cached = this.cache[icao];
-        if (!cached) return false;
-        return cached.dates && cached.dates.length > 0;
+        return this.cache[icao]?.dates?.length > 0;
     },
 
     // Prune cache when it exceeds maxCacheSize (LRU eviction)
     pruneCache() {
         const entries = Object.entries(this.cache);
         if (entries.length <= this.maxCacheSize) return;
-
-        // Sort by fetchedAt (oldest first) and remove excess
         entries.sort((a, b) => a[1].fetchedAt - b[1].fetchedAt);
         const toRemove = entries.length - this.maxCacheSize;
         for (let i = 0; i < toRemove; i++) {
             delete this.cache[entries[i][0]];
-        }
-    },
-
-    async requestActiveDates(icao, startDate, endDate) {
-        const timeFrom = Math.floor(startDate.getTime() / 1000);
-        const timeTo = Math.floor(endDate.getTime() / 1000);
-        
-        // Get cookie for authentication
-        const cookie = this.getCookie('adsbx_api');
-
-        const payload = {
-            user_token: cookie,
-            payload: {
-                icao: icao,
-                time_from: timeFrom,
-                time_to: timeTo
-            }
-        };
-
-        try {
-            const response = await fetch(`${this.apiBaseUrl}/operations/icao/active-dates`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',  // Required for cross-origin requests to send cookies
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                console.warn(`ActivityHistory: API returned ${response.status} ${response.statusText}`);
-                return [];
-            }
-
-            const data = await response.json();
-            return data.active_dates || [];
-        } catch (error) {
-            console.error('ActivityHistory: Request failed', error);
-            console.error('ActivityHistory: Error details:', error.message, error.stack);
-            return [];
         }
     },
 
@@ -88,97 +31,176 @@ const ActivityHistory = {
         return null;
     },
 
+    // Fetch a single time window from the API
+    async requestWindow(icao, startDate, endDate) {
+        const cookie = this.getCookie('adsbx_api');
+
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/operations/icao/active-dates`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    user_token: cookie,
+                    payload: {
+                        icao: icao,
+                        time_from: Math.floor(startDate.getTime() / 1000),
+                        time_to: Math.floor(endDate.getTime() / 1000)
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                console.warn(`ActivityHistory: API returned ${response.status} ${response.statusText}`);
+                return null;
+            }
+
+            const data = await response.json();
+            return data.active_dates || [];
+        } catch (error) {
+            console.error('ActivityHistory: Request failed', error.message);
+            return null;
+        }
+    },
+
+    // Initial fetch — gets the most recent 6 months of active dates
     async fetchActiveDates(icao) {
-        // Check cache first
-        if (this.hasValidCache(icao)) {
-            return this.cache[icao].dates;
+        const cached = this.cache[icao];
+        if (cached && (Date.now() - cached.fetchedAt) < this.cacheTTL) {
+            return cached.dates;
         }
 
-        // Check if exhausted
-        if (this.isExhausted(icao)) {
-            return [];
+        // Dedup concurrent requests
+        const key = `init-${icao}`;
+        if (this.inFlightRequests[key]) {
+            return await this.inFlightRequests[key];
         }
 
-        // Prevent duplicate concurrent requests for the same ICAO
-        if (this.inFlightRequests[icao]) {
-            return await this.inFlightRequests[icao];
-        }
-
-        // Create a promise for this request
-        const requestPromise = (async () => {
+        const promise = (async () => {
             try {
-                let attempts = 0;
+                const maxWindows = 20; // 20 * 6 months = 10 years
                 let endDate = new Date();
                 let allDates = [];
 
-                while (attempts < this.maxRequests) {
+                for (let i = 0; i < maxWindows; i++) {
                     const startDate = new Date(endDate);
                     startDate.setMonth(startDate.getMonth() - this.windowMonths);
-                    
-                    const dates = await this.requestActiveDates(icao, startDate, endDate);
+
+                    const dates = await this.requestWindow(icao, startDate, endDate);
+                    if (dates === null) return []; // API error — don't cache
 
                     if (dates.length > 0) {
-                        allDates = allDates.concat(dates);
-                        // Found activity - cache and return
-                        this.cache[icao] = { dates: allDates, fetchedAt: Date.now(), exhausted: false };
+                        allDates = dates;
+                        this.cache[icao] = {
+                            dates: allDates,
+                            oldestFetched: startDate,
+                            fetchedAt: Date.now()
+                        };
                         this.pruneCache();
-                        delete this.inFlightRequests[icao];
                         return allDates;
                     }
 
-                    // Shift window back 6 months and try again
-                    endDate = new Date(startDate); // Create new Date object to avoid reference issues
-                    attempts++;
+                    // Empty window — walk back further
+                    endDate = startDate;
                 }
 
-                // Gave up after 10 years - mark as exhausted
-                this.cache[icao] = { dates: [], fetchedAt: Date.now(), exhausted: true };
+                // Exhausted all windows — no data found
+                this.cache[icao] = {
+                    dates: [],
+                    oldestFetched: endDate,
+                    fetchedAt: Date.now(),
+                    prevExhausted: true
+                };
                 this.pruneCache();
-                delete this.inFlightRequests[icao];
                 return [];
-            } catch (error) {
-                console.error('ActivityHistory: Error in fetchActiveDates loop:', error);
-                delete this.inFlightRequests[icao];
-                throw error;
+            } finally {
+                delete this.inFlightRequests[key];
             }
         })();
 
-        // Store the promise BEFORE awaiting, so concurrent calls can wait for it
-        this.inFlightRequests[icao] = requestPromise;
-        
-        try {
-            const result = await requestPromise;
-            return result;
-        } catch (error) {
-            // If the promise was deleted, it means it completed (success or exhausted)
-            // Only delete if it's still our promise
-            if (this.inFlightRequests[icao] === requestPromise) {
-                delete this.inFlightRequests[icao];
-            }
-            throw error;
+        this.inFlightRequests[key] = promise;
+        return await promise;
+    },
+
+    // Fetch an older 6-month window and merge into cache
+    async fetchOlderDates(icao) {
+        const cached = this.cache[icao];
+        if (!cached) return [];
+
+        const key = `older-${icao}`;
+        if (this.inFlightRequests[key]) {
+            return await this.inFlightRequests[key];
         }
+
+        const promise = (async () => {
+            try {
+                const windowEnd = new Date(cached.oldestFetched);
+                const windowStart = new Date(windowEnd);
+                windowStart.setMonth(windowStart.getMonth() - this.windowMonths);
+
+                const dates = await this.requestWindow(icao, windowStart, windowEnd);
+                if (dates === null) return cached.dates; // API error — return what we have
+
+                // Merge and deduplicate
+                const allDates = [...new Set([...cached.dates, ...dates])];
+                allDates.sort().reverse(); // Descending
+
+                cached.dates = allDates;
+                cached.oldestFetched = windowStart;
+                cached.fetchedAt = Date.now();
+
+                // If this window returned nothing, mark backwards as exhausted
+                if (dates.length === 0) cached.prevExhausted = true;
+
+                return allDates;
+            } finally {
+                delete this.inFlightRequests[key];
+            }
+        })();
+
+        this.inFlightRequests[key] = promise;
+        return await promise;
+    },
+
+    // Returns true if there are known dates before currentDate, or if we haven't exhausted the search yet
+    hasPrevDate(icao, currentDate) {
+        const cached = this.cache[icao];
+        if (!cached?.dates?.length) return false;
+        const current = currentDate instanceof Date ? currentDate.toISOString().split('T')[0] : currentDate;
+        const hasInCache = cached.dates.some(d => d < current);
+        if (hasInCache) return true;
+        return !cached.prevExhausted; // May still have older data on server
     },
 
     getNextDate(icao, currentDate) {
         const cached = this.cache[icao];
-        if (!cached || !cached.dates || cached.dates.length === 0) return null;
+        if (!cached?.dates?.length) return null;
 
-        // Find the next date after currentDate
         const current = currentDate instanceof Date ? currentDate.toISOString().split('T')[0] : currentDate;
-        const dates = cached.dates.sort(); // Ensure sorted ascending
+        const dates = [...cached.dates].sort(); // Ascending
         const idx = dates.findIndex(d => d > current);
         return idx >= 0 ? dates[idx] : null;
     },
 
-    getPrevDate(icao, currentDate) {
+    // Returns the previous date, or fetches an older window if at the boundary
+    async getPrevDate(icao, currentDate) {
         const cached = this.cache[icao];
-        if (!cached || !cached.dates || cached.dates.length === 0) return null;
+        if (!cached?.dates?.length) return null;
 
-        // Find the previous date before currentDate
         const current = currentDate instanceof Date ? currentDate.toISOString().split('T')[0] : currentDate;
-        const dates = cached.dates.sort().reverse(); // Ensure sorted descending
+        const dates = [...cached.dates].sort().reverse(); // Descending
         const idx = dates.findIndex(d => d < current);
-        return idx >= 0 ? dates[idx] : null;
+
+        if (idx >= 0) return dates[idx];
+
+        // At the boundary — try fetching older data
+        await this.fetchOlderDates(icao);
+        const updated = this.cache[icao];
+        if (!updated?.dates?.length) return null;
+
+        const updatedDates = [...updated.dates].sort().reverse();
+        const newIdx = updatedDates.findIndex(d => d < current);
+        return newIdx >= 0 ? updatedDates[newIdx] : null;
     },
 
     clear(icao) {
