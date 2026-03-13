@@ -11,38 +11,39 @@ const ActivityHistory = {
     apiBaseUrl: '/api/aircraft/v2',
     inFlightRequests: {},   // Dedup concurrent requests per ICAO
 
-    hasActivity(icao) {
-        return this.cache[icao]?.dates?.length > 0;
+    hasActivity: function(icao) {
+        var entry = this.cache[icao];
+        return !!(entry && entry.dates && entry.dates.length > 0);
     },
 
     // Prune cache when it exceeds maxCacheSize (LRU eviction)
-    pruneCache() {
-        const entries = Object.entries(this.cache);
+    pruneCache: function() {
+        var entries = Object.entries(this.cache);
         if (entries.length <= this.maxCacheSize) return;
-        entries.sort((a, b) => a[1].fetchedAt - b[1].fetchedAt);
-        const toRemove = entries.length - this.maxCacheSize;
-        for (let i = 0; i < toRemove; i++) {
+        entries.sort(function(a, b) { return a[1].fetchedAt - b[1].fetchedAt; });
+        var toRemove = entries.length - this.maxCacheSize;
+        for (var i = 0; i < toRemove; i++) {
             delete this.cache[entries[i][0]];
         }
     },
 
-    getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
+    getCookie: function(name) {
+        var value = '; ' + document.cookie;
+        var parts = value.split('; ' + name + '=');
         if (parts.length === 2) return parts.pop().split(';').shift();
         return null;
     },
 
     // Safe month subtraction — avoids overflow by clamping to 1st of month
-    subtractMonths(date, months) {
-        const d = new Date(date);
+    subtractMonths: function(date, months) {
+        var d = new Date(date);
         d.setDate(1);
         d.setMonth(d.getMonth() - months);
         return d;
     },
 
     // Convert a date to YYYY-MM-DD in UTC
-    toDateStr(date) {
+    toDateStr: function(date) {
         if (typeof date === 'string') return date;
         return date.getUTCFullYear() + '-' +
             String(date.getUTCMonth() + 1).padStart(2, '0') + '-' +
@@ -50,11 +51,11 @@ const ActivityHistory = {
     },
 
     // Fetch a single time window from the API
-    async requestWindow(icao, startDate, endDate) {
-        const cookie = this.getCookie('adsbx_api');
+    requestWindow: async function(icao, startDate, endDate) {
+        var cookie = this.getCookie('adsbx_api');
 
         try {
-            const response = await fetch(`${this.apiBaseUrl}/operations/icao/active-dates`, {
+            var response = await fetch(this.apiBaseUrl + '/operations/icao/active-dates', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -69,11 +70,11 @@ const ActivityHistory = {
             });
 
             if (!response.ok) {
-                console.warn(`ActivityHistory: API returned ${response.status} ${response.statusText}`);
+                console.warn('ActivityHistory: API returned ' + response.status + ' ' + response.statusText);
                 return null;
             }
 
-            const data = await response.json();
+            var data = await response.json();
             return data.active_dates || [];
         } catch (error) {
             console.error('ActivityHistory: Request failed', error.message);
@@ -82,37 +83,38 @@ const ActivityHistory = {
     },
 
     // Initial fetch — walks back in 6-month windows until data is found
-    async fetchActiveDates(icao) {
-        const cached = this.cache[icao];
+    fetchActiveDates: async function(icao) {
+        var cached = this.cache[icao];
         if (cached && (Date.now() - cached.fetchedAt) < this.cacheTTL) {
             return cached.dates;
         }
 
         // Dedup concurrent requests
-        const key = `init-${icao}`;
+        var key = 'init-' + icao;
         if (this.inFlightRequests[key]) {
             return await this.inFlightRequests[key];
         }
 
-        const promise = (async () => {
+        var self = this;
+        var promise = (async function() {
             try {
-                const maxWindows = 20; // 20 * 6 months = 10 years
-                let endDate = new Date();
+                var maxWindows = 20; // 20 * 6 months = 10 years
+                var endDate = new Date();
 
-                for (let i = 0; i < maxWindows; i++) {
-                    const startDate = this.subtractMonths(endDate, this.windowMonths);
+                for (var i = 0; i < maxWindows; i++) {
+                    var startDate = self.subtractMonths(endDate, self.windowMonths);
 
-                    const dates = await this.requestWindow(icao, startDate, endDate);
+                    var dates = await self.requestWindow(icao, startDate, endDate);
                     if (dates === null) return []; // API error — don't cache
 
                     if (dates.length > 0) {
-                        this.cache[icao] = {
+                        self.cache[icao] = {
                             dates: dates,
                             oldestFetched: startDate,
                             fetchedAt: Date.now(),
                             prevExhausted: false
                         };
-                        this.pruneCache();
+                        self.pruneCache();
                         return dates;
                     }
 
@@ -121,16 +123,16 @@ const ActivityHistory = {
                 }
 
                 // Exhausted all windows — no data found
-                this.cache[icao] = {
+                self.cache[icao] = {
                     dates: [],
                     oldestFetched: endDate,
                     fetchedAt: Date.now(),
                     prevExhausted: true
                 };
-                this.pruneCache();
+                self.pruneCache();
                 return [];
             } finally {
-                delete this.inFlightRequests[key];
+                delete self.inFlightRequests[key];
             }
         })();
 
@@ -140,24 +142,25 @@ const ActivityHistory = {
 
     // Fetch older windows and merge into cache. Walks back multiple windows
     // to handle gaps > 6 months (e.g. aircraft inactive for years then active again).
-    async fetchOlderDates(icao) {
-        const cached = this.cache[icao];
-        if (!cached || cached.prevExhausted) return cached?.dates || [];
+    fetchOlderDates: async function(icao) {
+        var cached = this.cache[icao];
+        if (!cached || cached.prevExhausted) return cached ? cached.dates : [];
 
-        const key = `older-${icao}`;
+        var key = 'older-' + icao;
         if (this.inFlightRequests[key]) {
             return await this.inFlightRequests[key];
         }
 
-        const promise = (async () => {
+        var self = this;
+        var promise = (async function() {
             try {
-                const maxWindows = 20;
-                let windowEnd = new Date(cached.oldestFetched);
+                var maxWindows = 20;
+                var windowEnd = new Date(cached.oldestFetched);
 
-                for (let i = 0; i < maxWindows; i++) {
-                    const windowStart = this.subtractMonths(windowEnd, this.windowMonths);
+                for (var i = 0; i < maxWindows; i++) {
+                    var windowStart = self.subtractMonths(windowEnd, self.windowMonths);
 
-                    const dates = await this.requestWindow(icao, windowStart, windowEnd);
+                    var dates = await self.requestWindow(icao, windowStart, windowEnd);
                     if (dates === null) return cached.dates; // API error — return what we have
 
                     cached.oldestFetched = windowStart;
@@ -165,7 +168,9 @@ const ActivityHistory = {
 
                     if (dates.length > 0) {
                         // Merge and deduplicate, keep descending order
-                        const allDates = [...new Set([...cached.dates, ...dates])];
+                        var allDates = cached.dates.concat(dates).filter(function(d, i, arr) {
+                            return arr.indexOf(d) === i;
+                        });
                         allDates.sort().reverse();
                         cached.dates = allDates;
                         return allDates;
@@ -179,7 +184,7 @@ const ActivityHistory = {
                 cached.prevExhausted = true;
                 return cached.dates;
             } finally {
-                delete this.inFlightRequests[key];
+                delete self.inFlightRequests[key];
             }
         })();
 
@@ -188,48 +193,53 @@ const ActivityHistory = {
     },
 
     // Returns true if there are known dates before currentDate, or if we haven't exhausted the search yet
-    hasPrevDate(icao, currentDate) {
-        const cached = this.cache[icao];
-        if (!cached?.dates?.length) return false;
-        const current = this.toDateStr(currentDate);
-        const hasInCache = cached.dates.some(d => d < current);
-        if (hasInCache) return true;
+    hasPrevDate: function(icao, currentDate) {
+        var cached = this.cache[icao];
+        if (!cached || !cached.dates || !cached.dates.length) return false;
+        var current = this.toDateStr(currentDate);
+        for (var i = 0; i < cached.dates.length; i++) {
+            if (cached.dates[i] < current) return true;
+        }
         return !cached.prevExhausted;
     },
 
-    getNextDate(icao, currentDate) {
-        const cached = this.cache[icao];
-        if (!cached?.dates?.length) return null;
+    getNextDate: function(icao, currentDate) {
+        var cached = this.cache[icao];
+        if (!cached || !cached.dates || !cached.dates.length) return null;
 
-        const current = this.toDateStr(currentDate);
+        var current = this.toDateStr(currentDate);
         // dates are stored descending — walk from the end to find first > current
-        const dates = cached.dates;
-        for (let i = dates.length - 1; i >= 0; i--) {
+        var dates = cached.dates;
+        for (var i = dates.length - 1; i >= 0; i--) {
             if (dates[i] > current) return dates[i];
         }
         return null;
     },
 
     // Returns the previous date, or fetches older windows if at the boundary
-    async getPrevDate(icao, currentDate) {
-        const cached = this.cache[icao];
-        if (!cached?.dates?.length) return null;
+    getPrevDate: async function(icao, currentDate) {
+        var cached = this.cache[icao];
+        if (!cached || !cached.dates || !cached.dates.length) return null;
 
-        const current = this.toDateStr(currentDate);
+        var current = this.toDateStr(currentDate);
         // dates are stored descending — find first < current
-        const prevInCache = cached.dates.find(d => d < current);
-        if (prevInCache) return prevInCache;
+        for (var i = 0; i < cached.dates.length; i++) {
+            if (cached.dates[i] < current) return cached.dates[i];
+        }
 
         // At the boundary — try fetching older data
         if (cached.prevExhausted) return null;
         await this.fetchOlderDates(icao);
 
-        const updated = this.cache[icao];
-        if (!updated?.dates?.length) return null;
-        return updated.dates.find(d => d < current) || null;
+        var updated = this.cache[icao];
+        if (!updated || !updated.dates || !updated.dates.length) return null;
+        for (var i = 0; i < updated.dates.length; i++) {
+            if (updated.dates[i] < current) return updated.dates[i];
+        }
+        return null;
     },
 
-    clear(icao) {
+    clear: function(icao) {
         if (icao) {
             delete this.cache[icao];
         } else {

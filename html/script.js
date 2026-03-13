@@ -6709,7 +6709,7 @@ async function toggleShowTrace() {
         shiftTrace();
 
         // Fetch active dates in background — influences prev/next button behavior
-        const icao = SelectedPlane?.icao;
+        const icao = SelectedPlane ? SelectedPlane.icao : null;
         if (icao && !replay) {
             ActivityHistory.fetchActiveDates(icao).catch(error => {
                 console.warn('ActivityHistory: fetch failed on history open', error);
@@ -6869,7 +6869,7 @@ async function shiftTrace(offset) {
     traceOpts.showTimeEnd = null;
     traceOpts.showTime = null;
 
-    const icao = SelectedPlane?.icao;
+    const icao = SelectedPlane ? SelectedPlane.icao : null;
     let targetDate = null;
 
     // Use activity-aware navigation if we have active dates cached
@@ -6925,7 +6925,7 @@ async function shiftTrace(offset) {
 }
 
 function updateHistoryNavButtons() {
-    const icao = SelectedPlane?.icao;
+    const icao = SelectedPlane ? SelectedPlane.icao : null;
     if (!icao || !ActivityHistory.hasActivity(icao)) return;
 
     const currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
