@@ -5,6 +5,11 @@
 
 "use strict";
 
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
 g.planes        = {};
 g.planesOrdered = [];
 g.route_cache = [];
@@ -3360,9 +3365,9 @@ function displayPhoto() {
     let photoToPull = photos[0]["thumbnail"]["src"] || photos[0]["thumbnail"];
     let linkToPicture = photos[0]["link"];
     //console.log(linkToPicture);
-    new_html = '<a class=\"link\" href="'+linkToPicture+'" target="_blank" rel="noopener noreferrer"><img id="airplanePhoto" src=' +photoToPull+'></a>';
+    new_html = '<a class="link" href="'+escapeHtml(linkToPicture)+'" target="_blank" rel="noopener noreferrer"><img id="airplanePhoto" src="' +escapeHtml(photoToPull)+'"></a>';
     let copyright = photos[0]["photographer"] || photos[0]["user"];
-    jQuery('#copyrightInfo').html("<span>Image © " + copyright +"</span>");
+    jQuery('#copyrightInfo').html("<span>Image © " + escapeHtml(copyright) +"</span>");
     setPhotoHtml(new_html);
     adjustInfoBlock();
 }
@@ -3539,7 +3544,7 @@ function refreshSelected() {
             if (flightawareLinks) {
                 jQuery('#selected_registration').html(getFlightAwareIdentLink(selected.registration, selected.registration));
             } else if (registrationLinks && registrationLink(selected)) {
-                jQuery('#selected_registration').html(`<a class="link" target="_blank" href="${registrationLink(selected)}">${selected.registration}</a>`);
+                jQuery('#selected_registration').html(`<a class="link" target="_blank" href="${escapeHtml(registrationLink(selected))}">${escapeHtml(selected.registration)}</a>`);
             } else {
                 jQuery('#selected_registration').updateText(selected.registration);
             }
@@ -4033,7 +4038,7 @@ function refreshFeatures() {
         text: 'Flag',
         header: function() { return ""; },
         sort: function () { sortBy('country', compareAlpha, function(x) { return x.country; }); },
-        value: function(plane) { return (plane.country_code ? ('<img width="18" height="12" style="display: block;margin: auto;" src="flags/3x2/' + plane.country_code.toUpperCase() + '.svg" title="' + plane.country + '"></img>') : ''); },
+        value: function(plane) { return (plane.country_code ? ('<img width="18" height="12" style="display: block;margin: auto;" src="flags/3x2/' + escapeHtml(plane.country_code.toUpperCase()) + '.svg" title="' + escapeHtml(plane.country) + '"></img>') : ''); },
         hStyle: 'style="width: 18px; padding: 3px;"',
         html: true,
     };
@@ -4052,7 +4057,7 @@ function refreshFeatures() {
             value: function(plane) {
                 if (!useRouteAPI) return '';
                 if (plane.routeString) {
-                    return '<span title="' + plane.routeVerbose + '">' + plane.routeColumn + '</span>';
+                    return '<span title="' + escapeHtml(plane.routeVerbose) + '">' + escapeHtml(plane.routeColumn) + '</span>';
                 } else {
                     return '';
                 }
@@ -5371,7 +5376,7 @@ function getFlightAwareIdentLink(ident, linkText) {
         if (!linkText) {
             linkText = ident;
         }
-        return '<a class="link" target="_blank" href="https://flightaware.com/live/flight/' + ident.trim() + '" rel="noreferrer">' + linkText + '</a>';
+        return '<a class="link" target="_blank" href="https://flightaware.com/live/flight/' + encodeURIComponent(ident.trim()) + '" rel="noreferrer">' + escapeHtml(linkText) + '</a>';
     }
 
     return "";
@@ -5582,11 +5587,11 @@ function getFlightAwareModeSLink(code, ident, linkText) {
             linkText = "FlightAware: " + code.toUpperCase();
         }
 
-        let linkHtml = "<a class=\"link\" target=\"_blank\" href=\"https://flightaware.com/live/modes/" + code ;
+        let linkHtml = "<a class=\"link\" target=\"_blank\" href=\"https://flightaware.com/live/modes/" + encodeURIComponent(code) ;
         if (ident != null && ident !== "") {
-            linkHtml += "/ident/" + ident.trim();
+            linkHtml += "/ident/" + encodeURIComponent(ident.trim());
         }
-        linkHtml += "/redirect\" rel=\"noreferrer\">" + linkText + "</a>";
+        linkHtml += "/redirect\" rel=\"noreferrer\">" + escapeHtml(linkText) + "</a>";
         return linkHtml;
     }
 
@@ -8682,7 +8687,7 @@ function setAutoselect() {
 }
 function registrationLink(plane) {
     if (plane.country === 'Brazil') {
-        return `https://sistemas.anac.gov.br/aeronaves/cons_rab_resposta_en.asp?textMarca=${plane.registration}`;
+        return `https://sistemas.anac.gov.br/aeronaves/cons_rab_resposta_en.asp?textMarca=${encodeURIComponent(plane.registration)}`;
     } else {
         return '';
     }
