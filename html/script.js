@@ -6668,7 +6668,7 @@ function refreshInt() {
     return refresh;
 }
 
-function toggleShowTrace() {
+async function toggleShowTrace() {
     showTrace = !showTrace;
     if (showTrace) {
         jQuery("#selected_showTrace_hide").hide();
@@ -6676,12 +6676,54 @@ function toggleShowTrace() {
         toggleFollow(false);
         showTraceWasIsolation = onlySelected;
         toggleIsolation("on", "noRefresh");
-        shiftTrace();
+
+        // Show the panel first so spinner is visible
+        jQuery('#history_collapse').show();
+        jQuery('#show_trace').addClass('active');
+
+        const icao = SelectedPlane ? SelectedPlane.icao : null;
+
+        if (icao && !replay) {
+            // Show spinner while fetching active dates
+            jQuery('#trace_panel_loading').show();
+            jQuery('#trace_panel_content').hide();
+            jQuery('#trace_no_data').hide();
+
+            ActivityHistory.fetchActiveDates(icao).then(function() {
+                jQuery('#trace_panel_loading').hide();
+                var currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
+                var todayStr = ActivityHistory.toDateStr(new Date());
+                if (!ActivityHistory.hasActivity(icao) && currentDateStr && currentDateStr < todayStr) {
+                    // No history and viewing a past date — show no-history state
+                    jQuery('#trace_no_data').show();
+                    jQuery('#trace_panel_content').hide();
+                } else {
+                    jQuery('#trace_panel_content').show();
+                    jQuery('#trace_no_data').hide();
+                    shiftTrace();
+                }
+            }).catch(function() {
+                // API failed — hide spinner, show panel, fall back to day stepping
+                jQuery('#trace_panel_loading').hide();
+                jQuery('#trace_panel_content').show();
+                jQuery('#trace_no_data').hide();
+                shiftTrace();
+            });
+        } else {
+            // No ICAO or replay mode — show panel immediately
+            jQuery('#trace_panel_loading').hide();
+            jQuery('#trace_panel_content').show();
+            jQuery('#trace_no_data').hide();
+            shiftTrace();
+        }
+
         refreshFilter();
     } else {
         jQuery("#selected_showTrace_hide").show();
 
         traceOpts = {};
+        traceDate = null;
+        traceDateString = null;
         fetchData();
         legSel = -1;
         jQuery('#leg_sel').text('Legs: All');
@@ -6702,10 +6744,11 @@ function toggleShowTrace() {
         if (replay) {
             replayStep();
         }
-    }
 
-    jQuery('#history_collapse').toggle();
-    jQuery('#show_trace').toggleClass('active');
+        // Hide the panel when closing
+        jQuery('#history_collapse').hide();
+        jQuery('#show_trace').removeClass('active');
+    }
 }
 
 function legShift(offset, plane) {
@@ -6816,7 +6859,7 @@ function setTraceDate(options) {
     return traceDate;
 }
 
-function shiftTrace(offset) {
+async function shiftTrace(offset) {
     if (traceRate > 180) {
         jQuery('#leg_sel').text('Slow down! ...');
         return;
@@ -6828,15 +6871,60 @@ function shiftTrace(offset) {
     traceOpts.showTimeEnd = null;
     traceOpts.showTime = null;
 
-    jQuery('#leg_sel').text('Loading ...');
-    if (!traceDate || offset == "today") {
-        if (replay) {
-            setTraceDate({ ts: replay.ts.getTime() });
-        } else {
-            setTraceDate({ ts: new Date().getTime() });
+    const icao = SelectedPlane ? SelectedPlane.icao : null;
+    let targetDate = null;
+
+    // Use activity-aware navigation if we have active dates cached
+    const useActivityNav = icao && offset !== "today" && offset && !replay && ActivityHistory.hasActivity(icao);
+
+    if (useActivityNav) {
+        const currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
+
+        if (offset > 0) {
+            targetDate = ActivityHistory.getNextDate(icao, currentDateStr);
+            // No next active date — if before today, jump to today
+            if (!targetDate) {
+                var todayStr = ActivityHistory.toDateStr(new Date());
+                if (currentDateStr < todayStr) {
+                    targetDate = todayStr;
+                }
+            }
+        } else if (offset < 0) {
+            targetDate = ActivityHistory.getPrevDate(icao, currentDateStr);
+
+            // Eager prefetch: if within 5 dates of the oldest known, kick off background fetch
+            if (ActivityHistory.needsOlderFetch(icao) &&
+                    ActivityHistory._countOlderDates(icao, currentDateStr) <= 5) {
+                ActivityHistory.fetchOlderDates(icao).catch(function() {}); // fire-and-forget
+            }
+
+            // Blocking fetch: if we've run out but more may exist, wait for older window
+            if (!targetDate && ActivityHistory.needsOlderFetch(icao)) {
+                await ActivityHistory.fetchOlderDates(icao);
+                targetDate = ActivityHistory.getPrevDate(icao, currentDateStr);
+            }
         }
-    } else if (offset) {
-        setTraceDate({ ts: traceDate.getTime() + offset * 86400 * 1000 });
+
+        // If no date found, stay put
+        if (!targetDate) {
+            updateHistoryNavButtons();
+            return;
+        }
+
+        jQuery('#leg_sel').text('Loading ...');
+        setTraceDate({ string: targetDate });
+    } else {
+        // No activity data, API unreachable, or initial load — original day stepping
+        jQuery('#leg_sel').text('Loading ...');
+        if (!traceDate || offset == "today") {
+            if (replay) {
+                setTraceDate({ ts: replay.ts.getTime() });
+            } else {
+                setTraceDate({ ts: new Date().getTime() });
+            }
+        } else if (offset) {
+            setTraceDate({ ts: traceDate.getTime() + offset * 86400 * 1000 });
+        }
     }
 
     //jQuery('#trace_date').text('UTC day:\n' + traceDateString);
@@ -6847,6 +6935,28 @@ function shiftTrace(offset) {
     }
 
     updateAddressBar();
+    updateHistoryNavButtons();
+}
+
+function updateHistoryNavButtons() {
+    const icao = SelectedPlane ? SelectedPlane.icao : null;
+    if (!icao || !ActivityHistory.hasFetched(icao)) return;
+
+    // Fetched but no activity — disable both buttons
+    if (!ActivityHistory.hasActivity(icao)) {
+        jQuery('#trace_back_1d').prop('disabled', true);
+        jQuery('#trace_jump_1d').prop('disabled', true);
+        return;
+    }
+
+    const currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
+    if (!currentDateStr) return;
+
+    var hasPrev = !!ActivityHistory.getPrevDate(icao, currentDateStr) || ActivityHistory.needsOlderFetch(icao);
+    var todayStr = ActivityHistory.toDateStr(new Date());
+    var hasNext = !!ActivityHistory.getNextDate(icao, currentDateStr) || currentDateStr < todayStr;
+    jQuery('#trace_back_1d').prop('disabled', !hasPrev);
+    jQuery('#trace_jump_1d').prop('disabled', !hasNext);
 }
 
 
