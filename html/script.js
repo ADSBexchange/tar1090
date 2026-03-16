@@ -6712,12 +6712,22 @@ async function toggleShowTrace() {
 
             ActivityHistory.fetchActiveDates(icao).then(function() {
                 jQuery('#trace_panel_loading').hide();
-                jQuery('#trace_panel_content').show();
-                shiftTrace();
+                var currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
+                var todayStr = ActivityHistory.toDateStr(new Date());
+                if (!ActivityHistory.hasActivity(icao) && currentDateStr && currentDateStr < todayStr) {
+                    // No history and viewing a past date — show no-history state
+                    jQuery('#trace_no_data').show();
+                    jQuery('#trace_panel_content').hide();
+                } else {
+                    jQuery('#trace_panel_content').show();
+                    jQuery('#trace_no_data').hide();
+                    shiftTrace();
+                }
             }).catch(function() {
                 // API failed — hide spinner, show panel, fall back to day stepping
                 jQuery('#trace_panel_loading').hide();
                 jQuery('#trace_panel_content').show();
+                jQuery('#trace_no_data').hide();
                 shiftTrace();
             });
         } else {
@@ -6901,6 +6911,18 @@ async function shiftTrace(offset) {
             }
         } else if (offset < 0) {
             targetDate = ActivityHistory.getPrevDate(icao, currentDateStr);
+
+            // Eager prefetch: if within 5 dates of the oldest known, kick off background fetch
+            if (ActivityHistory.needsOlderFetch(icao) &&
+                    ActivityHistory._countOlderDates(icao, currentDateStr) <= 5) {
+                ActivityHistory.fetchOlderDates(icao).catch(function() {}); // fire-and-forget
+            }
+
+            // Blocking fetch: if we've run out but more may exist, wait for older window
+            if (!targetDate && ActivityHistory.needsOlderFetch(icao)) {
+                await ActivityHistory.fetchOlderDates(icao);
+                targetDate = ActivityHistory.getPrevDate(icao, currentDateStr);
+            }
         }
 
         // If no date found, stay put
@@ -6943,7 +6965,8 @@ function updateHistoryNavButtons() {
     const currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
     if (!currentDateStr) return;
 
-    jQuery('#trace_back_1d').prop('disabled', !ActivityHistory.hasPrevDate(icao, currentDateStr));
+    var hasPrev = !!ActivityHistory.getPrevDate(icao, currentDateStr) || ActivityHistory.needsOlderFetch(icao);
+    jQuery('#trace_back_1d').prop('disabled', !hasPrev);
 }
 
 

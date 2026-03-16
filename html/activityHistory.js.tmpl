@@ -1,13 +1,35 @@
 "use strict";
 
 var ActivityHistory = {
+    // Each cache entry: { dates: [], windowStart, windowEnd, fetchedAt, noMoreOlder: bool }
     cache: {},
     cacheTTL: 300000,
+    maxCacheSize: 50,
+    windowSize: 15778800, // ~6 months in seconds
+    accessOrder: [], // LRU tracking: most recently used at end
     apiBaseUrl: 'https://__ROOT_PUB_DOMAIN_NAME__/api/aircraft/v2',
 
     hasActivity: function(icao) {
         var entry = this.cache[icao];
         return !!(entry && entry.dates && entry.dates.length > 0);
+    },
+
+    needsOlderFetch: function(icao) {
+        var entry = this.cache[icao];
+        if (!entry) return false;
+        return entry.noMoreOlder === false;
+    },
+
+    // Returns how many known dates are older than (before) currentDate
+    _countOlderDates: function(icao, currentDate) {
+        var entry = this.cache[icao];
+        if (!entry || !entry.dates || !entry.dates.length) return 0;
+        var current = this.toDateStr(currentDate);
+        var count = 0;
+        for (var i = 0; i < entry.dates.length; i++) {
+            if (entry.dates[i] < current) count++;
+        }
+        return count;
     },
 
     getCookie: function(name) {
@@ -24,29 +46,95 @@ var ActivityHistory = {
             String(date.getUTCDate()).padStart(2, '0');
     },
 
+    _touch: function(icao) {
+        var idx = this.accessOrder.indexOf(icao);
+        if (idx !== -1) this.accessOrder.splice(idx, 1);
+        this.accessOrder.push(icao);
+    },
+
+    _evictIfNeeded: function() {
+        while (Object.keys(this.cache).length >= this.maxCacheSize && this.accessOrder.length > 0) {
+            var oldest = this.accessOrder.shift();
+            delete this.cache[oldest];
+        }
+    },
+
+    _postActiveDates: async function(icao, timeFrom, timeTo) {
+        var response = await fetch(this.apiBaseUrl + '/operations/icao/active-dates', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+                user_token: this.getCookie('adsbx_api'),
+                payload: { icao: icao, time_from: timeFrom, time_to: timeTo }
+            })
+        });
+        if (!response.ok) return [];
+        var data = await response.json();
+        return data.active_dates || [];
+    },
+
+    // Initial fetch: 6-month window ending now
     fetchActiveDates: async function(icao) {
         var cached = this.cache[icao];
         if (cached && (Date.now() - cached.fetchedAt) < this.cacheTTL) {
+            this._touch(icao);
             return cached.dates;
         }
+        var now = Math.floor(Date.now() / 1000);
+        var windowStart = now - this.windowSize;
         try {
-            var response = await fetch(this.apiBaseUrl + '/operations/icao/active-dates', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                    user_token: this.getCookie('adsbx_api'),
-                    payload: { icao: icao, time_from: 0, time_to: Math.floor(Date.now() / 1000) }
-                })
-            });
-            if (!response.ok) return [];
-            var data = await response.json();
-            var dates = data.active_dates || [];
-            this.cache[icao] = { dates: dates, fetchedAt: Date.now() };
+            var dates = await this._postActiveDates(icao, windowStart, now);
+            this._evictIfNeeded();
+            this.cache[icao] = {
+                dates: dates,
+                windowStart: windowStart,
+                windowEnd: now,
+                fetchedAt: Date.now(),
+                noMoreOlder: dates.length === 0
+            };
+            this._touch(icao);
             return dates;
         } catch (e) {
             return [];
         }
+    },
+
+    // Fetch next older 6-month window and merge into cache.
+    // Returns the in-flight promise so callers can await the same request.
+    fetchOlderDates: function(icao) {
+        var entry = this.cache[icao];
+        if (!entry || entry.noMoreOlder) return Promise.resolve();
+
+        // De-dup: if a fetch for this icao is already in-flight, return that promise
+        if (entry._olderFetchPromise) return entry._olderFetchPromise;
+
+        var newEnd = entry.windowStart - 1;
+        if (newEnd <= 0) {
+            entry.noMoreOlder = true;
+            return Promise.resolve();
+        }
+        var newStart = newEnd - this.windowSize;
+        if (newStart < 0) newStart = 0;
+
+        var self = this;
+        entry._olderFetchPromise = this._postActiveDates(icao, newStart, newEnd).then(function(dates) {
+            // Merge: append new dates, deduplicate, keep descending order
+            var merged = entry.dates.concat(dates.filter(function(d) {
+                return entry.dates.indexOf(d) === -1;
+            }));
+            merged.sort(function(a, b) { return b < a ? -1 : b > a ? 1 : 0; });
+            entry.dates = merged;
+            entry.windowStart = newStart;
+            entry.noMoreOlder = dates.length === 0;
+            self._touch(icao);
+            delete entry._olderFetchPromise;
+        }).catch(function() {
+            // leave noMoreOlder as-is so caller can retry
+            delete entry._olderFetchPromise;
+        });
+
+        return entry._olderFetchPromise;
     },
 
     getNextDate: function(icao, currentDate) {
@@ -63,6 +151,7 @@ var ActivityHistory = {
     getPrevDate: function(icao, currentDate) {
         var cached = this.cache[icao];
         if (!cached || !cached.dates || !cached.dates.length) return null;
+        this._touch(icao);
         var current = this.toDateStr(currentDate);
         var dates = cached.dates;
         for (var i = 0; i < dates.length; i++) {
@@ -72,6 +161,13 @@ var ActivityHistory = {
     },
 
     clear: function(icao) {
-        if (icao) { delete this.cache[icao]; } else { this.cache = {}; }
+        if (icao) {
+            delete this.cache[icao];
+            var idx = this.accessOrder.indexOf(icao);
+            if (idx !== -1) this.accessOrder.splice(idx, 1);
+        } else {
+            this.cache = {};
+            this.accessOrder = [];
+        }
     }
 };
