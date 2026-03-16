@@ -6743,6 +6743,8 @@ async function toggleShowTrace() {
         jQuery("#selected_showTrace_hide").show();
 
         traceOpts = {};
+        traceDate = null;
+        traceDateString = null;
         fetchData();
         legSel = -1;
         jQuery('#leg_sel').text('Legs: All');
