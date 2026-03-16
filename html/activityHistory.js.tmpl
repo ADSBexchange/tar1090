@@ -14,6 +14,10 @@ var ActivityHistory = {
         return !!(entry && entry.dates && entry.dates.length > 0);
     },
 
+    hasFetched: function(icao) {
+        return !!this.cache[icao];
+    },
+
     needsOlderFetch: function(icao) {
         var entry = this.cache[icao];
         if (!entry) return false;

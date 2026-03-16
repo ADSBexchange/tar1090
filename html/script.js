@@ -6906,7 +6906,7 @@ async function shiftTrace(offset) {
             targetDate = ActivityHistory.getNextDate(icao, currentDateStr);
             // No next active date — if before today, jump to today
             if (!targetDate) {
-                const todayStr = ActivityHistory.toDateStr(new Date());
+                var todayStr = ActivityHistory.toDateStr(new Date());
                 if (currentDateStr < todayStr) {
                     targetDate = todayStr;
                 }
@@ -6962,13 +6962,23 @@ async function shiftTrace(offset) {
 
 function updateHistoryNavButtons() {
     const icao = SelectedPlane ? SelectedPlane.icao : null;
-    if (!icao || !ActivityHistory.hasActivity(icao)) return;
+    if (!icao || !ActivityHistory.hasFetched(icao)) return;
+
+    // Fetched but no activity — disable both buttons
+    if (!ActivityHistory.hasActivity(icao)) {
+        jQuery('#trace_back_1d').prop('disabled', true);
+        jQuery('#trace_jump_1d').prop('disabled', true);
+        return;
+    }
 
     const currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
     if (!currentDateStr) return;
 
     var hasPrev = !!ActivityHistory.getPrevDate(icao, currentDateStr) || ActivityHistory.needsOlderFetch(icao);
+    var todayStr = ActivityHistory.toDateStr(new Date());
+    var hasNext = !!ActivityHistory.getNextDate(icao, currentDateStr) || currentDateStr < todayStr;
     jQuery('#trace_back_1d').prop('disabled', !hasPrev);
+    jQuery('#trace_jump_1d').prop('disabled', !hasNext);
 }
 
 
