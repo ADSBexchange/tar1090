@@ -59,19 +59,33 @@ var ActivityHistory = {
         }
     },
 
-    _postActiveDates: async function(icao, timeFrom, timeTo) {
-        var response = await fetch(this.apiBaseUrl + '/operations/icao/active-dates', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-                user_token: this.getCookie('adsbx_api'),
-                payload: { icao: icao, time_from: timeFrom, time_to: timeTo }
-            })
+    _postActiveDates: function(icao, timeFrom, timeTo) {
+        var self = this;
+        return new Promise(function(resolve) {
+            grecaptcha.enterprise.ready(async function() {
+                var token = await grecaptcha.enterprise.execute(
+                    '6LfaIQ0oAAAAAC4GM95h8s4zirnKqJwX2y3L8Bor',
+                    { action: 'ACTIVE_DATES' }
+                );
+                if (!token) { resolve([]); return; }
+                try {
+                    var response = await fetch(self.apiBaseUrl + '/operations/icao/active-dates', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            user_token: token,
+                            payload: { icao: icao, time_from: timeFrom, time_to: timeTo }
+                        })
+                    });
+                    if (!response.ok) { resolve([]); return; }
+                    var data = await response.json();
+                    resolve(data.active_dates || []);
+                } catch(e) {
+                    resolve([]);
+                }
+            });
         });
-        if (!response.ok) return [];
-        var data = await response.json();
-        return data.active_dates || [];
     },
 
     // Initial fetch: 6-month window ending now
