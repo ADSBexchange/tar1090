@@ -1857,7 +1857,7 @@ function initFlagFilter(colors) {
     html += createFilter(colors['uat'], 'PIA', flagFilterValues[1]);
     html += createFilter(colors['adsb'], 'LADD', flagFilterValues[2]);
     if (enableUAV)
-        html += createFilter(colors['other'], 'UAV', flagFilterValues[3]);
+        html += createFilter(colors['other'], 'UAV <span class="part107-badge">Part 107</span>', flagFilterValues[3]);
 
     document.getElementById('flagFilter').innerHTML = html;
 
