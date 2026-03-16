@@ -3,7 +3,7 @@
 var ActivityHistory = {
     cache: {},
     cacheTTL: 300000,
-    apiBaseUrl: '/api/aircraft/v2',
+    apiBaseUrl: 'https://__ROOT_PUB_DOMAIN_NAME__/api/aircraft/v2',
 
     hasActivity: function(icao) {
         var entry = this.cache[icao];
