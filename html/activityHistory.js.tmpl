@@ -143,6 +143,7 @@ var ActivityHistory = {
             }));
             merged.sort(function(a, b) { return b < a ? -1 : b > a ? 1 : 0; });
             entry.dates = merged;
+            delete entry._activeSet;
             entry.windowStart = newStart;
             entry.noMoreOlder = dates.length === 0;
             self._touch(icao);
@@ -176,6 +177,27 @@ var ActivityHistory = {
             if (dates[i] < current) return dates[i];
         }
         return null;
+    },
+
+    getActiveDatesSet: function(icao) {
+        var entry = this.cache[icao];
+        if (!entry || !entry.dates) return {};
+        if (entry._activeSet) return entry._activeSet;
+        var set = {};
+        for (var i = 0; i < entry.dates.length; i++) {
+            set[entry.dates[i]] = true;
+        }
+        entry._activeSet = set;
+        return set;
+    },
+
+    isBeforeCachedWindow: function(icao, year, month) {
+        var entry = this.cache[icao];
+        if (!entry) return false;
+        var ws = new Date(entry.windowStart * 1000);
+        if (year < ws.getUTCFullYear()) return true;
+        if (year === ws.getUTCFullYear() && (month - 1) < ws.getUTCMonth()) return true;
+        return false;
     },
 
     clear: function(icao) {

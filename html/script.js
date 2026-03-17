@@ -1270,8 +1270,33 @@ function earlyInitPage() {
         onClose: !onMobile ? null : function(dateText, inst){
             jQuery("#histDatePicker").attr("disabled", false);
         },
-        beforeShow: !onMobile ? null : function(input, inst){
-            jQuery("#histDatePicker").attr("disabled", true);
+        beforeShow: function(input, inst){
+            var icao = SelectedPlane ? SelectedPlane.icao : null;
+            if (icao && ActivityHistory.hasFetched(icao) && !ActivityHistory.hasActivity(icao)) {
+                return false;
+            }
+            if (onMobile) {
+                jQuery("#histDatePicker").attr("disabled", true);
+            }
+        },
+        beforeShowDay: function(date) {
+            var icao = SelectedPlane ? SelectedPlane.icao : null;
+            if (!icao || !ActivityHistory.hasFetched(icao)) return [true, '', ''];
+            var todayStr = ActivityHistory.toDateStr(new Date());
+            var dateStr = ActivityHistory.toDateStr(date);
+            if (dateStr === todayStr) return [true, '', ''];
+            var activeSet = ActivityHistory.getActiveDatesSet(icao);
+            if (activeSet[dateStr]) return [true, 'hist-active-date', ''];
+            return [false, '', 'No activity'];
+        },
+        onChangeMonthYear: function(year, month) {
+            var icao = SelectedPlane ? SelectedPlane.icao : null;
+            if (!icao) return;
+            if (ActivityHistory.isBeforeCachedWindow(icao, year, month) && ActivityHistory.needsOlderFetch(icao)) {
+                ActivityHistory.fetchOlderDates(icao).then(function() {
+                    jQuery("#histDatePicker").datepicker("refresh");
+                }).catch(function() {});
+            }
         },
     });
 
@@ -6691,6 +6716,7 @@ async function toggleShowTrace() {
 
             ActivityHistory.fetchActiveDates(icao).then(function() {
                 jQuery('#trace_panel_loading').hide();
+                jQuery("#histDatePicker").datepicker("refresh");
                 var currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
                 var todayStr = ActivityHistory.toDateStr(new Date());
                 if (!ActivityHistory.hasActivity(icao) && currentDateStr && currentDateStr < todayStr) {
@@ -6895,12 +6921,15 @@ async function shiftTrace(offset) {
             // Eager prefetch: if within 5 dates of the oldest known, kick off background fetch
             if (ActivityHistory.needsOlderFetch(icao) &&
                     ActivityHistory._countOlderDates(icao, currentDateStr) <= 5) {
-                ActivityHistory.fetchOlderDates(icao).catch(function() {}); // fire-and-forget
+                ActivityHistory.fetchOlderDates(icao).then(function() {
+                    jQuery("#histDatePicker").datepicker("refresh");
+                }).catch(function() {}); // fire-and-forget
             }
 
             // Blocking fetch: if we've run out but more may exist, wait for older window
             if (!targetDate && ActivityHistory.needsOlderFetch(icao)) {
                 await ActivityHistory.fetchOlderDates(icao);
+                jQuery("#histDatePicker").datepicker("refresh");
                 targetDate = ActivityHistory.getPrevDate(icao, currentDateStr);
             }
         }
@@ -6942,12 +6971,15 @@ function updateHistoryNavButtons() {
     const icao = SelectedPlane ? SelectedPlane.icao : null;
     if (!icao || !ActivityHistory.hasFetched(icao)) return;
 
-    // Fetched but no activity — disable both buttons
+    // Fetched but no activity — disable both buttons and datepicker
     if (!ActivityHistory.hasActivity(icao)) {
         jQuery('#trace_back_1d').prop('disabled', true);
         jQuery('#trace_jump_1d').prop('disabled', true);
+        jQuery('#histDatePicker').datepicker('disable');
         return;
     }
+
+    jQuery('#histDatePicker').datepicker('enable');
 
     const currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
     if (!currentDateStr) return;
