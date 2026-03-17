@@ -73,7 +73,7 @@ var ActivityHistory = {
                 );
                 if (!token) { resolve([]); return; }
                 try {
-                    var response = await fetch(self.apiBaseUrl + '/operations/icao/active-dates', {
+                    var response = await fetch(self.apiBaseUrl + '/operations/active-dates', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
