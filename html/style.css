@@ -987,6 +987,9 @@ input{
 #histDatePicker{
   background: var(--BGCOLOR1);
 }
+.hist-active-date a.ui-state-default {
+  font-weight: bold;
+}
 
 #replayBar {
   background: var(--BGCOLOR1);
