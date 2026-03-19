@@ -588,7 +588,7 @@ select.error, textarea.error, input.error {
     font-style: normal;
     color: #fff;
     background-color: #e080c0;
-    padding: 3px 3px;
+    padding: 3px 3px 1px;
     border-radius: 3px;
     pointer-events: none;
     line-height: 1.2;
