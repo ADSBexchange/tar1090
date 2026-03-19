@@ -580,12 +580,20 @@ select.error, textarea.error, input.error {
 }
 
 .part107-badge {
-    font-size: 0.6em;
-    font-style: italic;
-    color: #e080c0;
-    vertical-align: super;
-    margin-left: 2px;
+    position: absolute;
+    bottom: -10px;
+    right: -20px;
+    font-size: 9px;
+    font-weight: 700;
+    font-style: normal;
+    color: #fff;
+    background-color: #e080c0;
+    padding: 3px 3px;
+    border-radius: 3px;
     pointer-events: none;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-transform: uppercase;
 }
 
 .button-join-badge {
