@@ -1886,6 +1886,17 @@ function initFlagFilter(colors) {
 
     document.getElementById('flagFilter').innerHTML = html;
 
+    if (enableUAV) {
+        let uavLi = document.getElementById('flag-filter-uav');
+        if (uavLi) {
+            uavLi.style.position = 'relative';
+            let badge = document.createElement('span');
+            badge.className = 'part107-badge';
+            badge.textContent = 'Part 107';
+            uavLi.appendChild(badge);
+        }
+    }
+
     jQuery("#flagFilter").selectable({
         stop: function () {
             flagFilter = [];
