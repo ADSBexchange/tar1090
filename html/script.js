@@ -1292,11 +1292,7 @@ function earlyInitPage() {
         onChangeMonthYear: function(year, month) {
             var icao = SelectedPlane ? SelectedPlane.icao : null;
             if (!icao) return;
-            if (ActivityHistory.isBeforeCachedWindow(icao, year, month) && ActivityHistory.needsOlderFetch(icao)) {
-                ActivityHistory.fetchOlderDates(icao).then(function() {
-                    jQuery("#histDatePicker").datepicker("refresh");
-                }).catch(function() {});
-            }
+            // All dates fetched in one request — no older window to load
         },
     });
 
@@ -6929,20 +6925,7 @@ async function shiftTrace(offset) {
         } else if (offset < 0) {
             targetDate = ActivityHistory.getPrevDate(icao, currentDateStr);
 
-            // Eager prefetch: if within 5 dates of the oldest known, kick off background fetch
-            if (ActivityHistory.needsOlderFetch(icao) &&
-                    ActivityHistory._countOlderDates(icao, currentDateStr) <= 5) {
-                ActivityHistory.fetchOlderDates(icao).then(function() {
-                    jQuery("#histDatePicker").datepicker("refresh");
-                }).catch(function() {}); // fire-and-forget
-            }
-
-            // Blocking fetch: if we've run out but more may exist, wait for older window
-            if (!targetDate && ActivityHistory.needsOlderFetch(icao)) {
-                await ActivityHistory.fetchOlderDates(icao);
-                jQuery("#histDatePicker").datepicker("refresh");
-                targetDate = ActivityHistory.getPrevDate(icao, currentDateStr);
-            }
+            // All dates are fetched in one request — no windowed pagination needed
         }
 
         // If no date found, stay put
@@ -6995,7 +6978,7 @@ function updateHistoryNavButtons() {
     const currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
     if (!currentDateStr) return;
 
-    var hasPrev = !!ActivityHistory.getPrevDate(icao, currentDateStr) || ActivityHistory.needsOlderFetch(icao);
+    var hasPrev = !!ActivityHistory.getPrevDate(icao, currentDateStr);
     var todayStr = ActivityHistory.toDateStr(new Date());
     var hasNext = !!ActivityHistory.getNextDate(icao, currentDateStr) || currentDateStr < todayStr;
     jQuery('#trace_back_1d').prop('disabled', !hasPrev);

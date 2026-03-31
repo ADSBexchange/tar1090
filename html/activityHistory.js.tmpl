@@ -1,11 +1,10 @@
 "use strict";
 
 var ActivityHistory = {
-    // Each cache entry: { dates: [], windowStart, windowEnd, fetchedAt, noMoreOlder: bool }
+    // Each cache entry: { dates: [], fetchedAt }
     cache: {},
     cacheTTL: 300000,
     maxCacheSize: 50,
-    windowSize: 15778800, // ~6 months in seconds
     accessOrder: [], // LRU tracking: most recently used at end
     apiBaseUrl: 'https://__ROOT_PUB_DOMAIN_NAME__/api/aircraft/v2',
 
@@ -16,24 +15,6 @@ var ActivityHistory = {
 
     hasFetched: function(icao) {
         return !!this.cache[icao];
-    },
-
-    needsOlderFetch: function(icao) {
-        var entry = this.cache[icao];
-        if (!entry) return false;
-        return entry.noMoreOlder === false;
-    },
-
-    // Returns how many known dates are older than (before) currentDate
-    _countOlderDates: function(icao, currentDate) {
-        var entry = this.cache[icao];
-        if (!entry || !entry.dates || !entry.dates.length) return 0;
-        var current = this.toDateStr(currentDate);
-        var count = 0;
-        for (var i = 0; i < entry.dates.length; i++) {
-            if (entry.dates[i] < current) count++;
-        }
-        return count;
     },
 
     getCookie: function(name) {
@@ -63,7 +44,7 @@ var ActivityHistory = {
         }
     },
 
-    _postActiveDates: function(icao, timeFrom, timeTo) {
+    _postActiveDates: function(icao) {
         var self = this;
         return new Promise(function(resolve) {
             grecaptcha.enterprise.ready(async function() {
@@ -79,7 +60,7 @@ var ActivityHistory = {
                         credentials: 'include',
                         body: JSON.stringify({
                             user_token: token,
-                            payload: { icao: icao, time_from: timeFrom, time_to: timeTo }
+                            payload: { icao: icao }
                         })
                     });
                     if (!response.ok) { resolve([]); return; }
@@ -92,68 +73,25 @@ var ActivityHistory = {
         });
     },
 
-    // Initial fetch: 6-month window ending now
+    // Fetch all active dates for an ICAO (single request, ~1.3KB gzipped)
     fetchActiveDates: async function(icao) {
         var cached = this.cache[icao];
         if (cached && (Date.now() - cached.fetchedAt) < this.cacheTTL) {
             this._touch(icao);
             return cached.dates;
         }
-        var now = Math.floor(Date.now() / 1000);
-        var windowStart = now - this.windowSize;
         try {
-            var dates = await this._postActiveDates(icao, windowStart, now);
+            var dates = await this._postActiveDates(icao);
             this._evictIfNeeded();
             this.cache[icao] = {
                 dates: dates,
-                windowStart: windowStart,
-                windowEnd: now,
-                fetchedAt: Date.now(),
-                noMoreOlder: dates.length === 0
+                fetchedAt: Date.now()
             };
             this._touch(icao);
             return dates;
         } catch (e) {
             return [];
         }
-    },
-
-    // Fetch next older 6-month window and merge into cache.
-    // Returns the in-flight promise so callers can await the same request.
-    fetchOlderDates: function(icao) {
-        var entry = this.cache[icao];
-        if (!entry || entry.noMoreOlder) return Promise.resolve();
-
-        // De-dup: if a fetch for this icao is already in-flight, return that promise
-        if (entry._olderFetchPromise) return entry._olderFetchPromise;
-
-        var newEnd = entry.windowStart - 1;
-        if (newEnd <= 0) {
-            entry.noMoreOlder = true;
-            return Promise.resolve();
-        }
-        var newStart = newEnd - this.windowSize;
-        if (newStart < 0) newStart = 0;
-
-        var self = this;
-        entry._olderFetchPromise = this._postActiveDates(icao, newStart, newEnd).then(function(dates) {
-            // Merge: append new dates, deduplicate, keep descending order
-            var merged = entry.dates.concat(dates.filter(function(d) {
-                return entry.dates.indexOf(d) === -1;
-            }));
-            merged.sort(function(a, b) { return b < a ? -1 : b > a ? 1 : 0; });
-            entry.dates = merged;
-            delete entry._activeSet;
-            entry.windowStart = newStart;
-            entry.noMoreOlder = dates.length === 0;
-            self._touch(icao);
-            delete entry._olderFetchPromise;
-        }).catch(function() {
-            // leave noMoreOlder as-is so caller can retry
-            delete entry._olderFetchPromise;
-        });
-
-        return entry._olderFetchPromise;
     },
 
     getNextDate: function(icao, currentDate) {
@@ -189,15 +127,6 @@ var ActivityHistory = {
         }
         entry._activeSet = set;
         return set;
-    },
-
-    isBeforeCachedWindow: function(icao, year, month) {
-        var entry = this.cache[icao];
-        if (!entry) return false;
-        var ws = new Date(entry.windowStart * 1000);
-        if (year < ws.getUTCFullYear()) return true;
-        if (year === ws.getUTCFullYear() && (month - 1) < ws.getUTCMonth()) return true;
-        return false;
     },
 
     clear: function(icao) {
