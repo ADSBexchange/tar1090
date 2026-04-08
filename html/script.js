@@ -9489,6 +9489,7 @@ function toggleCloseCalls() {
     var btn = document.getElementById('toggle-close-calls');
     if (btn) btn.classList.toggle('active', PlaneFilter.closeCalls);
     if (PlaneFilter.closeCalls) {
+        deselectAllPlanes();
         fetchCloseCallsData(true);
     }
     refreshFilter();
@@ -9501,6 +9502,7 @@ function toggleMostWatched() {
     var btn = document.getElementById('toggle-most-watched');
     if (btn) btn.classList.toggle('active', PlaneFilter.mostWatched);
     if (PlaneFilter.mostWatched) {
+        deselectAllPlanes();
         fetchMostWatchedData(true);
     }
     refreshFilter();
