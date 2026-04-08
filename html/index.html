@@ -1185,6 +1185,13 @@
                   <tbody>
                   </tbody>
                 </table>
+                <div id="interesting-flights-section" style="padding:6px 4px 2px;">
+                  <div class="infoBlockTitleText">Filter by interesting:</div>
+                  <div style="display:flex; gap:4px; margin-top:2px;">
+                    <button id="toggle-close-calls" class="interesting-flights-btn" onclick="toggleCloseCalls()" title="Show only aircraft with recent TCAS alerts">Close Calls</button>
+                    <button id="toggle-most-watched" class="interesting-flights-btn" onclick="toggleMostWatched()" title="Show only the most-clicked aircraft in the last 5 minutes">Most Watched</button>
+                  </div>
+                </div>
               </div>
               <div id="tab-columns">
                 <ul id="sortableColumns"></ul>
@@ -1250,6 +1257,7 @@
     <script src="defaults.js"></script>
     <script src="config.js"></script>
     <script src="config-uav.js"></script>
+    <script src="config-feature-flags.js"></script>
     <script src="dbloader.js"></script>
     <script src="registrations.js"></script>
     <script src="formatter.js"></script>
