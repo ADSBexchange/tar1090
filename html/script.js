@@ -9497,8 +9497,16 @@ function toggleMostWatched() {
 }
 
 // Auto-fetch on load if URL params activated these filters
-if (enableCloseCalls && PlaneFilter.closeCalls) fetchCloseCallsData();
-if (enableMostWatched && PlaneFilter.mostWatched) fetchMostWatchedData();
+if (enableCloseCalls && PlaneFilter.closeCalls) {
+    fetchCloseCallsData();
+    var ccBtn = document.getElementById('toggle-close-calls');
+    if (ccBtn) ccBtn.classList.add('active');
+}
+if (enableMostWatched && PlaneFilter.mostWatched) {
+    fetchMostWatchedData();
+    var mwBtn = document.getElementById('toggle-most-watched');
+    if (mwBtn) mwBtn.classList.add('active');
+}
 if (!enableCloseCalls) document.getElementById('toggle-close-calls').style.display = 'none';
 if (!enableMostWatched) document.getElementById('toggle-most-watched').style.display = 'none';
 if (!enableCloseCalls && !enableMostWatched) document.getElementById('interesting-flights-section').style.display = 'none';
