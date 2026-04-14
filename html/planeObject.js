@@ -249,6 +249,13 @@ PlaneObject.prototype.isFiltered = function() {
     if (this.selected)
         return false;
 
+    if (enableCloseCalls && PlaneFilter.closeCalls && Object.keys(closeCallsMap).length > 0 && !closeCallsMap[this.icao]) {
+        return true;
+    }
+    if (enableMostWatched && PlaneFilter.mostWatched && Object.keys(mostWatchedMap).length > 0 && !mostWatchedMap[this.icao]) {
+        return true;
+    }
+
     if (noRegOnly && (
         (this.registration || this.icao.startsWith('~'))
         || (this.category && this.category.startsWith('C'))

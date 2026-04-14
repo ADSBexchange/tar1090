@@ -1127,3 +1127,28 @@ div.sticky {
     cursor: pointer;
     white-space: nowrap;
 }
+
+.interesting-flights-btn {
+    display: inline-block;
+    padding: 2px 10px;
+    font-size: var(--FS1);
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid #555;
+    border-radius: 3px;
+    background-color: #444;
+    color: #ccc;
+    text-align: center;
+    min-width: 80px;
+    transition: background-color 0.15s, color 0.15s;
+}
+.interesting-flights-btn:hover {
+    background-color: #555;
+    color: #fff;
+}
+.interesting-flights-btn.active {
+    background-color: #d46a00;
+    border-color: #d46a00;
+    color: #fff;
+    font-weight: bold;
+}
