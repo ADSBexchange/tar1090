@@ -4653,7 +4653,14 @@ function selectPlaneByHex(hex, options) {
     // already selected plane
     let oldPlane = SelectedPlane;
     // Record click for Most Watched tracking
-    if (hex && !options.noFetch && enableMostWatched) navigator.sendBeacon(interestingFlightsApiUrl + '/click', hex);
+    if (hex && !options.noFetch && enableMostWatched) {
+        var clickPlane = g.planes[hex];
+        var clickBody = hex;
+        if (clickPlane && clickPlane.position) {
+            clickBody += ',' + clickPlane.position[0].toFixed(1) + ',' + clickPlane.position[1].toFixed(1);
+        }
+        navigator.sendBeacon(interestingFlightsApiUrl + '/click', clickBody);
+    }
     // plane to be selected
     let newPlane = g.planes[hex];
 
@@ -9433,21 +9440,12 @@ function fetchCloseCallsData(thenZoom) {
         .catch(function(e) { console.warn('close-calls fetch failed', e); });
 }
 
-var MOST_WATCHED_WINDOWS = ['5m', '1h', '6h', '24h'];
-
-function fetchMostWatchedData(thenZoom, windowIndex) {
-    windowIndex = windowIndex || 0;
-    var win = MOST_WATCHED_WINDOWS[windowIndex];
-    fetch(interestingFlightsApiUrl + '/most-watched?window=' + win + '&limit=10')
+function fetchMostWatchedData(thenZoom) {
+    fetch(interestingFlightsApiUrl + '/most-watched?limit=15')
         .then(function(r) { return r.json(); })
         .then(function(data) {
-            var aircraft = data.aircraft || [];
-            if (aircraft.length === 0 && windowIndex < MOST_WATCHED_WINDOWS.length - 1) {
-                fetchMostWatchedData(thenZoom, windowIndex + 1);
-                return;
-            }
             mostWatchedMap = {};
-            aircraft.forEach(function(a) {
+            (data.aircraft || []).forEach(function(a) {
                 mostWatchedMap[a.hex] = a;
             });
             if (PlaneFilter.mostWatched) refreshFilter();
@@ -9459,16 +9457,29 @@ function fetchMostWatchedData(thenZoom, windowIndex) {
 function zoomToInterestingFlights(hexMap) {
     var hexes = Object.keys(hexMap);
     if (hexes.length === 0) return;
-    var bounds = null;
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    var hasPoints = false;
     hexes.forEach(function(hex) {
-        var plane = g.planes[hex];
-        if (!plane || !plane.position) return;
-        var coord = ol.proj.fromLonLat(plane.position);
-        if (!bounds) bounds = ol.extent.createEmpty();
-        ol.extent.extendCoordinate(bounds, coord);
+        var entry = hexMap[hex];
+        var lon, lat;
+        if (entry.lon != null && entry.lat != null) {
+            lon = entry.lon;
+            lat = entry.lat;
+        } else {
+            var plane = g.planes[hex];
+            if (!plane || !plane.position) return;
+            lon = plane.position[0];
+            lat = plane.position[1];
+        }
+        var coord = ol.proj.fromLonLat([lon, lat]);
+        if (coord[0] < minX) minX = coord[0];
+        if (coord[1] < minY) minY = coord[1];
+        if (coord[0] > maxX) maxX = coord[0];
+        if (coord[1] > maxY) maxY = coord[1];
+        hasPoints = true;
     });
-    if (bounds && !ol.extent.isEmpty(bounds)) {
-        OLMap.getView().fit(bounds, { padding: [80, 80, 80, 80], maxZoom: 8, duration: 500 });
+    if (hasPoints) {
+        OLMap.getView().fit([minX, minY, maxX, maxY], { padding: [80, 80, 80, 80], maxZoom: 8, duration: 500 });
     }
 }
 
