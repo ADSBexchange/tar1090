@@ -720,10 +720,10 @@ let shapes = {
     // Quadcopter drone icon for $ prefix UAVs (q12_icon.svg)
 
     'uav_quad': {
-        w: 36,
-        h: 36,
-        viewBox: '0 0 72 72',
-        strokeScale: 3,
+        w: 12.6,
+        h: 12.6,
+        viewBox: '-3 -3 78 78',
+        strokeScale: 5,
         path: [
             // Motor hubs (4 circles)
             'M68.9936 17.825C68.7706 25.6068 62.2912 31.7192 54.5094 31.5153C53.0629 31.4745 51.6762 31.2107 50.3738 30.7621C44.6911 28.8479 40.6751 23.4072 40.8192 17.1126V17.012C41.0449 9.23023 47.5216 3.09885 55.3034 3.32181C63.0852 3.54749 69.2166 10.0432 68.9936 17.8277V17.825Z' +
@@ -1051,8 +1051,8 @@ let TypeDesignatorIcons = {
     'Q9': ['uav', 1],
     'Q25': ['uav', 1],
     'HRON': ['uav', 1],
-    'MR4': ['uav_quad', 0.35],   // Multi-rotor quadcopter
-    'MR6': ['uav_quad', 0.35],   // Hexacopter
+    'MR4': ['uav_quad', 1.1],   // Multi-rotor quadcopter
+    'MR6': ['uav_quad', 1.1],   // Hexacopter
     'FWU': ['uav', 1],        // Fixed-wing UAV
 
     'A400': ['a400', 1],
@@ -1277,7 +1277,7 @@ function getBaseMarker(category, typeDesignator, typeDescription, wtc, addrtype,
 
     // Check for $ prefix quadcopter UAVs - always use quadcopter icon
     if (enableUAV && isQuadUAV) {
-        return ['uav_quad', 0.35];
+        return ['uav_quad', 1.1];
     }
 
     if (addrtype == 'ais') {
