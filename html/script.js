@@ -9441,7 +9441,7 @@ function fetchCloseCallsData(thenZoom) {
 }
 
 function fetchMostWatchedData(thenZoom) {
-    fetch(interestingFlightsApiUrl + '/most-watched?limit=15')
+    fetch(interestingFlightsApiUrl + '/most-watched')
         .then(function(r) { return r.json(); })
         .then(function(data) {
             mostWatchedMap = {};
