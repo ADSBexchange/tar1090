@@ -1168,7 +1168,7 @@ function earlyInitPage() {
         PlaneFilter.closeCalls = true;
         shareFiltersParam = true;
     }
-    if (enableMostWatched && usp.has('filterMostWatched')) {
+    if (enableMostWatchedFilter && usp.has('filterMostWatched')) {
         PlaneFilter.mostWatched = true;
         shareFiltersParam = true;
     }
@@ -4653,7 +4653,7 @@ function selectPlaneByHex(hex, options) {
     // already selected plane
     let oldPlane = SelectedPlane;
     // Record click for Most Watched tracking
-    if (hex && !options.noFetch && enableMostWatched) {
+    if (hex && !options.noFetch && enableMostWatchedClickTracking) {
         var clickPlane = g.planes[hex];
         var clickBody = hex;
         if (clickPlane && clickPlane.position) {
@@ -6588,7 +6588,7 @@ function updateAddressBar() {
         if (enableCloseCalls && PlaneFilter.closeCalls) {
             filterStrings.push('filterCloseCalls=enabled');
         }
-        if (enableMostWatched && PlaneFilter.mostWatched) {
+        if (enableMostWatchedFilter && PlaneFilter.mostWatched) {
             filterStrings.push('filterMostWatched=enabled');
         }
 
@@ -9497,7 +9497,7 @@ function toggleCloseCalls() {
 }
 
 function toggleMostWatched() {
-    if (!enableMostWatched) return;
+    if (!enableMostWatchedFilter) return;
     PlaneFilter.mostWatched = !PlaneFilter.mostWatched;
     var btn = document.getElementById('toggle-most-watched');
     if (btn) btn.classList.toggle('active', PlaneFilter.mostWatched);
@@ -9515,11 +9515,11 @@ if (enableCloseCalls && PlaneFilter.closeCalls) {
     var ccBtn = document.getElementById('toggle-close-calls');
     if (ccBtn) ccBtn.classList.add('active');
 }
-if (enableMostWatched && PlaneFilter.mostWatched) {
+if (enableMostWatchedFilter && PlaneFilter.mostWatched) {
     fetchMostWatchedData();
     var mwBtn = document.getElementById('toggle-most-watched');
     if (mwBtn) mwBtn.classList.add('active');
 }
 if (!enableCloseCalls) document.getElementById('toggle-close-calls').style.display = 'none';
-if (!enableMostWatched) document.getElementById('toggle-most-watched').style.display = 'none';
-if (!enableCloseCalls && !enableMostWatched) document.getElementById('interesting-flights-section').style.display = 'none';
+if (!enableMostWatchedFilter) document.getElementById('toggle-most-watched').style.display = 'none';
+if (!enableCloseCalls && !enableMostWatchedFilter) document.getElementById('interesting-flights-section').style.display = 'none';
