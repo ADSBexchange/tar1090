@@ -252,7 +252,7 @@ PlaneObject.prototype.isFiltered = function() {
     if (enableCloseCalls && PlaneFilter.closeCalls && Object.keys(closeCallsMap).length > 0 && !closeCallsMap[this.icao]) {
         return true;
     }
-    if (enableMostWatched && PlaneFilter.mostWatched && Object.keys(mostWatchedMap).length > 0 && !mostWatchedMap[this.icao]) {
+    if (enableMostWatchedFilter && PlaneFilter.mostWatched && Object.keys(mostWatchedMap).length > 0 && !mostWatchedMap[this.icao]) {
         return true;
     }
 
