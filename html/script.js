@@ -41,6 +41,8 @@ let addToIconCache = [];
 let lineStyleCache = {};
 let replayPlanes = {};
 let PlaneFilter   = {};
+let closeCallsMap = {};   // hex -> {rank, date, time, advisory, threat_hex, lat, lon, alt}
+let mostWatchedMap = {};  // hex -> {rank, clicks}
 let SelectedPlane = null;
 let sp = null;
 let SelPlanes = [];
@@ -88,7 +90,7 @@ let pathName = window.location.pathname.replace(/\/+/, '/') || "/";
 let sourcesFilter = null;
 let sources = ['adsb', ['uat', 'adsr'], 'mlat', 'tisb', 'modeS', 'other', 'adsc', 'ais'];
 let flagFilter = null;
-let flagFilterValues = ['military', 'pia', 'ladd'];
+let flagFilterValues = ['military', 'pia', 'ladd', 'uav'];
 let showTrace = false;
 let showTraceExit = false;
 let showTraceWasIsolation = false;
@@ -1162,6 +1164,14 @@ function earlyInitPage() {
         PlaneFilter.flagFilter = usp.get('filterDbFlag').split(',');
         shareFiltersParam = true;
     }
+    if (enableCloseCalls && usp.has('filterCloseCalls')) {
+        PlaneFilter.closeCalls = true;
+        shareFiltersParam = true;
+    }
+    if (enableMostWatchedFilter && usp.has('filterMostWatched')) {
+        PlaneFilter.mostWatched = true;
+        shareFiltersParam = true;
+    }
 
 
     if (false && iOSVersion() <= 12 && !('PointerEvent' in window)) {
@@ -1270,8 +1280,29 @@ function earlyInitPage() {
         onClose: !onMobile ? null : function(dateText, inst){
             jQuery("#histDatePicker").attr("disabled", false);
         },
-        beforeShow: !onMobile ? null : function(input, inst){
-            jQuery("#histDatePicker").attr("disabled", true);
+        beforeShow: function(input, inst){
+            var icao = SelectedPlane ? SelectedPlane.icao : null;
+            if (enableActiveDates && icao && ActivityHistory.hasFetched(icao) && !ActivityHistory.hasActivity(icao)) {
+                return false;
+            }
+            if (onMobile) {
+                jQuery("#histDatePicker").attr("disabled", true);
+            }
+        },
+        beforeShowDay: function(date) {
+            var icao = SelectedPlane ? SelectedPlane.icao : null;
+            if (!enableActiveDates || !icao || !ActivityHistory.hasFetched(icao)) return [true, '', ''];
+            var todayStr = ActivityHistory.toDateStr(new Date());
+            var dateStr = ActivityHistory.toDateStr(date);
+            if (dateStr === todayStr) return [true, '', ''];
+            var activeSet = ActivityHistory.getActiveDatesSet(icao);
+            if (activeSet[dateStr]) return [true, 'hist-active-date', ''];
+            return [false, '', 'No activity'];
+        },
+        onChangeMonthYear: function(year, month) {
+            var icao = SelectedPlane ? SelectedPlane.icao : null;
+            if (!icao) return;
+            // All dates fetched in one request — no older window to load
         },
     });
 
@@ -1786,6 +1817,7 @@ jQuery('#selected_altitude_geom1')
         showHideButtons();
         runAfterLoad(showHideButtons);
     }
+
 }
 
 function initLegend(colors) {
@@ -1855,8 +1887,21 @@ function initFlagFilter(colors) {
     //html += createFilter(colors['mlat'], 'Interesting');
     html += createFilter(colors['uat'], 'PIA', flagFilterValues[1]);
     html += createFilter(colors['adsb'], 'LADD', flagFilterValues[2]);
+    if (enableUAV)
+        html += createFilter(colors['other'], 'UAV', flagFilterValues[3]);
 
     document.getElementById('flagFilter').innerHTML = html;
+
+    if (enableUAV) {
+        let uavLi = document.getElementById('flag-filter-uav');
+        if (uavLi) {
+            uavLi.style.position = 'relative';
+            let badge = document.createElement('span');
+            badge.className = 'part107-badge';
+            badge.textContent = 'Part 107';
+            uavLi.appendChild(badge);
+        }
+    }
 
     jQuery("#flagFilter").selectable({
         stop: function () {
@@ -3329,11 +3374,15 @@ function displaySil() {
     }
     let selected = SelectedPlane;
     let new_html="";
-    let type = selected.icaoType ? selected.icaoType : 'ZZZZ';
-    let hex = selected.icao.toUpperCase();
-    new_html = "<img id='silhouette' width='"+ 151 * globalScale + "' src='aircraft_sil/" + type + ".png' />";
+    
+    // Use custom drone image for UAV aircraft ($ prefix)
+    if (enableUAV && selected.icao[0] == '$') {
+        new_html = "<img id='silhouette' width='"+ 151 * globalScale + "' src='images/sifly-drone.png' />";
+    } else {
+        let type = selected.icaoType ? selected.icaoType : 'ZZZZ';
+        new_html = "<img id='silhouette' width='"+ 151 * globalScale + "' src='aircraft_sil/" + type + ".png' />";
+    }
     setPhotoHtml(new_html);
-    selected.icao.toUpperCase();
 }
 
 function displayPhoto() {
@@ -3361,7 +3410,8 @@ function displayPhoto() {
 }
 
 function refreshPhoto(selected) {
-    if (!showPictures || selected.icao[0] == '~' || (!planespottingAPI && !planespottersAPI)) {
+    // Allow photos for UAV ($), but block for non-ICAO (~)
+    if (!showPictures || (selected.icao[0] == '~' && selected.icao[0] != '$') || (!planespottingAPI && !planespottersAPI)) {
         displaySil();
         return;
     }
@@ -3452,6 +3502,20 @@ function refreshSelected() {
     } else {
         jQuery('#altimeter_set_selected').prop("disabled", false);
     }
+    
+    // Hide Full Details, Flight Activity, and History for UAVs
+    if (enableUAV && selected && selected.isUAV()) {
+        jQuery('#feature_landings').hide();
+        jQuery('#show_trace').hide();
+    } else if (selected) {
+        // Show them for regular aircraft (only if aggregator mode or haveTraces)
+        if (aggregator || haveTraces) {
+            jQuery('#feature_landings').show();
+        }
+        if (haveTraces || globeIndex) {
+            jQuery('#show_trace').show();
+        }
+    }
 
     if (!selected) {
         if (somethingSelected) {
@@ -3485,18 +3549,29 @@ function refreshSelected() {
         jQuery('#selected_flightaware_link').html(getFlightAwareModeSLink(selected.icao, selected.flight, "Visit Flight Page"));
     }
 
+    // Show appropriate info panel based on aircraft type
     if (selected.isNonIcao() && selected.source != 'mlat') {
+        // Non-ICAO TIS-B
         jQuery('#anon_mlat_info').addClass('hidden');
         jQuery('#reg_info').addClass('hidden');
         jQuery('#tisb_info').removeClass('hidden');
     } else if (selected.isNonIcao() && selected.source == 'mlat') {
+        // Non-ICAO MLAT
         jQuery('#reg_info').addClass('hidden');
         jQuery('#tisb_info').addClass('hidden');
         jQuery('#anon_mlat_info').removeClass('hidden');
     } else {
+        // Standard ICAO aircraft (and UAVs)
         jQuery('#tisb_info').addClass('hidden');
         jQuery('#anon_mlat_info').addClass('hidden');
         jQuery('#reg_info').removeClass('hidden');
+
+        // Show/hide UAV disclaimer
+        if (enableUAV && selected.isUAV()) {
+            jQuery('#uav_disclaimer').removeClass('hidden');
+        } else {
+            jQuery('#uav_disclaimer').addClass('hidden');
+        }
     }
 
     let checkReg = selected.registration + ' ' + selected.dbinfoLoaded;
@@ -3521,6 +3596,8 @@ function refreshSelected() {
         dbFlags += '<a class="link" target="_blank" href="https://www.faa.gov/air_traffic/technology/equipadsb/privacy/" rel="noreferrer">PIA</a> / ';
     if (selected.military)
         dbFlags += 'military / ';
+    if (enableUAV && selected.uav)
+        dbFlags += 'UAV / ';
     if (dbFlags.length == 0) {
         jQuery('#selected_dbFlags').updateText("none");
     } else {
@@ -4575,6 +4652,15 @@ function selectPlaneByHex(hex, options) {
     }
     // already selected plane
     let oldPlane = SelectedPlane;
+    // Record click for Most Watched tracking
+    if (hex && !options.noFetch && enableMostWatchedClickTracking) {
+        var clickPlane = g.planes[hex];
+        var clickBody = hex;
+        if (clickPlane && clickPlane.position) {
+            clickBody += ',' + clickPlane.position[0].toFixed(1) + ',' + clickPlane.position[1].toFixed(1);
+        }
+        navigator.sendBeacon(interestingFlightsApiUrl + '/click', clickBody);
+    }
     // plane to be selected
     let newPlane = g.planes[hex];
 
@@ -4813,6 +4899,20 @@ function adjustInfoBlock() {
         }
 
         jQuery('#selected_infoblock').show();
+        
+        // Hide Full Details, Flight Activity, and History for UAVs
+        if (enableUAV && SelectedPlane && SelectedPlane.isUAV()) {
+            jQuery('#feature_landings').hide();
+            jQuery('#show_trace').hide();
+        } else {
+            // Show them for regular aircraft (only if aggregator mode or haveTraces)
+            if (aggregator || haveTraces) {
+                jQuery('#feature_landings').show();
+            }
+            if (haveTraces || globeIndex) {
+                jQuery('#show_trace').show();
+            }
+        }
     } else {
         if (!mapIsVisible)
             jQuery("#sidebar_container").css('margin-left', '0');
@@ -6485,6 +6585,12 @@ function updateAddressBar() {
         if (PlaneFilter.flagFilter) {
             filterStrings.push('filterDbFlag=' + PlaneFilter.flagFilter.map(f => encodeURIComponent(f)).join(','));
         }
+        if (enableCloseCalls && PlaneFilter.closeCalls) {
+            filterStrings.push('filterCloseCalls=enabled');
+        }
+        if (enableMostWatchedFilter && PlaneFilter.mostWatched) {
+            filterStrings.push('filterMostWatched=enabled');
+        }
 
         if (filterStrings.length > 0) {
             shareFilter = shareFilter + filterStrings.join('&');
@@ -6619,7 +6725,7 @@ function refreshInt() {
     return refresh;
 }
 
-function toggleShowTrace() {
+async function toggleShowTrace() {
     showTrace = !showTrace;
     if (showTrace) {
         jQuery("#selected_showTrace_hide").hide();
@@ -6627,12 +6733,61 @@ function toggleShowTrace() {
         toggleFollow(false);
         showTraceWasIsolation = onlySelected;
         toggleIsolation("on", "noRefresh");
-        shiftTrace();
+
+        // Show the panel first so spinner is visible
+        jQuery('#history_collapse').show();
+        jQuery('#show_trace').addClass('active');
+
+        const icao = SelectedPlane ? SelectedPlane.icao : null;
+
+        if (icao && !replay) {
+            // Show spinner while fetching active dates
+            if (!enableActiveDates) {
+                jQuery('#trace_panel_loading').hide();
+                jQuery('#trace_panel_content').show();
+                shiftTrace();
+                return;
+            }
+            jQuery('#trace_panel_loading').show();
+            jQuery('#trace_panel_content').hide();
+            jQuery('#trace_no_data').hide();
+
+            ActivityHistory.fetchActiveDates(icao).then(function() {
+                jQuery('#trace_panel_loading').hide();
+                jQuery("#histDatePicker").datepicker("refresh");
+                var currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
+                var todayStr = ActivityHistory.toDateStr(new Date());
+                if (!ActivityHistory.hasActivity(icao) && currentDateStr && currentDateStr < todayStr) {
+                    // No history and viewing a past date — show no-history state
+                    jQuery('#trace_no_data').show();
+                    jQuery('#trace_panel_content').hide();
+                } else {
+                    jQuery('#trace_panel_content').show();
+                    jQuery('#trace_no_data').hide();
+                    shiftTrace();
+                }
+            }).catch(function() {
+                // API failed — hide spinner, show panel, fall back to day stepping
+                jQuery('#trace_panel_loading').hide();
+                jQuery('#trace_panel_content').show();
+                jQuery('#trace_no_data').hide();
+                shiftTrace();
+            });
+        } else {
+            // No ICAO or replay mode — show panel immediately
+            jQuery('#trace_panel_loading').hide();
+            jQuery('#trace_panel_content').show();
+            jQuery('#trace_no_data').hide();
+            shiftTrace();
+        }
+
         refreshFilter();
     } else {
         jQuery("#selected_showTrace_hide").show();
 
         traceOpts = {};
+        traceDate = null;
+        traceDateString = null;
         fetchData();
         legSel = -1;
         jQuery('#leg_sel').text('Legs: All');
@@ -6653,10 +6808,11 @@ function toggleShowTrace() {
         if (replay) {
             replayStep();
         }
-    }
 
-    jQuery('#history_collapse').toggle();
-    jQuery('#show_trace').toggleClass('active');
+        // Hide the panel when closing
+        jQuery('#history_collapse').hide();
+        jQuery('#show_trace').removeClass('active');
+    }
 }
 
 function legShift(offset, plane) {
@@ -6767,7 +6923,7 @@ function setTraceDate(options) {
     return traceDate;
 }
 
-function shiftTrace(offset) {
+async function shiftTrace(offset) {
     if (traceRate > 180) {
         jQuery('#leg_sel').text('Slow down! ...');
         return;
@@ -6779,15 +6935,50 @@ function shiftTrace(offset) {
     traceOpts.showTimeEnd = null;
     traceOpts.showTime = null;
 
-    jQuery('#leg_sel').text('Loading ...');
-    if (!traceDate || offset == "today") {
-        if (replay) {
-            setTraceDate({ ts: replay.ts.getTime() });
-        } else {
-            setTraceDate({ ts: new Date().getTime() });
+    const icao = SelectedPlane ? SelectedPlane.icao : null;
+    let targetDate = null;
+
+    // Use activity-aware navigation if we have active dates cached
+    const useActivityNav = enableActiveDates && icao && offset !== "today" && offset && !replay && ActivityHistory.hasActivity(icao);
+
+    if (useActivityNav) {
+        const currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
+
+        if (offset > 0) {
+            targetDate = ActivityHistory.getNextDate(icao, currentDateStr);
+            // No next active date — if before today, jump to today
+            if (!targetDate) {
+                var todayStr = ActivityHistory.toDateStr(new Date());
+                if (currentDateStr < todayStr) {
+                    targetDate = todayStr;
+                }
+            }
+        } else if (offset < 0) {
+            targetDate = ActivityHistory.getPrevDate(icao, currentDateStr);
+
+            // All dates are fetched in one request — no windowed pagination needed
         }
-    } else if (offset) {
-        setTraceDate({ ts: traceDate.getTime() + offset * 86400 * 1000 });
+
+        // If no date found, stay put
+        if (!targetDate) {
+            updateHistoryNavButtons();
+            return;
+        }
+
+        jQuery('#leg_sel').text('Loading ...');
+        setTraceDate({ string: targetDate });
+    } else {
+        // No activity data, API unreachable, or initial load — original day stepping
+        jQuery('#leg_sel').text('Loading ...');
+        if (!traceDate || offset == "today") {
+            if (replay) {
+                setTraceDate({ ts: replay.ts.getTime() });
+            } else {
+                setTraceDate({ ts: new Date().getTime() });
+            }
+        } else if (offset) {
+            setTraceDate({ ts: traceDate.getTime() + offset * 86400 * 1000 });
+        }
     }
 
     //jQuery('#trace_date').text('UTC day:\n' + traceDateString);
@@ -6798,6 +6989,32 @@ function shiftTrace(offset) {
     }
 
     updateAddressBar();
+    updateHistoryNavButtons();
+}
+
+function updateHistoryNavButtons() {
+    if (!enableActiveDates) return;
+    const icao = SelectedPlane ? SelectedPlane.icao : null;
+    if (!icao || !ActivityHistory.hasFetched(icao)) return;
+
+    // Fetched but no activity — disable both buttons and datepicker
+    if (!ActivityHistory.hasActivity(icao)) {
+        jQuery('#trace_back_1d').prop('disabled', true);
+        jQuery('#trace_jump_1d').prop('disabled', true);
+        jQuery('#histDatePicker').datepicker('disable');
+        return;
+    }
+
+    jQuery('#histDatePicker').datepicker('enable');
+
+    const currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
+    if (!currentDateStr) return;
+
+    var hasPrev = !!ActivityHistory.getPrevDate(icao, currentDateStr);
+    var todayStr = ActivityHistory.toDateStr(new Date());
+    var hasNext = !!ActivityHistory.getNextDate(icao, currentDateStr) || currentDateStr < todayStr;
+    jQuery('#trace_back_1d').prop('disabled', !hasPrev);
+    jQuery('#trace_jump_1d').prop('disabled', !hasNext);
 }
 
 
@@ -9206,3 +9423,103 @@ globeRateUpdate();
 
 parseURLIcaos();
 initialize();
+
+// ---- Interesting Flights (AX-750) ----
+
+function fetchCloseCallsData(thenZoom) {
+    fetch(interestingFlightsApiUrl + '/close-calls')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            closeCallsMap = {};
+            (data.events || []).forEach(function(e) {
+                closeCallsMap[e.hex] = e;
+            });
+            if (PlaneFilter.closeCalls) refreshFilter();
+            if (thenZoom) zoomToInterestingFlights(closeCallsMap);
+        })
+        .catch(function(e) { console.warn('close-calls fetch failed', e); });
+}
+
+function fetchMostWatchedData(thenZoom) {
+    fetch(interestingFlightsApiUrl + '/most-watched')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            mostWatchedMap = {};
+            (data.aircraft || []).forEach(function(a) {
+                mostWatchedMap[a.hex] = a;
+            });
+            if (PlaneFilter.mostWatched) refreshFilter();
+            if (thenZoom) zoomToInterestingFlights(mostWatchedMap);
+        })
+        .catch(function(e) { console.warn('most-watched fetch failed', e); });
+}
+
+function zoomToInterestingFlights(hexMap) {
+    var hexes = Object.keys(hexMap);
+    if (hexes.length === 0) return;
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    var hasPoints = false;
+    hexes.forEach(function(hex) {
+        var entry = hexMap[hex];
+        var lon, lat;
+        if (entry.lon != null && entry.lat != null) {
+            lon = entry.lon;
+            lat = entry.lat;
+        } else {
+            var plane = g.planes[hex];
+            if (!plane || !plane.position) return;
+            lon = plane.position[0];
+            lat = plane.position[1];
+        }
+        var coord = ol.proj.fromLonLat([lon, lat]);
+        if (coord[0] < minX) minX = coord[0];
+        if (coord[1] < minY) minY = coord[1];
+        if (coord[0] > maxX) maxX = coord[0];
+        if (coord[1] > maxY) maxY = coord[1];
+        hasPoints = true;
+    });
+    if (hasPoints) {
+        OLMap.getView().fit([minX, minY, maxX, maxY], { padding: [80, 80, 80, 80], maxZoom: 8, duration: 500 });
+    }
+}
+
+function toggleCloseCalls() {
+    if (!enableCloseCalls) return;
+    PlaneFilter.closeCalls = !PlaneFilter.closeCalls;
+    var btn = document.getElementById('toggle-close-calls');
+    if (btn) btn.classList.toggle('active', PlaneFilter.closeCalls);
+    if (PlaneFilter.closeCalls) {
+        deselectAllPlanes();
+        fetchCloseCallsData(true);
+    }
+    refreshFilter();
+    updateAddressBar();
+}
+
+function toggleMostWatched() {
+    if (!enableMostWatchedFilter) return;
+    PlaneFilter.mostWatched = !PlaneFilter.mostWatched;
+    var btn = document.getElementById('toggle-most-watched');
+    if (btn) btn.classList.toggle('active', PlaneFilter.mostWatched);
+    if (PlaneFilter.mostWatched) {
+        deselectAllPlanes();
+        fetchMostWatchedData(true);
+    }
+    refreshFilter();
+    updateAddressBar();
+}
+
+// Auto-fetch on load if URL params activated these filters
+if (enableCloseCalls && PlaneFilter.closeCalls) {
+    fetchCloseCallsData();
+    var ccBtn = document.getElementById('toggle-close-calls');
+    if (ccBtn) ccBtn.classList.add('active');
+}
+if (enableMostWatchedFilter && PlaneFilter.mostWatched) {
+    fetchMostWatchedData();
+    var mwBtn = document.getElementById('toggle-most-watched');
+    if (mwBtn) mwBtn.classList.add('active');
+}
+if (!enableCloseCalls) document.getElementById('toggle-close-calls').style.display = 'none';
+if (!enableMostWatchedFilter) document.getElementById('toggle-most-watched').style.display = 'none';
+if (!enableCloseCalls && !enableMostWatchedFilter) document.getElementById('interesting-flights-section').style.display = 'none';

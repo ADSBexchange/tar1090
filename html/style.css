@@ -579,12 +579,29 @@ select.error, textarea.error, input.error {
     }
 }
 
-.button-beta-badge {
-    width: calc( 27px * var(--SCALE));
-    height: calc( 27px * var(--SCALE));
+.part107-badge {
+    position: absolute;
+    bottom: -10px;
+    right: -20px;
+    font-size: 9px;
+    font-weight: 700;
+    font-style: normal;
+    color: #fff;
+    background-color: #e080c0;
+    padding: 3px 3px 1px;
+    border-radius: 3px;
+    pointer-events: none;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+
+.button-join-badge {
+    width: calc( 34px * var(--SCALE));
+    height: calc( 34px * var(--SCALE));
     cursor: pointer;
-    background-image: url('images/button-badge-beta.svg');
-    background-size: 2em;
+    background-image: url('images/button-badge-join.svg');
+    background-size: 2.5em;
     background-position-x: left;
     background-position-y: bottom;
     background-repeat: no-repeat;
@@ -987,6 +1004,9 @@ input{
 #histDatePicker{
   background: var(--BGCOLOR1);
 }
+.hist-active-date a.ui-state-default {
+  font-weight: bold;
+}
 
 #replayBar {
   background: var(--BGCOLOR1);
@@ -1045,6 +1065,22 @@ input{
   grid-area: speedHint;
 }
 
+/* Trace panel spinner */
+.trace-spinner {
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top: 3px solid rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: trace-spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes trace-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 #privacy {
     display: block;
     align-items: center;
@@ -1090,4 +1126,29 @@ div.sticky {
     color: rgb(255, 255, 255);
     cursor: pointer;
     white-space: nowrap;
+}
+
+.interesting-flights-btn {
+    display: inline-block;
+    padding: 2px 10px;
+    font-size: var(--FS1);
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid #555;
+    border-radius: 3px;
+    background-color: #444;
+    color: #ccc;
+    text-align: center;
+    min-width: 80px;
+    transition: background-color 0.15s, color 0.15s;
+}
+.interesting-flights-btn:hover {
+    background-color: #555;
+    color: #fff;
+}
+.interesting-flights-btn.active {
+    background-color: #d46a00;
+    border-color: #d46a00;
+    color: #fff;
+    font-weight: bold;
 }
