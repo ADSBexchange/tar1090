@@ -9569,8 +9569,8 @@ function onResetInterestingFilter(e) {
 // Auto-fetch on load if URL params activated these filters.
 // The ui-selected class is applied by initInterestingFilter once the <li>s exist.
 if (enableCloseCalls && PlaneFilter.closeCalls) {
-    fetchCloseCallsData();
+    fetchCloseCallsData(true);
 }
 if (enableMostWatchedFilter && PlaneFilter.mostWatched) {
-    fetchMostWatchedData();
+    fetchMostWatchedData(true);
 }
