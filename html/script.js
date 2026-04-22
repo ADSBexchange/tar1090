@@ -1930,7 +1930,7 @@ function initInterestingFilter(colors) {
 
     let html = '';
     if (enableCloseCalls) {
-        html += createFilter(colors['modeS'], 'Close Calls', 'close-calls', 'Show only aircraft with recent TCAS alerts');
+        html += createFilter(colors['tisb'], 'Close Calls', 'close-calls', 'Show only aircraft with recent TCAS alerts');
     }
     if (enableMostWatchedFilter) {
         html += createFilter(colors['adsb'], 'Most Watched', 'most-watched', 'Show only the most-clicked aircraft in the last 5 minutes');
@@ -4696,8 +4696,9 @@ function selectPlaneByHex(hex, options) {
     }
     // already selected plane
     let oldPlane = SelectedPlane;
-    // Record click for Most Watched tracking
-    if (hex && !options.noFetch && enableMostWatchedClickTracking) {
+    // Record click for Most Watched tracking. Skipped while the Most Watched
+    // filter is active to avoid a rich-get-richer feedback loop.
+    if (hex && !options.noFetch && enableMostWatchedClickTracking && !PlaneFilter.mostWatched) {
         var clickPlane = g.planes[hex];
         var clickBody = hex;
         if (clickPlane && clickPlane.position) {
