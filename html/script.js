@@ -9508,14 +9508,15 @@ function zoomToInterestingFlights(hexMap) {
     hexes.forEach(function(hex) {
         var entry = hexMap[hex];
         var lon, lat;
-        if (entry.lon != null && entry.lat != null) {
+        var plane = g.planes[hex];
+        if (plane && plane.position) {
+            lon = plane.position[0];
+            lat = plane.position[1];
+        } else if (entry.lon != null && entry.lat != null) {
             lon = entry.lon;
             lat = entry.lat;
         } else {
-            var plane = g.planes[hex];
-            if (!plane || !plane.position) return;
-            lon = plane.position[0];
-            lat = plane.position[1];
+            return;
         }
         var coord = ol.proj.fromLonLat([lon, lat]);
         if (coord[0] < minX) minX = coord[0];
@@ -9525,7 +9526,15 @@ function zoomToInterestingFlights(hexMap) {
         hasPoints = true;
     });
     if (hasPoints) {
-        OLMap.getView().fit([minX, minY, maxX, maxY], { padding: [80, 80, 80, 80], maxZoom: 8, duration: 500 });
+        // Pad the bbox by ~150km in Web Mercator meters. Guarantees at least
+        // 150km of context on every side regardless of cluster size, so a
+        // fast-mover has room to move during the 5-minute cache window and a
+        // single-aircraft case still shows a useful area instead of over-zooming.
+        var buffer = 150000;
+        OLMap.getView().fit(
+            [minX - buffer, minY - buffer, maxX + buffer, maxY + buffer],
+            { padding: [80, 80, 80, 80], duration: 500 }
+        );
     }
 }
 
