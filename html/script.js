@@ -1250,10 +1250,12 @@ function earlyInitPage() {
     jQuery("#altitude_filter_form").submit(onFilterByAltitude);
     jQuery("#source_filter_form").submit(updateSourceFilter);
     jQuery("#flag_filter_form").submit(updateFlagFilter);
+    jQuery("#interesting_filter_form").submit(updateInterestingFilter);
 
     jQuery("#altitude_filter_reset_button").click(onResetAltitudeFilter);
     jQuery("#source_filter_reset_button").click(onResetSourceFilter);
     jQuery("#flag_filter_reset_button").click(onResetFlagFilter);
+    jQuery("#interesting_filter_reset_button").click(onResetInterestingFilter);
 
     // Initialize other controls
     jQuery("#search_form").submit(onSearch);
@@ -1917,6 +1919,47 @@ function initFlagFilter(colors) {
     });
 
     jQuery("#flagFilter").on("selectablestart", function (event, ui) {
+        event.originalEvent.ctrlKey = true;
+    });
+}
+
+function initInterestingFilter(colors) {
+    const createFilter = function (color, text, key, title) {
+        return '<li class="ui-widget-content" style="background-color:' + color + ';" id="interesting-' + key + '" title="' + title + '">' + text + '</li>';
+    };
+
+    let html = '';
+    if (enableCloseCalls) {
+        html += createFilter(colors['tisb'], 'Close Calls', 'close-calls', 'Show only aircraft with recent TCAS alerts');
+    }
+    if (enableMostWatchedFilter) {
+        html += createFilter(colors['adsb'], 'Most Watched', 'most-watched', 'Show only the most-clicked aircraft in the last 5 minutes');
+    }
+    document.getElementById('interestingFilter').innerHTML = html;
+
+    if (!enableCloseCalls && !enableMostWatchedFilter) {
+        jQuery('#interesting_filter_row').hide();
+        return;
+    }
+
+    // Restore selection from URL state
+    if (enableCloseCalls && PlaneFilter.closeCalls) {
+        jQuery('#interesting-close-calls').addClass('ui-selected');
+    }
+    if (enableMostWatchedFilter && PlaneFilter.mostWatched) {
+        jQuery('#interesting-most-watched').addClass('ui-selected');
+    }
+
+    jQuery("#interestingFilter").selectable({
+        stop: function () {
+            // Enforce single-select: keep only the most-recently-selected li
+            var $selected = jQuery('.ui-selected', this);
+            if ($selected.length > 1) {
+                $selected.not(':last').removeClass('ui-selected');
+            }
+        }
+    });
+    jQuery("#interestingFilter").on("selectablestart", function (event, ui) {
         event.originalEvent.ctrlKey = true;
     });
 }
@@ -3045,6 +3088,7 @@ function initMap() {
                 initLegend(tableColors.unselected);
                 initSourceFilter(tableColors.unselected);
                 initFlagFilter(tableColors.unselected);
+                initInterestingFilter(tableColors.unselected);
             }
         }
     });
@@ -4652,8 +4696,9 @@ function selectPlaneByHex(hex, options) {
     }
     // already selected plane
     let oldPlane = SelectedPlane;
-    // Record click for Most Watched tracking
-    if (hex && !options.noFetch && enableMostWatchedClickTracking) {
+    // Record click for Most Watched tracking. Skipped while the Most Watched
+    // filter is active to avoid a rich-get-richer feedback loop.
+    if (hex && !options.noFetch && enableMostWatchedClickTracking && !PlaneFilter.mostWatched) {
         var clickPlane = g.planes[hex];
         var clickBody = hex;
         if (clickPlane && clickPlane.position) {
@@ -5538,6 +5583,7 @@ Filter.prototype.init = function() {
 function initFilters() {
     initSourceFilter(tableColors.unselected);
     initFlagFilter(tableColors.unselected);
+    initInterestingFilter(tableColors.unselected);
     new Filter({
         key: 'callsign',
         field: 'name',
@@ -9462,14 +9508,15 @@ function zoomToInterestingFlights(hexMap) {
     hexes.forEach(function(hex) {
         var entry = hexMap[hex];
         var lon, lat;
-        if (entry.lon != null && entry.lat != null) {
+        var plane = g.planes[hex];
+        if (plane && plane.position) {
+            lon = plane.position[0];
+            lat = plane.position[1];
+        } else if (entry.lon != null && entry.lat != null) {
             lon = entry.lon;
             lat = entry.lat;
         } else {
-            var plane = g.planes[hex];
-            if (!plane || !plane.position) return;
-            lon = plane.position[0];
-            lat = plane.position[1];
+            return;
         }
         var coord = ol.proj.fromLonLat([lon, lat]);
         if (coord[0] < minX) minX = coord[0];
@@ -9479,47 +9526,60 @@ function zoomToInterestingFlights(hexMap) {
         hasPoints = true;
     });
     if (hasPoints) {
-        OLMap.getView().fit([minX, minY, maxX, maxY], { padding: [80, 80, 80, 80], maxZoom: 8, duration: 500 });
+        // Pad the bbox by ~150km in Web Mercator meters. Guarantees at least
+        // 150km of context on every side regardless of cluster size, so a
+        // fast-mover has room to move during the 5-minute cache window and a
+        // single-aircraft case still shows a useful area instead of over-zooming.
+        var buffer = 150000;
+        OLMap.getView().fit(
+            [minX - buffer, minY - buffer, maxX + buffer, maxY + buffer],
+            { padding: [80, 80, 80, 80], duration: 500 }
+        );
     }
 }
 
-function toggleCloseCalls() {
-    if (!enableCloseCalls) return;
-    PlaneFilter.closeCalls = !PlaneFilter.closeCalls;
-    var btn = document.getElementById('toggle-close-calls');
-    if (btn) btn.classList.toggle('active', PlaneFilter.closeCalls);
-    if (PlaneFilter.closeCalls) {
+function updateInterestingFilter(e) {
+    if (e) e.preventDefault();
+
+    var wantCloseCalls = enableCloseCalls && jQuery('#interesting-close-calls').hasClass('ui-selected');
+    var wantMostWatched = enableMostWatchedFilter && jQuery('#interesting-most-watched').hasClass('ui-selected');
+
+    PlaneFilter.closeCalls = wantCloseCalls;
+    PlaneFilter.mostWatched = wantMostWatched;
+
+    if (wantCloseCalls) {
         deselectAllPlanes();
         fetchCloseCallsData(true);
+    } else {
+        closeCallsMap = {};
     }
-    refreshFilter();
-    updateAddressBar();
-}
-
-function toggleMostWatched() {
-    if (!enableMostWatchedFilter) return;
-    PlaneFilter.mostWatched = !PlaneFilter.mostWatched;
-    var btn = document.getElementById('toggle-most-watched');
-    if (btn) btn.classList.toggle('active', PlaneFilter.mostWatched);
-    if (PlaneFilter.mostWatched) {
+    if (wantMostWatched) {
         deselectAllPlanes();
         fetchMostWatchedData(true);
+    } else {
+        mostWatchedMap = {};
     }
+
     refreshFilter();
     updateAddressBar();
 }
 
-// Auto-fetch on load if URL params activated these filters
+function onResetInterestingFilter(e) {
+    if (e) e.preventDefault();
+    jQuery('#interestingFilter .ui-selected').removeClass('ui-selected');
+    PlaneFilter.closeCalls = false;
+    PlaneFilter.mostWatched = false;
+    closeCallsMap = {};
+    mostWatchedMap = {};
+    refreshFilter();
+    updateAddressBar();
+}
+
+// Auto-fetch on load if URL params activated these filters.
+// The ui-selected class is applied by initInterestingFilter once the <li>s exist.
 if (enableCloseCalls && PlaneFilter.closeCalls) {
-    fetchCloseCallsData();
-    var ccBtn = document.getElementById('toggle-close-calls');
-    if (ccBtn) ccBtn.classList.add('active');
+    fetchCloseCallsData(true);
 }
 if (enableMostWatchedFilter && PlaneFilter.mostWatched) {
-    fetchMostWatchedData();
-    var mwBtn = document.getElementById('toggle-most-watched');
-    if (mwBtn) mwBtn.classList.add('active');
+    fetchMostWatchedData(true);
 }
-if (!enableCloseCalls) document.getElementById('toggle-close-calls').style.display = 'none';
-if (!enableMostWatchedFilter) document.getElementById('toggle-most-watched').style.display = 'none';
-if (!enableCloseCalls && !enableMostWatchedFilter) document.getElementById('interesting-flights-section').style.display = 'none';
