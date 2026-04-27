@@ -1250,12 +1250,20 @@ function earlyInitPage() {
     jQuery("#altitude_filter_form").submit(onFilterByAltitude);
     jQuery("#source_filter_form").submit(updateSourceFilter);
     jQuery("#flag_filter_form").submit(updateFlagFilter);
-    jQuery("#interesting_filter_form").submit(updateInterestingFilter);
-
     jQuery("#altitude_filter_reset_button").click(onResetAltitudeFilter);
     jQuery("#source_filter_reset_button").click(onResetSourceFilter);
     jQuery("#flag_filter_reset_button").click(onResetFlagFilter);
-    jQuery("#interesting_filter_reset_button").click(onResetInterestingFilter);
+
+    jQuery("#interestingFilter").addClass('ui-selectable');
+    jQuery("#interestingFilter li").on("click", function () {
+        var $this = jQuery(this);
+        var wasSelected = $this.hasClass('ui-selected');
+        jQuery("#interestingFilter li").removeClass('ui-selected');
+        if (!wasSelected) {
+            $this.addClass('ui-selected');
+        }
+        updateInterestingFilter();
+    });
 
     // Initialize other controls
     jQuery("#search_form").submit(onSearch);
@@ -9543,6 +9551,14 @@ function updateInterestingFilter(e) {
 
     var wantCloseCalls = enableCloseCalls && jQuery('#interesting-close-calls').hasClass('ui-selected');
     var wantMostWatched = enableMostWatchedFilter && jQuery('#interesting-most-watched').hasClass('ui-selected');
+
+    if (wantCloseCalls || wantMostWatched) {
+        onResetAltitudeFilter();
+        onResetSourceFilter();
+        onResetFlagFilter();
+        icaoFilter = null;
+        for (const f of filter_list) { f.reset(); }
+    }
 
     PlaneFilter.closeCalls = wantCloseCalls;
     PlaneFilter.mostWatched = wantMostWatched;
