@@ -1254,16 +1254,6 @@ function earlyInitPage() {
     jQuery("#source_filter_reset_button").click(onResetSourceFilter);
     jQuery("#flag_filter_reset_button").click(onResetFlagFilter);
 
-    jQuery("#interestingFilter").addClass('ui-selectable');
-    jQuery("#interestingFilter li").on("click", function () {
-        var $this = jQuery(this);
-        var wasSelected = $this.hasClass('ui-selected');
-        jQuery("#interestingFilter li").removeClass('ui-selected');
-        if (!wasSelected) {
-            $this.addClass('ui-selected');
-        }
-        updateInterestingFilter();
-    });
 
     // Initialize other controls
     jQuery("#search_form").submit(onSearch);
@@ -1958,17 +1948,15 @@ function initInterestingFilter(colors) {
         jQuery('#interesting-most-watched').addClass('ui-selected');
     }
 
-    jQuery("#interestingFilter").selectable({
-        stop: function () {
-            // Enforce single-select: keep only the most-recently-selected li
-            var $selected = jQuery('.ui-selected', this);
-            if ($selected.length > 1) {
-                $selected.not(':last').removeClass('ui-selected');
-            }
+    jQuery("#interestingFilter").addClass('ui-selectable');
+    jQuery("#interestingFilter li").on("click", function () {
+        var $this = jQuery(this);
+        var wasSelected = $this.hasClass('ui-selected');
+        jQuery("#interestingFilter li").removeClass('ui-selected');
+        if (!wasSelected) {
+            $this.addClass('ui-selected');
         }
-    });
-    jQuery("#interestingFilter").on("selectablestart", function (event, ui) {
-        event.originalEvent.ctrlKey = true;
+        updateInterestingFilter();
     });
 }
 
