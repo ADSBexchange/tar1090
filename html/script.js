@@ -9541,11 +9541,33 @@ function updateInterestingFilter(e) {
     var wantMostWatched = enableMostWatchedFilter && jQuery('#interesting-most-watched').hasClass('ui-selected');
 
     if (wantCloseCalls || wantMostWatched) {
-        onResetAltitudeFilter();
-        onResetSourceFilter();
-        onResetFlagFilter();
+        // Clear filter state in-place WITHOUT calling each reset function — those
+        // each trigger refreshFilter() (O(aircraft)) and cascade. The async fetch
+        // handler will do a single refreshFilter() once new data arrives.
+        if (PlaneFilter.enabled) {
+            jQuery("#altitude_filter_min").val("");
+            jQuery("#altitude_filter_max").val("");
+            PlaneFilter.enabled = false;
+            PlaneFilter.minAltitude = undefined;
+            PlaneFilter.maxAltitude = undefined;
+        }
+        if (sourcesFilter) {
+            jQuery('#sourceFilter .ui-selected').removeClass('ui-selected');
+            sourcesFilter = null;
+            PlaneFilter.sources = null;
+        }
+        if (flagFilter) {
+            jQuery('#flagFilter .ui-selected').removeClass('ui-selected');
+            flagFilter = null;
+            PlaneFilter.flagFilter = null;
+        }
         icaoFilter = null;
-        for (const f of filter_list) { f.reset(); }
+        for (const f of filters_active.slice()) {
+            f.input.val("");
+            f.pattern = "";
+            f.PATTERN = "";
+        }
+        filters_active.length = 0;
     }
 
     PlaneFilter.closeCalls = wantCloseCalls;
@@ -9564,7 +9586,12 @@ function updateInterestingFilter(e) {
         mostWatchedMap = {};
     }
 
-    refreshFilter();
+    // Only refresh now if we're NOT about to fetch — otherwise the fetch handler
+    // will refresh with fresh data, and refreshing here just causes a visible
+    // flash where everything hides (empty map) before re-appearing.
+    if (!wantCloseCalls && !wantMostWatched) {
+        refreshFilter();
+    }
     updateAddressBar();
 }
 
