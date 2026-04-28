@@ -9529,7 +9529,7 @@ function zoomToInterestingFlights(hexMap) {
         var buffer = 150000;
         OLMap.getView().fit(
             [minX - buffer, minY - buffer, maxX + buffer, maxY + buffer],
-            { padding: [80, 80, 80, 80], duration: 500 }
+            { padding: [80, 80, 80, 80], duration: 0 }
         );
     }
 }
@@ -9544,25 +9544,23 @@ function updateInterestingFilter(e) {
         // Clear filter state in-place WITHOUT calling each reset function — those
         // each trigger refreshFilter() (O(aircraft)) and cascade. The async fetch
         // handler will do a single refreshFilter() once new data arrives.
-        if (PlaneFilter.enabled) {
-            jQuery("#altitude_filter_min").val("");
-            jQuery("#altitude_filter_max").val("");
-            PlaneFilter.enabled = false;
-            PlaneFilter.minAltitude = undefined;
-            PlaneFilter.maxAltitude = undefined;
-        }
-        if (sourcesFilter) {
-            jQuery('#sourceFilter .ui-selected').removeClass('ui-selected');
-            sourcesFilter = null;
-            PlaneFilter.sources = null;
-        }
-        if (flagFilter) {
-            jQuery('#flagFilter .ui-selected').removeClass('ui-selected');
-            flagFilter = null;
-            PlaneFilter.flagFilter = null;
-        }
+        jQuery("#altitude_filter_min").val("");
+        jQuery("#altitude_filter_max").val("");
+        PlaneFilter.enabled = false;
+        PlaneFilter.minAltitude = undefined;
+        PlaneFilter.maxAltitude = undefined;
+
+        jQuery('#sourceFilter .ui-selected').removeClass('ui-selected');
+        sourcesFilter = null;
+        PlaneFilter.sources = null;
+
+        jQuery('#flagFilter .ui-selected').removeClass('ui-selected');
+        flagFilter = null;
+        PlaneFilter.flagFilter = null;
+
         icaoFilter = null;
-        for (const f of filters_active.slice()) {
+
+        for (const f of filters_active) {
             f.input.val("");
             f.pattern = "";
             f.PATTERN = "";
