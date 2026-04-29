@@ -9475,6 +9475,13 @@ function fetchCloseCallsData(thenZoom) {
             closeCallsMap = {};
             (data.events || []).forEach(function(e) {
                 closeCallsMap[e.hex] = e;
+                // Include the threat aircraft too — a close call is between two
+                // planes and both should pass the filter when they're flying.
+                // For single-sided RAs the threat won't have its own event row,
+                // so seed a minimal entry keyed by its hex.
+                if (e.threat_hex && !closeCallsMap[e.threat_hex]) {
+                    closeCallsMap[e.threat_hex] = { hex: e.threat_hex };
+                }
             });
             if (PlaneFilter.closeCalls) refreshFilter();
             if (thenZoom) zoomToInterestingFlights(closeCallsMap);
