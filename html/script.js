@@ -4703,7 +4703,7 @@ function selectPlaneByHex(hex, options) {
         if (clickPlane && clickPlane.position) {
             clickBody += ',' + clickPlane.position[0].toFixed(1) + ',' + clickPlane.position[1].toFixed(1);
         }
-        navigator.sendBeacon(interestingFlightsApiUrl + '/click', clickBody);
+        navigator.sendBeacon(globeDataApiUrl + '/click', clickBody);
     }
     // plane to be selected
     let newPlane = g.planes[hex];
@@ -9485,9 +9485,9 @@ initialize();
 // Used only by the URL auto-restore path (?filterMostWatched=enabled).
 // On empty/error, silently fall back to unfiltered.
 function fetchMostWatchedData(thenZoom) {
-    fetch(interestingFlightsApiUrl + '/most-watched')
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
+    fetch(globeDataApiUrl + '/most-watched')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
             const aircraft = (data && data.aircraft) || [];
             if (aircraft.length === 0) {
                 deactivateMostWatched();
