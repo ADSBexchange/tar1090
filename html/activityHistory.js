@@ -1,7 +1,7 @@
 "use strict";
 
 // One-shot fetch of every active date for an ICAO. The Worker behind
-// `globeDataApiUrl` sets a daily-aligned `Cache-Control: max-age` so the
+// `globeDataBaseUrl` sets a daily-aligned `Cache-Control: max-age` so the
 // browser's HTTP cache handles re-use across page loads — no client-side
 // LRU/TTL bookkeeping needed.
 
@@ -27,7 +27,7 @@ var ActivityHistory = {
     fetchActiveDates: async function(icao) {
         if (this.hasFetched(icao)) return this.datesByIcao[icao];
         try {
-            var response = await fetch(globeDataApiUrl + '/active-dates/' + icao);
+            var response = await fetch(globeDataBaseUrl + '/active-dates/' + icao);
             if (!response.ok) {
                 this.datesByIcao[icao] = [];
                 return [];

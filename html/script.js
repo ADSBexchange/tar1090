@@ -4703,7 +4703,7 @@ function selectPlaneByHex(hex, options) {
         if (clickPlane && clickPlane.position) {
             clickBody += ',' + clickPlane.position[0].toFixed(1) + ',' + clickPlane.position[1].toFixed(1);
         }
-        navigator.sendBeacon(globeDataApiUrl + '/click', clickBody);
+        navigator.sendBeacon(globeDataBaseUrl + '/click', clickBody);
     }
     // plane to be selected
     let newPlane = g.planes[hex];
@@ -9485,7 +9485,7 @@ initialize();
 // Used only by the URL auto-restore path (?filterMostWatched=enabled).
 // On empty/error, silently fall back to unfiltered.
 function fetchMostWatchedData(thenZoom) {
-    fetch(globeDataApiUrl + '/most-watched')
+    fetch(globeDataBaseUrl + '/most-watched')
         .then(function(r) { return r.json(); })
         .then(function(data) {
             const aircraft = (data && data.aircraft) || [];
@@ -9607,7 +9607,7 @@ function toggleMostWatched() {
     // Activate path: fetch first, only commit if data came back. Empty
     // result or network error leaves the page exactly as it was.
     const btn = document.getElementById('MW');
-    fetch(interestingFlightsApiUrl + '/most-watched')
+    fetch(globeDataBaseUrl + '/most-watched')
         .then(function (r) { return r.json(); })
         .then(function (data) {
             const aircraft = (data && data.aircraft) || [];
