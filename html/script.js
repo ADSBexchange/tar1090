@@ -6808,8 +6808,10 @@ async function toggleShowTrace() {
                 jQuery("#histDatePicker").datepicker("refresh");
                 var currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
                 var todayStr = ActivityHistory.toDateStr(new Date());
-                if (!ActivityHistory.hasActivity(icao) && currentDateStr && currentDateStr < todayStr) {
-                    // No history and viewing a past date — show no-history state
+                if (ActivityHistory.hasFetched(icao) && !ActivityHistory.hasActivity(icao) && currentDateStr && currentDateStr < todayStr) {
+                    // Successful fetch returned empty → genuine "no history" state.
+                    // On fetch error nothing is cached, so hasFetched is false here and
+                    // we fall through to the free-stepping fallback instead of mislabelling an outage.
                     jQuery('#trace_no_data').show();
                     jQuery('#trace_panel_content').hide();
                 } else {
@@ -7046,7 +7048,17 @@ async function shiftTrace(offset) {
 function updateHistoryNavButtons() {
     if (!enableActiveDates) return;
     const icao = SelectedPlane ? SelectedPlane.icao : null;
-    if (!icao || !ActivityHistory.hasFetched(icao)) return;
+    if (!icao) return;
+
+    // No cached dates for this ICAO — either not fetched yet, or the fetch errored.
+    // Either way, fall back to pre-AX-744 free-stepping nav (buttons + datepicker enabled).
+    // Without this, buttons could stay disabled from a previous aircraft's "no activity" state.
+    if (!ActivityHistory.hasFetched(icao)) {
+        jQuery('#trace_back_1d').prop('disabled', false);
+        jQuery('#trace_jump_1d').prop('disabled', false);
+        jQuery('#histDatePicker').datepicker('enable');
+        return;
+    }
 
     // Fetched but no activity — disable both buttons and datepicker
     if (!ActivityHistory.hasActivity(icao)) {

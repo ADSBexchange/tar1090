@@ -5,6 +5,9 @@
 // browser's HTTP cache handles re-use across page loads — no client-side
 // LRU/TTL bookkeeping needed.
 
+// On fetch error nothing is cached — next selection of the same ICAO retries.
+// Callers detect the errored state via `!hasFetched(icao)` and fall back to
+// pre-AX-744 free-stepping nav (buttons + datepicker enabled, no day highlights).
 var ActivityHistory = {
     datesByIcao: {},  // { icao: ["YYYY-MM-DD", ...] } — descending
 
@@ -28,16 +31,12 @@ var ActivityHistory = {
         if (this.hasFetched(icao)) return this.datesByIcao[icao];
         try {
             var response = await fetch(globeDataBaseUrl + '/active-dates/' + icao);
-            if (!response.ok) {
-                this.datesByIcao[icao] = [];
-                return [];
-            }
+            if (!response.ok) return [];
             var data = await response.json();
             var dates = data.dates || [];
             this.datesByIcao[icao] = dates;
             return dates;
         } catch (e) {
-            this.datesByIcao[icao] = [];
             return [];
         }
     },
