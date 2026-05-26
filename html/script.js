@@ -1294,6 +1294,10 @@ function earlyInitPage() {
             if (dateStr === todayStr) return [true, '', ''];
             var activeSet = ActivityHistory.getActiveDatesSet(icao);
             if (activeSet[dateStr]) return [true, 'hist-active-date', ''];
+            // Before the oldest known active date — no dataset coverage, but globe history
+            // may exist; leave enabled so the user can free-step into that era.
+            var dates = ActivityHistory.datesByIcao[icao];
+            if (dates && dates.length && dateStr < dates[dates.length - 1]) return [true, '', ''];
             return [false, '', 'No activity'];
         },
         onChangeMonthYear: function(year, month) {

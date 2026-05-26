@@ -45,6 +45,13 @@ var ActivityHistory = {
         var dates = this.datesByIcao[icao];
         if (!dates || !dates.length) return null;
         var current = this.toDateStr(currentDate);
+        // Before the oldest known active date — free-step forward one day so
+        // navigation stays day-by-day until it enters the active-dates range.
+        if (current < dates[dates.length - 1]) {
+            var d = new Date(current + 'T00:00:00Z');
+            d.setUTCDate(d.getUTCDate() + 1);
+            return this.toDateStr(d);
+        }
         for (var i = dates.length - 1; i >= 0; i--) {
             if (dates[i] > current) return dates[i];
         }
