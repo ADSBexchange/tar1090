@@ -58,6 +58,13 @@ var ActivityHistory = {
         for (var i = 0; i < dates.length; i++) {
             if (dates[i] < current) return dates[i];
         }
+        // Past oldest known active date — free-step back one day until 2000-01-01
+        // so users can navigate globe history that predates the active-dates dataset.
+        if (current > '2000-01-01') {
+            var d = new Date(current + 'T00:00:00Z');
+            d.setUTCDate(d.getUTCDate() - 1);
+            return this.toDateStr(d);
+        }
         return null;
     },
 
