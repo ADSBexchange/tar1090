@@ -1279,9 +1279,8 @@ function earlyInitPage() {
         },
         beforeShow: function(input, inst){
             var icao = SelectedPlane ? SelectedPlane.icao : null;
-            if (enableActiveDates && icao && ActivityHistory.hasFetched(icao) && !ActivityHistory.hasActivity(icao)) {
-                return false;
-            }
+            // Don't block the datepicker for empty-dates ICAOs — pre-2022-only aircraft
+            // return [] but still have globe history; user should be able to free-step.
             if (onMobile) {
                 jQuery("#histDatePicker").attr("disabled", true);
             }
@@ -1292,12 +1291,14 @@ function earlyInitPage() {
             var todayStr = ActivityHistory.toDateStr(new Date());
             var dateStr = ActivityHistory.toDateStr(date);
             if (dateStr === todayStr) return [true, '', ''];
+            var dates = ActivityHistory.datesByIcao[icao];
+            // Empty dates array — pre-2022-only aircraft; all days navigable, no highlights.
+            if (!dates || !dates.length) return [true, '', ''];
             var activeSet = ActivityHistory.getActiveDatesSet(icao);
             if (activeSet[dateStr]) return [true, 'hist-active-date', ''];
             // Before the oldest known active date — no dataset coverage, but globe history
             // may exist; leave enabled so the user can free-step into that era.
-            var dates = ActivityHistory.datesByIcao[icao];
-            if (dates && dates.length && dateStr < dates[dates.length - 1]) return [true, '', ''];
+            if (dateStr < dates[dates.length - 1]) return [true, '', ''];
             return [false, '', 'No activity'];
         },
         onChangeMonthYear: function(year, month) {
