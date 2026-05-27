@@ -7064,11 +7064,12 @@ function updateHistoryNavButtons() {
         return;
     }
 
-    // Fetched but no activity — disable both buttons and datepicker
+    // Fetched but empty dates — plane may have only flown pre-2022 (before dataset
+    // coverage). Fall back to free-stepping so the user can still navigate history.
     if (!ActivityHistory.hasActivity(icao)) {
-        jQuery('#trace_back_1d').prop('disabled', true);
-        jQuery('#trace_jump_1d').prop('disabled', true);
-        jQuery('#histDatePicker').datepicker('disable');
+        jQuery('#trace_back_1d').prop('disabled', false);
+        jQuery('#trace_jump_1d').prop('disabled', false);
+        jQuery('#histDatePicker').datepicker('enable');
         return;
     }
 
