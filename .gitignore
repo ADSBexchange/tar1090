@@ -369,3 +369,4 @@ scripts/
 html/ax-identity.js
 html/layers.js
 html/config-feature-flags.js
+html/config-uav.js
