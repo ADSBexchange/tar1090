@@ -1289,10 +1289,12 @@ function earlyInitPage() {
             var icao = activeDatesIcao();
             if (!enableActiveDates || !icao || !ActivityHistory.hasFetched(icao)) return [true, '', ''];
             var todayStr = ActivityHistory.toDateStr(new Date());
-            // Read the cell with LOCAL getters: jQuery UI builds it at local midnight,
-            // so its printed day = local Y/M/D = the UTC day it loads. Using UTC getters
-            // here rolled the day back for users east of UTC (AX-916 bug 1).
-            var dateStr = ActivityHistory.toLocalDateStr(date);
+            // Format the cell with the datepicker's OWN formatter — the exact code
+            // path that produces the onSelect "YYYY-MM-DD" string — so the highlight
+            // key can never drift from the selected-date key. (Reads local getters
+            // internally: the cell is local-midnight and its printed day = the UTC
+            // day it loads. Using UTC getters here rolled it back east of UTC — AX-916 bug 1.)
+            var dateStr = jQuery.datepicker.formatDate('yy-mm-dd', date);
             if (dateStr === todayStr) return [true, '', ''];
             var dates = ActivityHistory.datesByIcao[icao];
             // Empty dates array — pre-2022-only aircraft; all days navigable, no highlights.

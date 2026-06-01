@@ -8,34 +8,14 @@
 // On fetch error nothing is cached — next selection of the same ICAO retries.
 // Callers detect the errored state via `!hasFetched(icao)` and fall back to
 // pre-AX-744 free-stepping nav (buttons + datepicker enabled, no day highlights).
-//
-// Active dates are a single-aircraft concept ("when did THIS plane fly"). With
-// more than one plane selected, callers pass no icao here and fall back to
-// free-stepping nav — see activeDatesIcao() in script.js (AX-916).
 var ActivityHistory = {
     datesByIcao: {},  // { icao: ["YYYY-MM-DD", ...] } — descending
 
-    // Active dates are UTC calendar days end-to-end (operations export forces
-    // Etc/UTC; Writer copies the yr/mo/dy partition verbatim) — see AX-916 plan
-    // finding F1. So an *instant* (e.g. `new Date()` "now") maps to its UTC day.
     toDateStr: function(date) {
         if (typeof date === 'string') return date;
         return date.getUTCFullYear() + '-' +
             String(date.getUTCMonth() + 1).padStart(2, '0') + '-' +
             String(date.getUTCDate()).padStart(2, '0');
-    },
-
-    // Wall-clock (local) formatter for jQuery UI datepicker cells. The datepicker
-    // builds each cell as `new Date(y, m, d)` at *local* midnight, so the day
-    // printed on the cell equals its local Y/M/D. Using toDateStr (UTC getters)
-    // here rolls the day back for users east of UTC and mis-aligns active-date
-    // highlights by one cell (AX-916 bug 1). The cell's printed number already IS
-    // the UTC day it loads (onSelect receives the "YYYY-MM-DD" string), so local
-    // components are the correct — and only consistent — mapping.
-    toLocalDateStr: function(date) {
-        return date.getFullYear() + '-' +
-            String(date.getMonth() + 1).padStart(2, '0') + '-' +
-            String(date.getDate()).padStart(2, '0');
     },
 
     hasFetched: function(icao) {
