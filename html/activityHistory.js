@@ -41,17 +41,12 @@ var ActivityHistory = {
         }
     },
 
+    // AX-913: the dataset now covers full trace history, so nav jumps strictly between active dates —
+    // no free-stepping into pre-dataset days (those are disabled in the calendar too).
     getNextDate: function(icao, currentDate) {
         var dates = this.datesByIcao[icao];
         if (!dates || !dates.length) return null;
         var current = this.toDateStr(currentDate);
-        // Before the oldest known active date — free-step forward one day so
-        // navigation stays day-by-day until it enters the active-dates range.
-        if (current < dates[dates.length - 1]) {
-            var d = new Date(current + 'T00:00:00Z');
-            d.setUTCDate(d.getUTCDate() + 1);
-            return this.toDateStr(d);
-        }
         for (var i = dates.length - 1; i >= 0; i--) {
             if (dates[i] > current) return dates[i];
         }
@@ -65,13 +60,6 @@ var ActivityHistory = {
         for (var i = 0; i < dates.length; i++) {
             if (dates[i] < current) return dates[i];
         }
-        // Past oldest known active date — free-step back one day until 2000-01-01
-        // so users can navigate globe history that predates the active-dates dataset.
-        if (current > '2000-01-01') {
-            var d = new Date(current + 'T00:00:00Z');
-            d.setUTCDate(d.getUTCDate() - 1);
-            return this.toDateStr(d);
-        }
         return null;
     },
 
@@ -83,3 +71,6 @@ var ActivityHistory = {
         return set;
     }
 };
+
+// Node-only export for unit tests; inert in the browser.
+if (typeof module !== 'undefined' && module.exports) { module.exports = ActivityHistory; }

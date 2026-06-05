@@ -1297,13 +1297,13 @@ function earlyInitPage() {
             var dateStr = jQuery.datepicker.formatDate('yy-mm-dd', date);
             if (dateStr === todayStr) return [true, '', ''];
             var dates = ActivityHistory.datesByIcao[icao];
-            // Empty dates array — pre-2022-only aircraft; all days navigable, no highlights.
+            // Empty dates array — no activity on record for this aircraft; show the old view (all days
+            // navigable, no highlights) so the user can still roam globe history.
             if (!dates || !dates.length) return [true, '', ''];
             var activeSet = ActivityHistory.getActiveDatesSet(icao);
             if (activeSet[dateStr]) return [true, 'hist-active-date', ''];
-            // Before the oldest known active date — no dataset coverage, but globe history
-            // may exist; leave enabled so the user can free-step into that era.
-            if (dateStr < dates[dates.length - 1]) return [true, '', ''];
+            // AX-913: dataset now covers full trace history, so any non-active day (incl. before the
+            // oldest known one) is genuinely "no activity" — disable it. No more free-step crutch.
             return [false, '', 'No activity'];
         },
         onChangeMonthYear: function(year, month) {
