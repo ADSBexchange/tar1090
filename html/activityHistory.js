@@ -1,15 +1,13 @@
 "use strict";
 
-// One-shot fetch of every active date for an ICAO. The Worker behind
-// `globeDataBaseUrl` sets a daily-aligned `Cache-Control: max-age` so the
-// browser's HTTP cache handles re-use across page loads — no client-side
-// LRU/TTL bookkeeping needed.
-
-// On fetch error nothing is cached — next selection of the same ICAO retries.
-// Callers detect the errored state via `!hasFetched(icao)` and fall back to
-// pre-AX-744 free-stepping nav (buttons + datepicker enabled, no day highlights).
+// Per-ICAO active dates for the history calendar, from two sources (kept separate, never merged):
+//   historicalDatesByIcao — <= yesterday, one-shot fetch from GlobeData. Single source of truth, 3 states:
+//                            undefined = unfetched/failed (retries), [] = no history, [d,...] = days (desc).
+//   recentDatesByIcao     — today's edge, derived from the live trace_full (GlobeData lags ~25h). AX-913.
+// Calendar has two modes, picked by hasActivity: none -> free-step everywhere; >=1 day -> activity-driven.
 var ActivityHistory = {
-    datesByIcao: {},  // { icao: ["YYYY-MM-DD", ...] } — descending
+    historicalDatesByIcao: {},  // { icao: ["YYYY-MM-DD", ...] } descending
+    recentDatesByIcao: {},      // { icao: ["YYYY-MM-DD", ...] } descending
 
     toDateStr: function(date) {
         if (typeof date === 'string') return date;
@@ -18,57 +16,120 @@ var ActivityHistory = {
             String(date.getUTCDate()).padStart(2, '0');
     },
 
-    hasFetched: function(icao) {
-        return Object.prototype.hasOwnProperty.call(this.datesByIcao, icao);
-    },
-
+    // The view-mode signal: any known activity, past or today.
     hasActivity: function(icao) {
-        var dates = this.datesByIcao[icao];
-        return !!(dates && dates.length > 0);
+        var historical = this.historicalDatesByIcao[icao];
+        var recent = this.recentDatesByIcao[icao];
+        return !!((historical && historical.length) || (recent && recent.length));
     },
 
-    fetchActiveDates: async function(icao) {
-        if (this.hasFetched(icao)) return this.datesByIcao[icao];
+    // GlobeData answered empty (fetched-OK, no history, not flying today). Drives only the "no data"
+    // message; a failed/pending fetch is undefined -> false -> stay silent.
+    fetchedEmpty: function(icao) {
+        var historical = this.historicalDatesByIcao[icao];
+        return Array.isArray(historical) && historical.length === 0 && !this.hasActivity(icao);
+    },
+
+    // null = fetch failed (not cached, retries), [] = no history, [...] = days. Cached array = fetched-OK.
+    fetchHistoricalDates: async function(icao) {
+        if (Array.isArray(this.historicalDatesByIcao[icao])) return this.historicalDatesByIcao[icao];
         try {
             var response = await fetch(globeDataBaseUrl + '/active-dates/' + icao);
-            if (!response.ok) return [];
+            if (!response.ok) return null;
             var data = await response.json();
-            var dates = data.dates || [];
-            this.datesByIcao[icao] = dates;
-            return dates;
+            return (this.historicalDatesByIcao[icao] = data.dates || []);
         } catch (e) {
-            return [];
+            return null;
         }
     },
 
-    // AX-913: the dataset now covers full trace history, so nav jumps strictly between active dates —
-    // no free-stepping into pre-dataset days (those are disabled in the calendar too).
-    getNextDate: function(icao, currentDate) {
-        var dates = this.datesByIcao[icao];
-        if (!dates || !dates.length) return null;
-        var current = this.toDateStr(currentDate);
-        for (var i = dates.length - 1; i >= 0; i--) {
-            if (dates[i] > current) return dates[i];
+    // Live edge: current-UTC-day trace (<=24h) the globe already serves. Relative URL = same host (no WAF
+    // concern), browser-cache-deduped against the trail load. Error/non-2xx -> null (FAILED — distinct
+    // from a 200 with no points, which is []). null means "couldn't tell"; mergeTraceDates ignores it, so
+    // a failed trace never poisons the recent edge or masks a real fetch (matches the historical contract).
+    fetchTraceDates: async function(icao) {
+        try {
+            var response = await fetch('data/traces/' + icao.slice(-2) + '/trace_full_' + icao + '.json');
+            if (!response.ok) return null;
+            var data = await response.json();
+            return this.datesFromTrace(data);
+        } catch (e) {
+            return null;
         }
+    },
+
+    // Pure: distinct UTC dates in a trace. abs epoch = (timestamp||0) + point[0]s; works on raw or
+    // normalized data, skips NaN. Normally [today] (or +yesterday across 00:00 UTC).
+    datesFromTrace: function(traceData) {
+        var trace = traceData && traceData.trace;
+        if (!trace || !trace.length) return [];
+        var base = traceData.timestamp || 0;
+        var seen = {}, out = [];
+        for (var i = 0; i < trace.length; i++) {
+            var p = trace[i];
+            if (!p || !Number.isFinite(p[0])) continue;
+            var ds = this.toDateStr(new Date((base + p[0]) * 1000));
+            if (!seen[ds]) { seen[ds] = true; out.push(ds); }
+        }
+        return out;
+    },
+
+    // Union dates into the recent edge (deduped, descending). Idempotent. Normally [today].
+    mergeTraceDates: function(icao, dates) {
+        if (!icao || !dates || !dates.length) return;
+        var existing = this.recentDatesByIcao[icao] || [];
+        var set = {};
+        for (var i = 0; i < existing.length; i++) set[existing[i]] = true;
+        for (var j = 0; j < dates.length; j++) set[dates[j]] = true;
+        this.recentDatesByIcao[icao] = Object.keys(set).sort().reverse();
+    },
+
+    // Active dates as one ascending list (historical ∪ recent edge, deduped) — what nav steps through.
+    sortedActiveDates: function(icao) {
+        return Object.keys(this.getActiveDatesSet(icao)).sort();
+    },
+
+    // Next/prev active date relative to current; null at the ends. Nav jumps strictly between active
+    // days — no free-stepping into empty days (the trace-complete dataset has no gaps to roam into).
+    getNextDate: function(icao, currentDate) {
+        var dates = this.sortedActiveDates(icao);
+        var current = this.toDateStr(currentDate);
+        for (var i = 0; i < dates.length; i++) { if (dates[i] > current) return dates[i]; }
         return null;
     },
 
     getPrevDate: function(icao, currentDate) {
-        var dates = this.datesByIcao[icao];
-        if (!dates || !dates.length) return null;
+        var dates = this.sortedActiveDates(icao);
         var current = this.toDateStr(currentDate);
-        for (var i = 0; i < dates.length; i++) {
-            if (dates[i] < current) return dates[i];
-        }
+        for (var i = dates.length - 1; i >= 0; i--) { if (dates[i] < current) return dates[i]; }
         return null;
     },
 
+    // Membership set for highlighting: historical + recent edge.
     getActiveDatesSet: function(icao) {
-        var dates = this.datesByIcao[icao];
-        if (!dates) return {};
         var set = {};
-        for (var i = 0; i < dates.length; i++) set[dates[i]] = true;
+        var hist = this.historicalDatesByIcao[icao];
+        if (hist) for (var i = 0; i < hist.length; i++) set[hist[i]] = true;
+        var rec = this.recentDatesByIcao[icao];
+        if (rec) for (var j = 0; j < rec.length; j++) set[rec[j]] = true;
         return set;
+    },
+
+    // Newest known active day (high-water max) — where history opens on a fresh selection, so you
+    // land on a day with a flight rather than a possibly-empty today. null when no activity (caller
+    // falls back to today).
+    mostRecentActiveDate: function(icao) {
+        var dates = this.sortedActiveDates(icao);
+        return dates.length ? dates[dates.length - 1] : null;
+    },
+
+    // The only non-clickable calendar cell: any day that isn't an active day, once we have data for
+    // this aircraft (hasActivity). The dataset is trace-complete, so "not in the set" means "didn't
+    // fly" — no pre-dataset era to roam into. Today is NOT special-cased: it greys when idle, greens
+    // when the live trace shows a flight. No data at all (hasActivity false — both sources empty or
+    // failed) → nothing blocked → old view (roam). Green highlight is orthogonal (getActiveDatesSet).
+    isNoActivityDay: function(icao, dateStr) {
+        return this.hasActivity(icao) && !this.getActiveDatesSet(icao)[dateStr];
     }
 };
 

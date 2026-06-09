@@ -1287,24 +1287,12 @@ function earlyInitPage() {
         },
         beforeShowDay: function(date) {
             var icao = activeDatesIcao();
-            if (!enableActiveDates || !icao || !ActivityHistory.hasFetched(icao)) return [true, '', ''];
-            var todayStr = ActivityHistory.toDateStr(new Date());
-            // Format the cell with the datepicker's OWN formatter — the exact code
-            // path that produces the onSelect "YYYY-MM-DD" string — so the highlight
-            // key can never drift from the selected-date key. (Reads local getters
-            // internally: the cell is local-midnight and its printed day = the UTC
-            // day it loads. Using UTC getters here rolled it back east of UTC — AX-916 bug 1.)
+            if (!enableActiveDates || !icao) return [true, '', ''];
+            // Datepicker's own formatter so the key matches onSelect exactly (UTC getters drift east — AX-916 bug 1).
             var dateStr = jQuery.datepicker.formatDate('yy-mm-dd', date);
-            if (dateStr === todayStr) return [true, '', ''];
-            var dates = ActivityHistory.datesByIcao[icao];
-            // Empty dates array — no activity on record for this aircraft; show the old view (all days
-            // navigable, no highlights) so the user can still roam globe history.
-            if (!dates || !dates.length) return [true, '', ''];
-            var activeSet = ActivityHistory.getActiveDatesSet(icao);
-            if (activeSet[dateStr]) return [true, 'hist-active-date', ''];
-            // AX-913: dataset now covers full trace history, so any non-active day (incl. before the
-            // oldest known one) is genuinely "no activity" — disable it. No more free-step crutch.
-            return [false, '', 'No activity'];
+            if (ActivityHistory.isNoActivityDay(icao, dateStr)) return [false, '', 'No activity'];  // blocked (incl. today if idle)
+            var green = ActivityHistory.getActiveDatesSet(icao)[dateStr] ? 'hist-active-date' : '';
+            return [true, green, ''];                                                               // selectable (± green)
         },
         onChangeMonthYear: function(year, month) {
             var icao = SelectedPlane ? SelectedPlane.icao : null;
@@ -6815,15 +6803,18 @@ async function toggleShowTrace() {
             jQuery('#trace_panel_content').hide();
             jQuery('#trace_no_data').hide();
 
-            ActivityHistory.fetchActiveDates(adIcao).then(function() {
+            // AX-913: parallel fetch — GlobeData historical + the live trace's "today" edge (GlobeData lags
+            // ~25h). Both swallow errors, so neither miss blocks the other.
+            Promise.all([
+                ActivityHistory.fetchHistoricalDates(adIcao),
+                ActivityHistory.fetchTraceDates(adIcao).then(function(d) { ActivityHistory.mergeTraceDates(adIcao, d); }),
+            ]).then(function() {
                 jQuery('#trace_panel_loading').hide();
                 jQuery("#histDatePicker").datepicker("refresh");
                 var currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
                 var todayStr = ActivityHistory.toDateStr(new Date());
-                if (ActivityHistory.hasFetched(adIcao) && !ActivityHistory.hasActivity(adIcao) && currentDateStr && currentDateStr < todayStr) {
-                    // Successful fetch returned empty → genuine "no history" state.
-                    // On fetch error nothing is cached, so hasFetched is false here and
-                    // we fall through to the free-stepping fallback instead of mislabelling an outage.
+                // "No history" only when GlobeData answered empty and we're viewing a past date.
+                if (ActivityHistory.fetchedEmpty(adIcao) && currentDateStr && currentDateStr < todayStr) {
                     jQuery('#trace_no_data').show();
                     jQuery('#trace_panel_content').hide();
                 } else {
@@ -6831,12 +6822,6 @@ async function toggleShowTrace() {
                     jQuery('#trace_no_data').hide();
                     shiftTrace();
                 }
-            }).catch(function() {
-                // API failed — hide spinner, show panel, fall back to day stepping
-                jQuery('#trace_panel_loading').hide();
-                jQuery('#trace_panel_content').show();
-                jQuery('#trace_no_data').hide();
-                shiftTrace();
             });
         } else {
             // No ICAO or replay mode — show panel immediately
@@ -7039,7 +7024,13 @@ async function shiftTrace(offset) {
             if (replay) {
                 setTraceDate({ ts: replay.ts.getTime() });
             } else {
-                setTraceDate({ ts: new Date().getTime() });
+                // AX-913: on a fresh open (traceDate null, not an explicit "today" jump) land on the
+                // aircraft's most-recent active day (high-water) so you start on a day it actually flew,
+                // not a possibly-empty today. No activity / multi-select / "today" jump -> today, as before.
+                // A deep-linked showTrace=<date> sets traceDate up front, so this never overrides it.
+                var mostRecent = (offset != "today" && enableActiveDates && icao)
+                    ? ActivityHistory.mostRecentActiveDate(icao) : null;
+                setTraceDate(mostRecent ? { string: mostRecent } : { ts: new Date().getTime() });
             }
         } else if (offset) {
             setTraceDate({ ts: traceDate.getTime() + offset * 86400 * 1000 });
@@ -7072,11 +7063,8 @@ function updateHistoryNavButtons() {
     if (!enableActiveDates) return;
     const icao = activeDatesIcao();
 
-    // Multi-select (icao null), not fetched yet, or a fetch errored (nothing cached),
-    // or fetched-but-empty (pre-2022-only aircraft). In every case fall back to
-    // free-stepping nav (buttons + datepicker enabled). Without this, buttons could
-    // stay disabled from a previous aircraft's "no activity" state.
-    if (!icao || !ActivityHistory.hasFetched(icao) || !ActivityHistory.hasActivity(icao)) {
+    // No known activity (multi-select, unfetched, error, or empty) -> free-step nav enabled.
+    if (!icao || !ActivityHistory.hasActivity(icao)) {
         jQuery('#trace_back_1d').prop('disabled', false);
         jQuery('#trace_jump_1d').prop('disabled', false);
         jQuery('#histDatePicker').datepicker('enable');
