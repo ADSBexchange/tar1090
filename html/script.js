@@ -6996,20 +6996,11 @@ async function shiftTrace(offset) {
 
         if (offset > 0) {
             targetDate = ActivityHistory.getNextDate(icao, currentDateStr);
-            // No next active date — if before today, jump to today
-            if (!targetDate) {
-                var todayStr = ActivityHistory.toDateStr(new Date());
-                if (currentDateStr < todayStr) {
-                    targetDate = todayStr;
-                }
-            }
         } else if (offset < 0) {
             targetDate = ActivityHistory.getPrevDate(icao, currentDateStr);
-
-            // All dates are fetched in one request — no windowed pagination needed
         }
 
-        // If no date found, stay put
+        // At an end (no next/prev active date) — stay put; nav never lands on an inactive day.
         if (!targetDate) {
             updateHistoryNavButtons();
             return;
@@ -7076,9 +7067,9 @@ function updateHistoryNavButtons() {
     const currentDateStr = traceDateString || (traceDate ? traceDate.toISOString().split('T')[0] : null);
     if (!currentDateStr) return;
 
+    // Enabled only when there's an actual active day to step to — nav stays strictly on active days.
     var hasPrev = !!ActivityHistory.getPrevDate(icao, currentDateStr);
-    var todayStr = ActivityHistory.toDateStr(new Date());
-    var hasNext = !!ActivityHistory.getNextDate(icao, currentDateStr) || currentDateStr < todayStr;
+    var hasNext = !!ActivityHistory.getNextDate(icao, currentDateStr);
     jQuery('#trace_back_1d').prop('disabled', !hasPrev);
     jQuery('#trace_jump_1d').prop('disabled', !hasNext);
 }
