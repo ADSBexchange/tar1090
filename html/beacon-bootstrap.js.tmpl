@@ -1,10 +1,10 @@
 window.__beacon = {
   publicKey: '__BEACON_PUBLIC_KEY__',
-  apiUrl: 'https://beacon.ops.devjetnet.com/api/v1',
+  apiUrl: '__BEACON_BASE_URL__/api/v1',
 };
 (function () {
   var s = document.createElement('script');
-  s.src = 'https://beacon.ops.devjetnet.com/agent/sdk/__BEACON_PUBLIC_KEY__';
+  s.src = '__BEACON_BASE_URL__/agent/sdk/__BEACON_PUBLIC_KEY__';
   s.async = true;
   s.onload = function () { window.Beacon && window.Beacon.init(); };
   document.head.appendChild(s);
