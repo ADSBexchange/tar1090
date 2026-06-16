@@ -52,6 +52,7 @@ Configuration should be preserved.
 - Clone the github repo
 - Make changes
 - run `./install.sh test` to install from your local directory
+- run `./test.sh` (needs Node) to run the frontend unit tests
 
 
 ## Configuration part 1: History interval and number of snapshots / ptracks duration (optional)
