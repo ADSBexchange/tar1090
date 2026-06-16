@@ -8,14 +8,15 @@ tar1090 is an improved web interface for ADS-B aircraft tracking decoders (reads
 
 ## Development & Testing
 
-There is no traditional build system, test framework, or linter. Development workflow:
+There is no bundler, transpiler, or npm/webpack step — files are served directly. Development workflow:
 
 - **Local testing:** `sudo ./install.sh test` — installs from the local directory instead of pulling from GitHub
+- **Unit tests:** `./test.sh` (or `node --test` from the repo root) runs the frontend logic tests via Node's built-in `node:test` runner — zero dependencies, no `package.json`. Tests live in `test/` (e.g. `test/activityHistory.test.js`) and are never deployed (`install.sh` copies only `html/`). Pure-logic modules expose themselves to Node with a guarded `module.exports` that is inert in the browser. Note `node --test test/` does NOT work (it tries to `require` the dir) — run `node --test` from the root, which auto-discovers `test/`.
 - **Template processing:** `.tmpl` files (e.g., `layers.js.tmpl`, `api.js.tmpl`) are processed by `install.sh` using sed/bash substitution during installation
 - **Cache busting:** `cachebust.sh` renames files with MD5 hashes and updates references in `index.html` and `script.js`
 - **Version tagging:** `tag.sh` manages version numbers (stored in `version` file, currently 3.14.x)
 
-No compilation, transpilation, or npm/webpack steps exist. Edit files directly and reinstall to test.
+No compilation or transpilation. Edit files directly and reinstall to test.
 
 ## Architecture
 
