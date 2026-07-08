@@ -213,7 +213,10 @@ function initializeFeederGrid() {
       numeric: false,
       previousNext: false,
       messages: {
-        display: "Showing {2} feeders"
+        // Public leaderboard intentionally does not surface the total feeder count while the
+        // count is being stabilized (ghost-feeder dedupe + beast-only inclusion). The underlying
+        // data is unchanged; only the plain-sight number is hidden. See AX-957.
+        display: "Feeders"
       }
     },
     sort: function (e) {
