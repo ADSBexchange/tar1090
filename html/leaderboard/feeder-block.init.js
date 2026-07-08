@@ -213,7 +213,9 @@ function initializeFeederGrid() {
       numeric: false,
       previousNext: false,
       messages: {
-        display: "Showing {2} feeders"
+        // The aggregate feeder count is not shown on the public leaderboard until it can be
+        // reported reliably. Per-feeder rows and the underlying data are unchanged. See AX-957.
+        display: ""
       }
     },
     sort: function (e) {
