@@ -29,7 +29,7 @@
     freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
     // Page Specific
     freestar.config.disabledProducts = {
-    stickyFooter: true,
+    stickyFooter: false,
     googleInterstitial: true
     };
     let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
@@ -883,14 +883,18 @@
             </div>
           </div>
         </div>
-        <!-- freestar body: AX-680 mobile footer unit, tag as supplied by Freestar. -->
-        <!-- Tag ID: adsbexchange_mobile_tracking_leaderboard -->
+        <!-- freestar body: AX-680 mobile footer unit — Freestar's supplied tag, masked off.
+             As an in-flow slot it rendered at the top of the map and stole 100px of map height,
+             pushing the zoom controls off screen. Using the stickyFooter product instead (see the
+             disabledProducts block above), which Freestar inject and position themselves.
+             Kept here so it can be restored if the product route is rejected.
+        <!-\- Tag ID: adsbexchange_mobile_tracking_leaderboard -\->
         <div align="center" data-freestar-ad="__320x100" id="adsbexchange_mobile_tracking_leaderboard">
             <script data-cfasync="false" type="text/javascript">
                 freestar.config.enabled_slots.push({ placementName: "adsbexchange_mobile_tracking_leaderboard", slotId: "adsbexchange_mobile_tracking_leaderboard" });
             </script>
         </div>
-        <!-- end freestar -->
+        -->
         <!-- MAP_CONTAINER_ANCHOR -->
         <div id="map_canvas" style="background-color:#D2D2D2;">
         </div>
