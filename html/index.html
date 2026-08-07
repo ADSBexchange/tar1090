@@ -34,7 +34,7 @@
     };
     let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
     let hide_freestar = () => {
-    for (let id of ['tracking_leaderboard_container', 'adsbexchange_mobile_tracking_leaderboard', 'adsbexchange_medrec_atf', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2', 'adsbexchange_full_details_leaderboard', 'adsbexchange_full_details_leaderboard_2', 'FreeStarVideoAdContainer_Slider', 'FreeStarVideoAdContainer_Slider_mw', 'adsbexchange_1x1_bouncex']) { hideById(id);};
+    for (let id of ['tracking_leaderboard_container', 'adsbexchange_medrec_atf', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2', 'adsbexchange_full_details_leaderboard', 'FreeStarVideoAdContainer_Slider', 'FreeStarVideoAdContainer_Slider_mw', 'adsbexchange_1x1_bouncex']) { hideById(id);};
     // Ensure full details iframe is full height, in case the ad is hidden
     document.getElementById('full_details_iframe').style.height = '100%';
     };
@@ -147,18 +147,6 @@
         </div>
         <!-- end freestar -->
         <iframe id="full_details_iframe"></iframe>
-        <!-- freestar body: AX-680 evaluation unit.
-             Lives in the parent document, not details.html: that page is loaded in the iframe above
-             and has no Freestar context of its own (no config object, no pubfig loader), so a slot
-             placed inside it would throw on enabled_slots.push. Freestar asked for this "underneath
-             the plane image", which is inside the iframe — see AX-680 for the discrepancy. -->
-        <!-- Tag ID: adsbexchange_full_details_leaderboard_2 -->
-        <div align="center" data-freestar-ad="__320x100" id="adsbexchange_full_details_leaderboard_2">
-            <script data-cfasync="false" type="text/javascript">
-                freestar.config.enabled_slots.push({ placementName: "adsbexchange_full_details_leaderboard_2", slotId: "adsbexchange_full_details_leaderboard_2" });
-            </script>
-        </div>
-        <!-- end freestar -->
       </div>
 
       <div id="selected_infoblock" style="display: none">
@@ -883,14 +871,6 @@
             </div>
           </div>
         </div>
-        <!-- freestar body: AX-680 mobile footer unit, tag as supplied by Freestar. -->
-        <!-- Tag ID: adsbexchange_mobile_tracking_leaderboard -->
-        <div align="center" data-freestar-ad="__320x100" id="adsbexchange_mobile_tracking_leaderboard">
-            <script data-cfasync="false" type="text/javascript">
-                freestar.config.enabled_slots.push({ placementName: "adsbexchange_mobile_tracking_leaderboard", slotId: "adsbexchange_mobile_tracking_leaderboard" });
-            </script>
-        </div>
-        <!-- end freestar -->
         <!-- MAP_CONTAINER_ANCHOR -->
         <div id="map_canvas" style="background-color:#D2D2D2;">
         </div>
