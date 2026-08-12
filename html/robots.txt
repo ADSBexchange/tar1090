@@ -1,7 +1,9 @@
 User-agent: *
+Allow: /ads.txt
 Disallow: /api/
 Disallow: /mapproxy/
 Disallow: /re-api/
+Disallow: /globe_history/
 
 # Allow all static pages
 Allow: /$
