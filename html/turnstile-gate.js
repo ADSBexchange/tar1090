@@ -25,7 +25,7 @@
 var ghTokenReady;
 
 (function () {
-    var TOKEN_ENDPOINT = '/gh-token';
+    var TOKEN_ENDPOINT = '/turnstile-token';
     var TURNSTILE_API = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
     var REFRESH_MARGIN_MS = 5 * 60 * 1000; // re-mint 5 min before expiry
     var RETRY_DELAY_MS = 60 * 1000;        // back off after a failed attempt
