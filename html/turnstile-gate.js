@@ -1,7 +1,7 @@
 // Historical-data access gate (client half).
 //
 // On the ADSBx globe, historical trace/heatmap files under /globe_history/ are
-// protected by the globe-history-gate Cloudflare Worker: a request needs a
+// protected by the globe-turnstile Cloudflare Worker: a request needs a
 // short-lived signed cookie that is only issued after a Cloudflare Turnstile
 // challenge. This module obtains that cookie on page load and refreshes it
 // before it expires, so a real browser transparently keeps access while bulk
