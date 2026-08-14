@@ -7690,15 +7690,15 @@ function getTrace(newPlane, hex, options) {
 
         // Historical-data gate: a 403 on a globe_history request means the access
         // token is missing or expired. Re-mint once and resume. The one-shot
-        // options._ghRetried guard prevents a retry storm; a single re-mint fixes
+        // options._globeGateRetried guard prevents a retry storm; a single re-mint fixes
         // the cookie for every following request. For a bulk list this resumes at
         // the next item (getTrace pops from options.list) rather than re-fetching
         // the failed one — acceptable, since the point is to re-arm the cookie.
-        if (jqxhr && jqxhr.status === 403 && options._historic && !options._ghRetried
-            && typeof ghGateActive === 'function' && ghGateActive()) {
-            options._ghRetried = true;
+        if (jqxhr && jqxhr.status === 403 && options._historic && !options._globeGateRetried
+            && typeof globeGateActive === 'function' && globeGateActive()) {
+            options._globeGateRetried = true;
             const retryHex = options.plane;
-            ghEnsureToken(true).then(function() {
+            globeEnsureToken(true).then(function() {
                 getTrace(options.list ? null : g.planes[retryHex], retryHex, options);
             });
             return;

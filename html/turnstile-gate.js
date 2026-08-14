@@ -14,15 +14,15 @@
 // file's position in the script order does not matter.
 //
 // Exports (globals, since tar1090 has no module system):
-//   ghTokenReady          - Promise, resolves once an initial token attempt
+//   globeTokenReady          - Promise, resolves once an initial token attempt
 //                           settles (or immediately when disabled)
-//   ghEnsureToken(force)  - Promise, mint a token now (called on a 403)
-//   ghGateActive()        - bool, whether the gate is active on this page
-//   ghEnforcing()         - bool, whether access should block on a token
+//   globeEnsureToken(force)  - Promise, mint a token now (called on a 403)
+//   globeGateActive()        - bool, whether the gate is active on this page
+//   globeEnforcing()         - bool, whether access should block on a token
 
 "use strict";
 
-var ghTokenReady;
+var globeTokenReady;
 
 (function () {
     var TOKEN_ENDPOINT = '/turnstile-token';
@@ -41,7 +41,7 @@ var ghTokenReady;
     var readyResolvedOnce = false;
     var resolveReady;
 
-    ghTokenReady = new Promise(function (res) { resolveReady = res; });
+    globeTokenReady = new Promise(function (res) { resolveReady = res; });
 
     function settleReadyOnce() {
         if (!readyResolvedOnce) { readyResolvedOnce = true; resolveReady(); }
@@ -79,7 +79,7 @@ var ghTokenReady;
                 container.style.zIndex = '2000';
                 document.body.appendChild(container);
             }
-            window.ghOnTurnstileLoad = function () {
+            window.globeOnTurnstileLoad = function () {
                 try {
                     widgetId = window.turnstile.render('#turnstile-gate-container', {
                         sitekey: turnstileSiteKey,
@@ -95,7 +95,7 @@ var ghTokenReady;
                 }
             };
             var s = document.createElement('script');
-            s.src = TURNSTILE_API + '&onload=ghOnTurnstileLoad';
+            s.src = TURNSTILE_API + '&onload=globeOnTurnstileLoad';
             s.async = true;
             s.defer = true;
             s.onerror = function () { reject(new Error('turnstile api load failed')); };
@@ -171,10 +171,10 @@ var ghTokenReady;
         return inFlight;
     }
 
-    window.ghGateActive = function () { return enabled; };
-    window.ghEnforcing = function () { return enforce; };
+    window.globeGateActive = function () { return enabled; };
+    window.globeEnforcing = function () { return enforce; };
 
-    window.ghEnsureToken = function (force) {
+    window.globeEnsureToken = function (force) {
         if (!enabled) return Promise.resolve();
         if (force && !inFlight && refreshTimer) clearTimeout(refreshTimer);
         return doMint();
