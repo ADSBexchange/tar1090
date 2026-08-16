@@ -9,6 +9,7 @@
     --TXTCOLOR1: #003f4b;
     --TXTCOLOR2: #050505;
     --TXTCOLOR3: #101010;
+    --AD-FOOTER-H: 100px;
 }
 
 html, body {
@@ -1161,3 +1162,33 @@ div.sticky {
     white-space: nowrap;
 }
 
+
+/* Mobile footer ad unit. The map canvas is shortened by the ad height rather than
+   overlaying it, so the OpenLayers controls, scale bar and OpenStreetMap attribution
+   (required by ODbL) all reposition above it. #credits is anchored to #map_container
+   rather than the canvas, so it needs its own offset. */
+
+#mobile_tracking_leaderboard_container {
+    display: none;
+}
+
+@media (max-width: 500px) {
+    #mobile_tracking_leaderboard_container {
+        display: block;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: var(--AD-FOOTER-H);
+        z-index: 90;
+        background-color: #D2D2D2;
+    }
+
+    #map_canvas {
+        height: calc(100% - var(--AD-FOOTER-H));
+    }
+
+    #credits {
+        bottom: calc(var(--AD-FOOTER-H) + 10px * var(--SCALE));
+    }
+}
