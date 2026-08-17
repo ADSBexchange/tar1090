@@ -883,17 +883,6 @@
             </div>
           </div>
         </div>
-        <!-- freestar body. Anchored to the bottom of the map area; style.css shortens the map
-             canvas to match so the controls and attribution stay visible. -->
-        <div id="mobile_tracking_leaderboard_container">
-            <!-- Tag ID: adsbexchange_mobile_tracking_leaderboard -->
-            <div align="center" data-freestar-ad="__320x100" id="adsbexchange_mobile_tracking_leaderboard">
-                <script data-cfasync="false" type="text/javascript">
-                    freestar.config.enabled_slots.push({ placementName: "adsbexchange_mobile_tracking_leaderboard", slotId: "adsbexchange_mobile_tracking_leaderboard" });
-                </script>
-            </div>
-        </div>
-        <!-- end freestar -->
         <!-- MAP_CONTAINER_ANCHOR -->
         <div id="map_canvas" style="background-color:#D2D2D2;">
         </div>
@@ -1259,6 +1248,19 @@
       </div> <!-- sidebar_container -->
 
     </div> <!-- layout_container -->
+
+    <!-- freestar body. Sits below layout_container, which style.css shrinks by the same height on
+         mobile so the map, info panels and attribution all reflow above it. -->
+    <div id="mobile_tracking_leaderboard_container">
+      <!-- Tag ID: adsbexchange_mobile_tracking_leaderboard -->
+      <div align="center" data-freestar-ad="__320x100" id="adsbexchange_mobile_tracking_leaderboard">
+        <script data-cfasync="false" type="text/javascript">
+          freestar.config.enabled_slots.push({ placementName: "adsbexchange_mobile_tracking_leaderboard", slotId: "adsbexchange_mobile_tracking_leaderboard" });
+        </script>
+      </div>
+    </div>
+    <!-- end freestar -->
+
 
     <div id="update_error" class="hidden error_box">
       Problem fetching data from the server:<br>

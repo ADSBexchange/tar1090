@@ -1163,32 +1163,25 @@ div.sticky {
 }
 
 
-/* Mobile footer ad unit. The map canvas is shortened by the ad height rather than
-   overlaying it, so the OpenLayers controls, scale bar and OpenStreetMap attribution
-   (required by ODbL) all reposition above it. #credits is anchored to #map_container
-   rather than the canvas, so it needs its own offset. */
+/* Mobile footer ad unit. layout_container is shrunk by the ad height rather than the ad
+   overlaying the page, so the map, its controls, the info panels and the OpenStreetMap
+   attribution (required by ODbL) all reflow above it. */
 
 #mobile_tracking_leaderboard_container {
     display: none;
 }
 
 @media (max-width: 500px) {
-    #mobile_tracking_leaderboard_container {
-        display: block;
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: var(--AD-FOOTER-H);
-        z-index: 90;
-        background-color: #D2D2D2;
-    }
-
-    #map_canvas {
+    #layout_container {
         height: calc(100% - var(--AD-FOOTER-H));
     }
 
-    #credits {
-        bottom: calc(var(--AD-FOOTER-H) + 10px * var(--SCALE));
+    #mobile_tracking_leaderboard_container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: var(--AD-FOOTER-H);
+        background-color: #D2D2D2;
     }
 }
