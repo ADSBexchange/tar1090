@@ -1163,15 +1163,14 @@ div.sticky {
 }
 
 
-/* Mobile footer ad unit. layout_container is shrunk by the ad height rather than the ad
-   overlaying the page, so the map, its controls, the info panels and the OpenStreetMap
-   attribution (required by ODbL) all reflow above it. */
-
 #mobile_tracking_leaderboard_container {
     display: none;
 }
 
-@media (max-width: 500px) {
+/* 768px matches the breakpoint in Freestar's own https://a.pub.network/adsbexchange-com/cls.css
+   for these placements. We don't load their stylesheet directly so this keeps working if
+   that CDN is ever unavailable. */
+@media (max-width: 768px) {
     #layout_container {
         height: calc(100% - var(--AD-FOOTER-H));
     }
@@ -1185,15 +1184,11 @@ div.sticky {
         background-color: #000000;
     }
 
-    /* These are positioned against the viewport rather than layout_container, so the shrink
-       above does not move them. Lift each by the ad height. */
     #selected_infoblock {
         bottom: var(--AD-FOOTER-H);
         height: calc(100% - var(--AD-FOOTER-H));
     }
 
-    /* The error boxes sit outside layout_container, so they anchor to the viewport and would
-       otherwise float over the ad. Lift them by the same height. */
     .error_box {
         bottom: calc( 90px * var(--SCALE) + var(--AD-FOOTER-H));
     }
