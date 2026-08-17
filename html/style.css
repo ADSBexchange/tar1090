@@ -39,9 +39,6 @@ select {
 #layout_container {
     display: flex;
     height: 100%;
-    /* Positioning context for the absolutely-positioned info blocks, so they size against
-       this container rather than the viewport. */
-    position: relative;
 }
 
 #selected_infoblock {
@@ -1185,7 +1182,14 @@ div.sticky {
         justify-content: center;
         width: 100%;
         height: var(--AD-FOOTER-H);
-        background-color: #D2D2D2;
+        background-color: #000000;
+    }
+
+    /* These are positioned against the viewport rather than layout_container, so the shrink
+       above does not move them. Lift each by the ad height. */
+    #selected_infoblock {
+        bottom: var(--AD-FOOTER-H);
+        height: calc(100% - var(--AD-FOOTER-H));
     }
 
     /* The error boxes sit outside layout_container, so they anchor to the viewport and would
