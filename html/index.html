@@ -29,8 +29,6 @@
     freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
     // Page Specific
     freestar.config.disabledProducts = {
-    // Left disabled: the mobile footer uses Freestar's slot tag, positioned by us, rather than
-    // their auto-injected stickyFooter product, which never initialises on our site.
     stickyFooter: true,
     googleInterstitial: true
     };
@@ -149,9 +147,6 @@
         </div>
         <!-- end freestar -->
         <iframe id="full_details_iframe"></iframe>
-        <!-- freestar body. Lives in the parent document, not details.html: that page loads in the
-             iframe above and has no Freestar context of its own, so a slot placed inside it would
-             throw on enabled_slots.push. -->
         <!-- Tag ID: adsbexchange_full_details_leaderboard_2 -->
         <div align="center" data-freestar-ad="__320x100" id="adsbexchange_full_details_leaderboard_2">
             <script data-cfasync="false" type="text/javascript">
@@ -1249,8 +1244,8 @@
 
     </div> <!-- layout_container -->
 
-    <!-- freestar body. Sits below layout_container, which style.css shrinks by the same height on
-         mobile so the map, info panels and attribution all reflow above it. -->
+    <!-- Mobile ad strip. Sits below layout_container, which style.css shrinks by the same height
+         on mobile so the map, info panels and attribution all reflow above it. -->
     <div id="mobile_tracking_leaderboard_container">
       <!-- Tag ID: adsbexchange_mobile_tracking_leaderboard -->
       <div align="center" data-freestar-ad="__320x100" id="adsbexchange_mobile_tracking_leaderboard">

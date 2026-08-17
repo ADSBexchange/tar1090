@@ -39,6 +39,9 @@ select {
 #layout_container {
     display: flex;
     height: 100%;
+    /* Positioning context for the absolutely-positioned info blocks, so they size against
+       this container rather than the viewport. */
+    position: relative;
 }
 
 #selected_infoblock {
@@ -1183,5 +1186,15 @@ div.sticky {
         width: 100%;
         height: var(--AD-FOOTER-H);
         background-color: #D2D2D2;
+    }
+
+    /* The error boxes sit outside layout_container, so they anchor to the viewport and would
+       otherwise float over the ad. Lift them by the same height. */
+    .error_box {
+        bottom: calc( 90px * var(--SCALE) + var(--AD-FOOTER-H));
+    }
+
+    #js_error {
+        bottom: calc( 5px + var(--AD-FOOTER-H));
     }
 }
