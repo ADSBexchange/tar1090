@@ -37,6 +37,7 @@
     for (let id of ['tracking_leaderboard_container', 'mobile_tracking_leaderboard_container', 'adsbexchange_medrec_atf', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2', 'adsbexchange_full_details_leaderboard', 'FreeStarVideoAdContainer_Slider', 'FreeStarVideoAdContainer_Slider_mw', 'adsbexchange_1x1_bouncex']) { hideById(id);};
     // Ensure full details iframe is full height, in case the ad is hidden
     document.getElementById('full_details_iframe').style.height = '100%';
+    document.getElementById('layout_container') && (document.getElementById('layout_container').style.height = '100%');
     };
     let is_subscriber = false;
     let load_freestar = () => {
