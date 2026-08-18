@@ -1167,6 +1167,11 @@ div.sticky {
     display: none;
 }
 
+/* Subscribers get no ad, so collapsing the height collapses every offset derived from it. */
+body.no-ads {
+    --AD-FOOTER-H: 0px;
+}
+
 /* 768px matches the breakpoint in Freestar's own https://a.pub.network/adsbexchange-com/cls.css
    for these placements. We don't load their stylesheet directly so this keeps working if
    that CDN is ever unavailable. */
