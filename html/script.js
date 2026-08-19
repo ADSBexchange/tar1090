@@ -7587,13 +7587,16 @@ function getTrace(newPlane, hex, options) {
         URL1 = null;
         URL2 = 'globe_history/' + zDateString(refDate).replace(/-/g, '/') + '/traces/' + hex.slice(-2) + '/trace_full_' + hex + '.json';
         traceRate += 3;
+        options._historic = true;
     } else {
         URL1 = 'data/traces/'+ hex.slice(-2) + '/trace_recent_' + hex + '.json';
         URL2 = 'data/traces/'+ hex.slice(-2) + '/trace_full_' + hex + '.json';
         traceRate += 2;
+        options._historic = false;
     }
     if (showTrace && trace_hist_only) {
         URL2 = 'globe_history/' + zDateString(refDate).replace(/-/g, '/') + '/traces/' + hex.slice(-2) + '/trace_full_' + hex + '.json';
+        options._historic = true;
     }
 
     traceOpts.follow = (options.follow == true);
@@ -7680,9 +7683,27 @@ function getTrace(newPlane, hex, options) {
         options.defer = null;
         this.options = null;
     })
-        .fail(function() {
+        .fail(function(jqxhr) {
         const options = this.options;
+        this.options = null;
         const plane = g.planes[options.plane];
+
+        // Historical-data gate: a 403 on a globe_history request means the access
+        // token is missing or expired. Re-mint once and resume. The one-shot
+        // options._globeGateRetried guard prevents a retry storm; a single re-mint fixes
+        // the cookie for every following request. For a bulk list this resumes at
+        // the next item (getTrace pops from options.list) rather than re-fetching
+        // the failed one — acceptable, since the point is to re-arm the cookie.
+        if (jqxhr && jqxhr.status === 403 && options._historic && !options._globeGateRetried
+            && typeof globeGateActive === 'function' && globeGateActive()) {
+            options._globeGateRetried = true;
+            const retryHex = options.plane;
+            globeEnsureToken(true).then(function() {
+                getTrace(options.list ? null : g.planes[retryHex], retryHex, options);
+            });
+            return;
+        }
+
         if (showTrace)
             legShift(0, plane);
         else
@@ -7694,7 +7715,6 @@ function getTrace(newPlane, hex, options) {
             plane.getAircraftData();
             refreshSelected();
         }
-        this.options = null;
     });
 
     return newPlane;
