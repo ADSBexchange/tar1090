@@ -1167,6 +1167,10 @@ div.sticky {
     display: none;
 }
 
+#adsbexchange_left_rail {
+    margin: calc( 10px * var(--SCALE)) 0;
+}
+
 /* Subscribers get no ad, so collapsing the height collapses every offset derived from it. */
 body.no-ads {
     --AD-FOOTER-H: 0px;
