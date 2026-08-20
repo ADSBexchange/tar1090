@@ -1615,6 +1615,7 @@ jQuery('#selected_altitude_geom1')
         setState: function (state) {
             if (state) {
                 jQuery("#sidebar_container").show();
+                requestAdSlots([AdSlots.MEDREC_ATF, AdSlots.RIGHT_RAIL_2]);
                 jQuery("#expand_sidebar_button").show();
                 jQuery("#toggle_sidebar_button").removeClass("show_sidebar");
                 jQuery("#toggle_sidebar_button").addClass("hide_sidebar");
@@ -1645,6 +1646,7 @@ jQuery('#selected_altitude_geom1')
             } else {
                 if (loadFinished) {
                     jQuery("#sidebar_container").hide();
+                    destroyAdSlots([AdSlots.MEDREC_ATF, AdSlots.RIGHT_RAIL_2]);
                     jQuery("#expand_sidebar_button").hide();
                     jQuery("#toggle_sidebar_button").removeClass("hide_sidebar");
                     jQuery("#toggle_sidebar_button").addClass("show_sidebar");
@@ -1746,6 +1748,9 @@ jQuery('#selected_altitude_geom1')
     if (onMobile) {
         enableMouseover = false;
         (typeof hideById != 'undefined') && (hideById) && (hideById('tracking_leaderboard_container'));
+    } else {
+        // Desktop-only overlay: request it only where it is shown (hidden on mobile above).
+        requestAdSlots([AdSlots.TRACKING_LEADERBOARD]);
     }
 
     new Toggle({
@@ -4941,7 +4946,8 @@ function adjustInfoBlock() {
         }
 
         jQuery('#selected_infoblock').show();
-        
+        requestAdSlots([AdSlots.LEFT_RAIL]);
+
         // Hide Full Details, Flight Activity, and History for UAVs
         if (enableUAV && SelectedPlane && SelectedPlane.isUAV()) {
             jQuery('#feature_landings').hide();
@@ -4966,6 +4972,7 @@ function adjustInfoBlock() {
         jQuery('#credits').css('left', '');
 
         jQuery('#selected_infoblock').hide();
+        destroyAdSlots([AdSlots.LEFT_RAIL]);
     }
 
     let photoWidth = document.getElementById('photo_container').clientWidth;
