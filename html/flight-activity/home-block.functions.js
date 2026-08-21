@@ -9,10 +9,7 @@ function resetFunction() {
       jQuery("#full_details_window").show(
         "slide",
         { direction: "left", queue: false },
-        800,
-        function () {
-          requestAdSlots([AdSlots.FULL_DETAILS_LEADERBOARD, AdSlots.FULL_DETAILS_FOOTER]);
-        }
+        800
       );
       fullDetails = false;
     }
@@ -34,7 +31,6 @@ function resetFlightPanel() {
   jQuery("#takeoff_landings_block").empty();
   jQuery("#flight_activity_expand").attr("class", "icon icon_down");
   jQuery("#full_details_window").hide();
-  destroyAdSlots([AdSlots.FULL_DETAILS_LEADERBOARD, AdSlots.FULL_DETAILS_FOOTER]);
 }
 
 //Full details button click. This checks for selected plane and then updates details iframe accordingly. 
@@ -52,7 +48,6 @@ jQuery(".full_detail").on("click", function () {
           function () {
             fullDetails = true;
             toggles["enableInfoblock"].state = false;
-            destroyAdSlots([AdSlots.LEFT_RAIL]);
           }
         );
       }
@@ -68,7 +63,6 @@ jQuery("#close_full_details").on("click", function () {
     function () {
       jQuery("#full_details_iframe").attr("src", "");
       toggles["enableInfoblock"].state = true;
-      destroyAdSlots([AdSlots.FULL_DETAILS_LEADERBOARD, AdSlots.FULL_DETAILS_FOOTER]);
     }
   );
 });
