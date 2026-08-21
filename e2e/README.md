@@ -61,9 +61,8 @@ Projects: `desktop` (1400×900) and `mobile` (Pixel 5, <768px). Target `?mobile`
 
 ## Notes
 
-- `fixtures/aircraft.json` is **not used by the CI suite** — it's a convenience fixture for anyone
-  doing a manual "real aircraft selection" run against the local recipe (stop readsb, drop it into
-  `readsb-output/`).
+- The suite needs **no aircraft** — it toggles panel visibility directly, which is the transition the
+  watcher reacts to, so it runs against an empty map (no feed / VPN) on localhost.
 - CI against **dev** needs VPN/VPC reachability to `globe.dev`; a public prod URL later would need none.
 - `node_modules/` and reports are gitignored; this folder is dev-only and never deploys
   (tar1090's `install.sh` copies only `html/`).
