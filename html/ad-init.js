@@ -24,4 +24,6 @@ jQuery(function () {
   watchPanel("selected_infoblock", "selectedInfoblock", bus);
   watchPanel("sidebar_container", "sidebar", bus);
   watchPanel("tracking_leaderboard_container", "mapOverlay", bus);
+
+  window.__adPanelsReady = true; // all watchers attached (used by E2E to avoid a startup race)
 });
