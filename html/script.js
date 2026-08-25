@@ -8120,12 +8120,21 @@ function loadReplay(ts) {
         fetch(chunk.url, { signal: replay.abortController.signal })
             .then(
                 (response) => {
+                    // 403: re-mint the access token once and reload this chunk.
+                    if (response.status === 403 && replay.gateRetriedKey != rKey
+                        && typeof globeGateActive === 'function' && globeGateActive()) {
+                        replay.gateRetriedKey = rKey;
+                        ff();
+                        globeEnsureToken(true).then(function() { loadReplay(ts); });
+                        return;
+                    }
                     if (!response.ok) {
                         throw new Error(`HTTP error, status = ${response.status}`);
                     }
                     response.arrayBuffer()
                         .then((data) => {
                             delete replay.abortController;
+                            delete replay.gateRetriedKey;
                             g.replayCache.add(rKey, data);
                             initReplay(chunk, data);
                             //console.log(`loaded: ${rKey}`);

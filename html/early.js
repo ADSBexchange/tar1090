@@ -472,13 +472,33 @@ if (uuid) {
 
 
 let heatmapLoadingState = {};
-function loadHeatChunk() {
-    if (heatmapLoadingState.index >= heatChunks.length) {
-        heatmapDefer.resolve();
-        return; // done, stop recursing
+let heatmapGateRetried = {};
+
+// turnstile-gate.js resolves its state at DOMContentLoaded, so a request that
+// fails while the page is still parsing has to consult it later.
+function heatmapWhenGateReady(fn) {
+    if (document.readyState == 'loading') {
+        document.addEventListener('DOMContentLoaded', fn);
+    } else {
+        fn();
+    }
+}
+
+// retryNum re-requests one chunk rather than taking the next off the queue.
+function loadHeatChunk(retryNum) {
+    let num;
+    if (retryNum != null) {
+        num = retryNum;
+    } else {
+        if (heatmapLoadingState.index >= heatChunks.length) {
+            heatmapDefer.resolve();
+            return; // done, stop recursing
+        }
+        num = heatmapLoadingState.index;
+        heatmapLoadingState.index++;
     }
 
-    let time = new Date(heatmapLoadingState.start + heatmapLoadingState.index * heatmapLoadingState.interval);
+    let time = new Date(heatmapLoadingState.start + num * heatmapLoadingState.interval);
     let sDate = sDateString(time);
     let index = 2 * time.getUTCHours() + Math.floor(time.getUTCMinutes() / 30);
 
@@ -490,10 +510,9 @@ function loadHeatChunk() {
     let req = jQuery.ajax({
         url: URL,
         method: 'GET',
-        num: heatmapLoadingState.index,
+        num: num,
         xhr: arraybufferRequest,
     });
-    heatmapLoadingState.index++;
 
     const sliceEnd = new Date(time.getTime() + (30 * 60 - 1) * 1000);
     console.log(zDateString(time) + ' ' + zuluTime(time) + ' - ' + zuluTime(sliceEnd) + ' ' + URL);
@@ -505,6 +524,20 @@ function loadHeatChunk() {
         loadHeatChunk();
     });}
     {req.fail(function(jqxhr, status, error) {
+        // 403: re-mint the access token once and re-request this chunk.
+        const num = this.num;
+        if (jqxhr && jqxhr.status === 403 && !heatmapGateRetried[num]) {
+            heatmapGateRetried[num] = true;
+            heatmapWhenGateReady(function() {
+                if (typeof globeGateActive != 'function' || !globeGateActive()
+                    || typeof globeEnsureToken != 'function') {
+                    loadHeatChunk();
+                    return;
+                }
+                globeEnsureToken(true).then(function() { loadHeatChunk(num); });
+            });
+            return;
+        }
         loadHeatChunk();
     });}
 }
@@ -522,6 +555,7 @@ if (!heatmap) {
     heatChunks = Array(numChunks).fill(null);
     heatPoints = Array(numChunks).fill(null);
     // load chunks sequentially via recursion:
+    heatmapGateRetried = {};
     heatmapLoadingState.index = 0;
     heatmapLoadingState.interval = interval;
     heatmapLoadingState.start = start;
@@ -532,7 +566,7 @@ if (!heatmap) {
 
     // 2 async chains of heat chunk loading:
     loadHeatChunk();
-    setTimeout(loadHeatChunk, 500);
+    setTimeout(function() { loadHeatChunk(); }, 500);
 
 }
 
