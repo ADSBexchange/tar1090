@@ -4941,7 +4941,7 @@ function adjustInfoBlock() {
         }
 
         jQuery('#selected_infoblock').show();
-        
+
         // Hide Full Details, Flight Activity, and History for UAVs
         if (enableUAV && SelectedPlane && SelectedPlane.isUAV()) {
             jQuery('#feature_landings').hide();

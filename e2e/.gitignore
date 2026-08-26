@@ -1,0 +1,9 @@
+node_modules/
+package-lock.json
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
+# QA walkthrough artifact source — personal doc, published via the Artifact tool, not part of the harness
+ax680-test-cases.html

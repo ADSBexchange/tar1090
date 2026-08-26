@@ -20,10 +20,15 @@
     <script src="https://www.google.com/recaptcha/enterprise.js?render=6LfaIQ0oAAAAAC4GM95h8s4zirnKqJwX2y3L8Bor"></script>
 
     <!-- freestar header -->
-    <link rel="stylesheet" href="https://a.pub.network/core/pubfig/cls.css">
+    <link rel="stylesheet" href="https://a.pub.network/adsbexchange-com/cls.css">
     <script data-cfasync="false" type="text/javascript">
     var freestar = freestar || {};
     freestar.queue = freestar.queue || [];
+    // Local dev only: GAM won't serve ads to unsafelisted domains, so tell it to treat localhost as
+    // the production domain. tar1090 rewrites the URL and strips ?fstesturl=, so use the JS method.
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      freestar.queue.push(function () { googletag.pubads().set('page_url', 'https://adsbexchange.com/'); });
+    }
     freestar.config = freestar.config || {};
     freestar.config.enabled_slots = [];
     freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
@@ -34,9 +39,10 @@
     };
     let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
     let hide_freestar = () => {
-    for (let id of ['tracking_leaderboard_container', 'adsbexchange_medrec_atf', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2', 'adsbexchange_full_details_leaderboard', 'FreeStarVideoAdContainer_Slider', 'FreeStarVideoAdContainer_Slider_mw', 'adsbexchange_1x1_bouncex']) { hideById(id);};
+    for (let id of ['tracking_leaderboard_container', 'mobile_tracking_leaderboard_container', 'adsbexchange_medrec_atf', 'adsbexchange_right_rail_1', 'adsbexchange_right_rail_2', 'adsbexchange_left_rail', 'adsbexchange_full_details_leaderboard', 'adsbexchange_full_details_footer', 'FreeStarVideoAdContainer_Slider', 'FreeStarVideoAdContainer_Slider_mw', 'adsbexchange_1x1_bouncex']) { hideById(id);};
     // Ensure full details iframe is full height, in case the ad is hidden
     document.getElementById('full_details_iframe').style.height = '100%';
+    document.body.classList.add('no-ads');
     };
     let is_subscriber = false;
     let load_freestar = () => {
@@ -138,15 +144,14 @@
         <!-- freestar body -->
           <div class="sticky full_details_page_background">
             <!-- Tag ID: adsbexchange_full_details_leaderboard -->
-            <div align="center" data-freestar-ad="__728x90" id="adsbexchange_full_details_leaderboard">
-                <script data-cfasync="false" type="text/javascript">
-                freestar.config.enabled_slots.push({ placementName: "adsbexchange_full_details_leaderboard", slotId: "adsbexchange_full_details_leaderboard" });
-                </script>
-            </div>
+            <div align="center" data-freestar-ad="__728x90" id="adsbexchange_full_details_leaderboard"></div>
             <div id="close_full_details" class="pointer closeButton"></div>
         </div>
         <!-- end freestar -->
         <iframe id="full_details_iframe"></iframe>
+        <div class="full_details_footer_ad full_details_page_background">
+            <div align="center" data-freestar-ad="__728x90" id="adsbexchange_full_details_footer"></div>
+        </div>
       </div>
 
       <div id="selected_infoblock" style="display: none">
@@ -844,6 +849,8 @@
               </div>
           </div>
 
+          <div align="center" data-freestar-ad="__180x150" id="adsbexchange_left_rail"></div>
+
           <div class="sectionTitle">
             <div class="section-title-content">
               Export KML
@@ -862,13 +869,10 @@
 
       <div id="map_container" style="background-color:#D2D2D2;">
         <div class="banner-adv" id="tracking_leaderboard_container" style="position: absolute; bottom: calc( 90px * var(--SCALE)); right: calc( 45px * var(--SCALE)); border: calc( 2px * var(--SCALE)); height: 127px; width: 970px; z-index: 99;">
-          <div title="Close" style="z-indx:99; position: absolute; top: 0px; right: 2px; cursor: pointer;display: block;height: 17px;width: 44px;line-height: 17px;color: white;font-family: Arial;text-shadow: black 2px 1px 1px;font-size: 12px;text-align: center;opacity: 1;white-space: nowrap;border-top-left-radius: 4px;border-top-right-radius: 4px;background-color: grey;"><span style="display: inline-block; line-height: normal; height: 17px;" onclick="jQuery('#tracking_leaderboard_container').css('display','none');freestar.deleteAdSlots('adsbexchange_tracking_leaderboard');">Close</span></div>
+          <div title="Close" style="z-indx:99; position: absolute; top: 0px; right: 2px; cursor: pointer;display: block;height: 17px;width: 44px;line-height: 17px;color: white;font-family: Arial;text-shadow: black 2px 1px 1px;font-size: 12px;text-align: center;opacity: 1;white-space: nowrap;border-top-left-radius: 4px;border-top-right-radius: 4px;background-color: grey;"><span style="display: inline-block; line-height: normal; height: 17px;" onclick="jQuery('#tracking_leaderboard_container').css('display','none');">Close</span></div>
           <div style="position: absolute; bottom: 0; right: 0; height: 110px; width: 970px">
-            <div data-freestar-ad="__970x90" id="adsbexchange_tracking_leaderboard" style="justify-content: right; align-items: start">
-              <script data-cfasync="false" type="text/javascript">
-                freestar.config.enabled_slots.push({ placementName: "adsbexchange_tracking_leaderboard", slotId: "adsbexchange_tracking_leaderboard" });
-              </script>
-            </div>
+            <!-- Requested on desktop only via ad-slots.js (hidden on mobile); destroyed by the Close button above -->
+            <div data-freestar-ad="__970x90" id="adsbexchange_tracking_leaderboard" style="justify-content: right; align-items: start"></div>
           </div>
         </div>
         <!-- MAP_CONTAINER_ANCHOR -->
@@ -1088,11 +1092,8 @@
             </table>
 
         <!-- Tag ID: adsbexchange_medrec_atf -->
-        <div align="center" data-freestar-ad="__300x250" id="adsbexchange_medrec_atf">
-          <script data-cfasync="false" type="text/javascript">
-            freestar.config.enabled_slots.push({ placementName: "adsbexchange_medrec_atf", slotId: "adsbexchange_medrec_atf" });
-          </script>
-        </div>
+        <!-- Requested on sidebar show / destroyed on hide via ad-slots.js (sidebar hidden by default on mobile) -->
+        <div align="center" data-freestar-ad="__300x250" id="adsbexchange_medrec_atf"></div>
         <!-- ABOVE_TABS_ANCHOR -->
 
             <div id="tabs" style="min-height: 10px; overflow: auto">
@@ -1217,11 +1218,8 @@
             <div id="legend" class="legend">
             </div>
 
-        <div align="center" data-freestar-ad="__300x600" id="adsbexchange_right_rail_2">
-          <script data-cfasync="false" type="text/javascript">
-            freestar.config.enabled_slots.push({ placementName: "adsbexchange_right_rail_2", slotId: "adsbexchange_right_rail_2" });
-          </script>
-        </div>
+        <!-- Requested on sidebar show / destroyed on hide via ad-slots.js (sidebar hidden by default on mobile) -->
+        <div align="center" data-freestar-ad="__300x600" id="adsbexchange_right_rail_2"></div>
         <!-- BELOW_LEGEND_ANCHOR -->
       </div>
 
@@ -1236,6 +1234,14 @@
       </div> <!-- sidebar_container -->
 
     </div> <!-- layout_container -->
+
+    <div id="mobile_tracking_leaderboard_container">
+      <div align="center" data-freestar-ad="__320x100" id="adsbexchange_mobile_tracking_leaderboard">
+        <script data-cfasync="false" type="text/javascript">
+          freestar.config.enabled_slots.push({ placementName: "adsbexchange_mobile_tracking_leaderboard", slotId: "adsbexchange_mobile_tracking_leaderboard" });
+        </script>
+      </div>
+    </div>
 
     <div id="update_error" class="hidden error_box">
       Problem fetching data from the server:<br>
@@ -1284,11 +1290,15 @@
     <!-- JS_ANCHOR3 -->
     <script src="planeObject.js"></script>
     <script src="activityHistory.js"></script>
+    <script src="ad-slots.js"></script>
+    <script src="panel-watcher.js"></script>
+    <script src="ad-controller.js"></script>
     <script src="script.js"></script>
     <script src="ax-identity.js"></script>
     <script src="flight-activity/api.js"></script>
     <script src="flight-activity/home-block.functions.js"></script>
     <script src="flight-activity/home-block.init.js"></script>
+    <script src="ad-init.js"></script>
     <!-- adsbexchange ads -->
 
     <!-- Google tag (gtag.js) -->
