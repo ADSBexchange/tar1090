@@ -85,8 +85,6 @@
 // opacities for various overlays
 // nexradOpacity = 0.35
 // dwdRadolanOpacity = 0.30;
-// rainViewerRadarOpacity = 0.30;
-// rainViewerCloudsOpacity = 0.30;
 // noaaInfraredOpacity = 0.35;
 // noaaRadarOpacity = 0.35;
 // openAIPOpacity = 0.70;
