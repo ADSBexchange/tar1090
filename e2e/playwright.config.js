@@ -4,7 +4,7 @@ const { defineConfig, devices } = require("@playwright/test");
 // Target selection:
 //   BASE_URL  — where to run (default local Docker recipe). e.g. https://globe.dev.adsbexchange.com
 //   TARGET    — "local" (default) or "dev". Controls global-setup: local seeds a static aircraft
-//               fixture (deterministic, offline); dev uses the live site (needs VPN + live aircraft).
+//               fixture (deterministic, offline); dev uses the live site (needs live aircraft).
 const BASE_URL = process.env.BASE_URL || "http://localhost:8080";
 const TARGET = process.env.TARGET || (BASE_URL.includes("localhost") ? "local" : "dev");
 

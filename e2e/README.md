@@ -11,7 +11,7 @@ never register at mobile width — and it does **not** assert ad fills (a live a
 non-deterministic).
 
 Panels are opened/closed by toggling their container's `display` in-page — exactly the transition
-the watcher observes — so the suite needs **no aircraft, no Docker, and no VPN**. It runs against any
+the watcher observes — so the suite needs **no aircraft and no Docker**. It runs against any
 deployed URL, which makes it CI-friendly.
 
 ## Run
@@ -21,7 +21,7 @@ deployed URL, which makes it CI-friendly.
 ```powershell
 cd e2e
 .\run-playwright.ps1                 # against local stack (http://localhost:8080)
-.\run-playwright.ps1 -Dev            # against https://globe.dev.adsbexchange.com (needs VPN)
+.\run-playwright.ps1 -Dev            # against https://globe.dev.adsbexchange.com
 .\run-playwright.ps1 -Project mobile -Headed
 .\run-playwright.ps1 -Grep "switching"
 ```
@@ -39,7 +39,7 @@ npm run install:browser        # one-time: downloads Playwright's Chromium
 # against the local Docker recipe (default BASE_URL=http://localhost:8080)
 npm run e2e
 
-# against dev (needs network access to globe.dev — i.e. VPN)
+# against dev (needs network access to globe.dev)
 npm run e2e:dev
 # or explicitly:
 BASE_URL=https://globe.dev.adsbexchange.com npx playwright test
@@ -62,7 +62,7 @@ Projects: `desktop` (1400×900) and `mobile` (Pixel 5, <768px). Target `?mobile`
 ## Notes
 
 - The suite needs **no aircraft** — it toggles panel visibility directly, which is the transition the
-  watcher reacts to, so it runs against an empty map (no feed / VPN) on localhost.
-- CI against **dev** needs VPN/VPC reachability to `globe.dev`; a public prod URL later would need none.
+  watcher reacts to, so it runs against an empty map (no feed) on localhost.
+- CI against **dev** needs network reachability to `globe.dev`; a public prod URL later would need none.
 - `node_modules/` and reports are gitignored; this folder is dev-only and never deploys
   (tar1090's `install.sh` copies only `html/`).

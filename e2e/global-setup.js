@@ -7,6 +7,6 @@ module.exports = async () => {
   const target = process.env.TARGET || (baseURL.includes("localhost") ? "local" : "dev");
   console.log(`[e2e] target=${target}  baseURL=${baseURL}`);
   if (target === "dev") {
-    console.log("[e2e] dev target: requires network access to globe.dev (VPN). Asserts wiring; fills are live/non-deterministic.");
+    console.log("[e2e] dev target: requires network access to globe.dev. Asserts wiring; fills are live/non-deterministic.");
   }
 };

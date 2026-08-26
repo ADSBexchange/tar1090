@@ -6,7 +6,7 @@
 .EXAMPLE
   .\run-playwright.ps1                 # against local stack (http://localhost:8080)
 .EXAMPLE
-  .\run-playwright.ps1 -Dev            # against https://globe.dev.adsbexchange.com (needs VPN)
+  .\run-playwright.ps1 -Dev            # against https://globe.dev.adsbexchange.com
 .EXAMPLE
   .\run-playwright.ps1 -Project mobile -Headed
 .EXAMPLE
@@ -37,7 +37,7 @@ try {
   if ($Dev) {
     $env:BASE_URL = "https://globe.dev.adsbexchange.com"
     $env:TARGET = "dev"
-    Write-Host "Target: DEV ($env:BASE_URL) — VPN required" -ForegroundColor Yellow
+    Write-Host "Target: DEV ($env:BASE_URL)" -ForegroundColor Yellow
   }
   else {
     Write-Host "Target: LOCAL (http://localhost:8080) — local stack must be up" -ForegroundColor Yellow
