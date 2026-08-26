@@ -36,6 +36,7 @@ var globeTokenReady;
     var attempt = null;      // { settle, timer } for the challenge currently running
     var inFlight = null;
     var refreshTimer = null;
+    var tokenExp = 0;
     var readyResolvedOnce = false;
     var resolveReady;
 
@@ -126,10 +127,19 @@ var globeTokenReady;
     }
 
     function scheduleRefresh(expEpochSec) {
+        tokenExp = expEpochSec;
         if (refreshTimer) clearTimeout(refreshTimer);
         var msUntil = (expEpochSec * 1000) - Date.now() - REFRESH_MARGIN_MS;
         if (msUntil < 0) msUntil = RETRY_DELAY_MS;
         refreshTimer = setTimeout(function () { doMint(); }, msUntil);
+    }
+
+    // The refresh timer does not fire while the device is asleep or the tab is
+    // frozen, so re-check the remaining lifetime when the page comes back.
+    function refreshIfDue() {
+        if (!enabled) return;
+        if (tokenExp && (tokenExp * 1000) - Date.now() > REFRESH_MARGIN_MS) return;
+        doMint();
     }
 
     function backoff() {
@@ -181,6 +191,10 @@ var globeTokenReady;
     function start() {
         computeEnabled();
         if (!enabled) { settleReadyOnce(); return; }
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) refreshIfDue();
+        });
+        window.addEventListener('focus', refreshIfDue);
         doMint();
     }
 
