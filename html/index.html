@@ -117,6 +117,10 @@
 <!--              <div id="routeRowHighlight" class="infoHeading"><span title="Reported flight origin and destination according to adsbdb.com">Route</span>:</div>-->
 <!--              <div class="infoData"><span id="highlighted_route"></span></div>-->
 <!--          </div>-->
+          <!-- Airline row from upstream airline-lookup; hidden unless enableAirlineLookup (see defaults.js) -->
+          <div id="highlighted_airline_row" style="display: none;">
+            <div class="infoHeading"><span id="highlighted_airline">n/a</span></div>
+          </div>
           <div class="rSpacer">
           </div>
           <div>
@@ -259,6 +263,14 @@
                   <div class="infoData">
                     <span title="Country of registration" id="selected_country">n/a</span>
                   </div>
+                </td>
+              </tr>
+              <tr id="selected_airline_row" class="hidden">
+                <td>
+                  <div class="infoHeading">
+                    <span title="Airline/Operator name for the active callsign">Airline: </span>
+                  </div>
+                  <div class="infoData"><span id="selected_airline" title="n/a">n/a</span></div>
                 </td>
               </tr>
               <tr>
@@ -932,6 +944,7 @@
             <span id="U" title="only show the U2 and other military planes" class="button inActiveButton" onclick="toggleMilitary();"><span class="buttonText">U</span></span>
             <span id="H" title="(H)ome / Reset Map" class="button inActiveButton" onclick="resetMap();"><span class="buttonText">H</span></span>
             <span id="T" title="All (T)racks" class="button inActiveButton" onclick="selectAllPlanes();"><span class="buttonText">T</span></span>
+            <span id="RP" title="Repla(Y)" class="button inActiveButton replayButton" onclick="showReplayBar();" style="display: none"><span class="buttonText"></span></span>
           </div>
         </div>
         <div id="header_side" class="infoHeading">
@@ -1269,7 +1282,7 @@
     <script src="libs/zstddec-tar1090-0.0.5.js"></script>
 
     <!-- ol-custom bundling created using https://github.com/wiedehopf/ol-rollup-->
-    <script src="libs/ol-custom-10.6.1.js"></script>
+    <script src="libs/ol-custom-10.9.0.js"></script>
 
     <!-- JS_ANCHOR2 -->
     <script src="early.js"></script>
@@ -1288,6 +1301,7 @@
     <script src="markers.js"></script>
 
     <!-- JS_ANCHOR3 -->
+    <script>let spriteSrc = 'images/sprites.png';</script>
     <script src="planeObject.js"></script>
     <script src="activityHistory.js"></script>
     <script src="ad-slots.js"></script>

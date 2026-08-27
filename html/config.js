@@ -33,7 +33,7 @@
 // Update GPS location (keep map centered on GPS location)
 //updateLocation = false;
 
-// Color controls for the range outline
+// Color controls for the heywhatsthat upintheair range outline
 //range_outline_color = '#0000DD';
 //range_outline_alpha = 1.0;
 //range_outline_width = 1.7;
@@ -42,7 +42,7 @@
 //range_outline_dash = [5, 5]; // null - solid line, [5, 5] - dashed line with 5 pixel lines and spaces in between
 //
 //
-// Style controls for the actal range outline:
+// Style controls for the actual range outline (dynamic, by default 24h retention, see readsb options)
 // actual_range_outline_color = '#00596b';
 // actual_range_outline_width = 1.7;
 // NOTE: dashed lines cause slowdown when zooming in, not recommended
@@ -56,6 +56,11 @@
 //
 // valid values for the above setting:
 // osm
+// OpenFreeMapBright
+// OpenFreeMapLiberty
+// OpenFreeMapPositron
+// OpenFreeMapDark
+// OpenFreeMapFiord
 // esri
 // gibs
 // osm_adsbx
@@ -231,7 +236,8 @@ ColorByAlt = {
 
 // Only display labels when zoomed in this far:
 //labelZoom = 8;
-//labelZoomGround = 12.5;
+//labelZoomGround = 14.8;
+//labelZoomAIS = 11.8;
 
 // font family for labels, default bold, could be empty or italic as well
 // labelStyle = 'bold';
@@ -266,6 +272,9 @@ ColorByAlt = {
 // show links to various registration websites (not all countries)
 // registrationLinks = true;
 
+// enable callsign-based airline lookup from the operators database
+// airlineLookup = true;
+
 // Filter implausible positions (required speed > Mach 3.5)
 // valid values: true, false, "onlyMLAT" ("" required)
 // positionFilter = true;
@@ -290,13 +299,14 @@ ColorByAlt = {
 //squareMania = false;
 
 // Columns that have a // in front of them are shown.
-/* // remove this line to mofify columns (and the one at the end)
+/* // remove this line to modify columns (and the one at the end)
 HideCols = [
 //	"#icao",
 //	"#country",
 //	"#flight",
 	"#route",
 	"#registration",
+	"#airline",
 //	"#type",
 	"#squawk",
 //	"#altitude",

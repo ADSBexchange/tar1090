@@ -222,10 +222,10 @@ if (usp.has('reset')) {
     resetSettings();
 }
 
-const feed = usp.get('feed');
-if (feed != null) {
-    console.log('feed: ' + feed);
-    let split = feed.split(',');
+if (usp.has('feed')) {
+    uuid = usp.get('feed');
+    console.log('feed: ' + uuid);
+    let split = uuid.split(',');
     if (split.length > 0) {
         uuid = [];
         for (let i in split) {
@@ -240,9 +240,24 @@ if (feed != null) {
     } else {
         console.error('uuid / feed fail!');
     }
+    const feedAsUuid = true; // treat /?feed as /?uuid
+    if (feedAsUuid) {
+        filterUuid = uuid;
+        uuid = null;
+    }
 }
 if (usp.has('uuid')) {
     filterUuid = usp.get('uuid');
+    console.log('uuid: ' + filterUuid);
+    let split = filterUuid.split(',');
+    if (split.length > 0) {
+        filterUuid = [];
+        for (let i in split) {
+            filterUuid.push(encodeURIComponent(split[i]));
+        }
+    } else {
+        console.error('uuid / feed fail!');
+    }
 }
 if (usp.has('tfrs')) {
     tfrs = true;
@@ -262,12 +277,6 @@ if (customTiles)
     loStore['customTiles'] = customTiles;
 if (customTiles == 'remove')
     loStore.removeItem('customTiles');
-
-const bingKey = usp.get('BingMapsAPIKey');
-if (bingKey)
-    loStore['bingKey'] = bingKey;
-if (bingKey == 'remove')
-    loStore.removeItem('bingKey');
 
 if (usp.has('l3harris') || usp.has('ift')) {
     l3harris = true;

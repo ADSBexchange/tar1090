@@ -106,7 +106,7 @@ newChunk() {
 
 prune() {
     jq -c <"$1" >"$2" '
-    .aircraft |= map(select(has("seen") and .seen < '$INTERVAL' + 2))
+    .aircraft |= map(select(has("seen") and (.seen < '$INTERVAL' + 2 or .type == "adsc" and .seen < '$(( INTERVAL + 60 ))' )))
     | .aircraft[] |= [.hex,
     (if .ground == true then "ground" elif .alt_baro != null then .alt_baro elif .altitude != null then .altitude else .alt_geom end),
     (if .gs != null then .gs else .tas end),
