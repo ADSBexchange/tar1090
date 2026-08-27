@@ -179,16 +179,6 @@ var globeTokenReady;
         return inFlight;
     }
 
-    // False only while the first mint attempt is still outstanding, so callers
-    // can hold a request back rather than spend it on a refusal. Goes true once
-    // a token exists or the attempt settles either way, so a failed mint does
-    // not hold the page.
-    window.globeTokenArmed = function () {
-        if (!enabled) return true;
-        if (tokenExp && (tokenExp * 1000) > Date.now()) return true;
-        return readyResolvedOnce;
-    };
-
     window.globeGateActive = function () { return enabled; };
     window.globeEnforcing = function () { return enforce; };
 
@@ -212,9 +202,14 @@ var globeTokenReady;
     // runs or a mint never settles.
     setTimeout(settleReadyOnce, 10000);
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', start);
-    } else {
+    // Start at once rather than at DOMContentLoaded: the config-*.js globals this
+    // reads are loaded immediately before this file, and the remaining scripts
+    // would otherwise be parsed before the challenge even begins. document.body
+    // exists here because this script sits at the end of the body; the listener
+    // is the fallback for any placement where it does not.
+    if (document.body) {
         start();
+    } else {
+        document.addEventListener('DOMContentLoaded', start);
     }
 })();
