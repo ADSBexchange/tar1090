@@ -3272,7 +3272,7 @@ PlaneObject.prototype.setFlight = function(flight) {
             }
         }
     }
-    if (airlineLookup && this.name !== oldName) {
+    if (this.name !== oldName) {
         this.clearAirlineCache();
     }
 }

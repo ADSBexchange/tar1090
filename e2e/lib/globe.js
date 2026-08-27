@@ -33,17 +33,6 @@ async function gotoGlobe(page, { query = "" } = {}) {
   await waitForGlobeReady(page);
 }
 
-// Force the upstream airline-lookup feature on by appending an override to config.js as it is served.
-// config.js is served no-cache and is NOT cachebust-renamed, so a route on **/config.js is reliable.
-// Call BEFORE page.goto.
-async function enableAirlineLookupViaConfig(page) {
-  await page.route("**/config.js", async (route) => {
-    const res = await route.fetch();
-    const body = (await res.text()) + "\nairlineLookup = true;\n";
-    await route.fulfill({ response: res, body, headers: { ...res.headers(), "content-length": String(Buffer.byteLength(body)) } });
-  });
-}
-
 // Collect the layer names present in the live OpenLayers map (base layers + overlays).
 async function mapLayerNames(page) {
   return page.evaluate(() =>
@@ -70,7 +59,6 @@ module.exports = {
   readGlobal,
   waitForGlobeReady,
   gotoGlobe,
-  enableAirlineLookupViaConfig,
   mapLayerNames,
   trackOperatorsFetch,
 };

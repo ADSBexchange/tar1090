@@ -281,9 +281,8 @@ let planespottersLinks = false;
 // show links to various registration websites (not all countries)
 let registrationLinks = true;
 
-// enable callsign-based airline lookup from the operators database (upstream feature).
-// ADSBx default: off. Toggle on per-deployment via config.js (airlineLookup = true).
-let airlineLookup = false;
+// enable callsign-based airline lookup from the operators database
+let airlineLookup = true;
 
 // Filter implausible positions (required speed > Mach 2.5)
 // valid values: true, false, "onlyMLAT" ("" required)

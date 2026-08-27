@@ -516,10 +516,6 @@ function db_load_type_cache() {
 }
 
 function db_load_operators_cache() {
-    if (!airlineLookup) {
-        // airline lookup disabled: skip the operators.js fetch entirely
-        return jQuery.Deferred().resolve({}).promise();
-    }
     if (operatorsCacheLoaded) {
         return jQuery.Deferred().resolve(operatorsCache).promise();
     }
@@ -4151,14 +4147,16 @@ function refreshHighlighted() {
         jQuery('#highlighted_registration').text("n/a");
     }
 
-    if (airlineLookup) {
-        jQuery('#highlighted_airline_row').show();
-        let highlightedOperator = highlighted.getAirline
-            ? highlighted.getAirline()
-            : lookupAirlineForCallsign(highlighted.name, highlighted.registration);
-        jQuery('#highlighted_airline').text(highlightedOperator ? (highlightedOperator.n || 'n/a') : 'n/a');
+    let highlightedOperator = null;
+    if (highlighted.getAirline) {
+        highlightedOperator = highlighted.getAirline();
     } else {
-        jQuery('#highlighted_airline_row').hide();
+        highlightedOperator = lookupAirlineForCallsign(highlighted.name, highlighted.registration);
+    }
+    if (highlightedOperator) {
+        jQuery('#highlighted_airline').text(highlightedOperator.n || 'n/a');
+    } else {
+        jQuery('#highlighted_airline').text('n/a');
     }
 
     jQuery('#highlighted_speed').text(format_speed_long(highlighted.gs, DisplayUnits));
