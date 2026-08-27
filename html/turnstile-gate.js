@@ -179,6 +179,16 @@ var globeTokenReady;
         return inFlight;
     }
 
+    // False only while the first mint attempt is still outstanding, so callers
+    // can hold a request back rather than spend it on a refusal. Goes true once
+    // a token exists or the attempt settles either way, so a failed mint does
+    // not hold the page.
+    window.globeTokenArmed = function () {
+        if (!enabled) return true;
+        if (tokenExp && (tokenExp * 1000) > Date.now()) return true;
+        return readyResolvedOnce;
+    };
+
     window.globeGateActive = function () { return enabled; };
     window.globeEnforcing = function () { return enforce; };
 
@@ -197,6 +207,10 @@ var globeTokenReady;
         window.addEventListener('focus', refreshIfDue);
         doMint();
     }
+
+    // Safety net: nothing should wait on the gate indefinitely if start() never
+    // runs or a mint never settles.
+    setTimeout(settleReadyOnce, 10000);
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', start);
