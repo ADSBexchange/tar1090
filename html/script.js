@@ -363,7 +363,11 @@ function fetchFail(jqxhr, status, error) {
             && typeof globeGateActive === 'function' && globeGateActive()
             && typeof globeEnsureToken === 'function') {
             lastGateMint = gateMintNow;
-            globeEnsureToken(true);
+            globeEnsureToken(true).then(function () {
+                // Refetch on the next tick rather than waiting out the poll
+                // interval, which grows with session age.
+                triggerRefresh++;
+            });
         }
         if (jqxhr.readyState == 0) error = "Can't connect to server, check your network!";
         let errText = status + (error ? (": " + error) : "");
@@ -560,6 +564,13 @@ function fetchData(options) {
         return;
     }
     if (heatmap || replay || showTrace || pTracks || !loadFinished || inhibitFetch) {
+        return;
+    }
+    // The data paths can require an access token. While the gate is still
+    // arming, skip the cycle: a request now is refused, and the refusal shows
+    // as a connection error. checkMovement calls back every 50 ms.
+    if (typeof globeGateActive === 'function' && globeGateActive()
+        && typeof globeTokenArmed === 'function' && !globeTokenArmed()) {
         return;
     }
     let currentTime = new Date().getTime();
