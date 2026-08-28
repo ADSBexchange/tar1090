@@ -13,8 +13,10 @@ test("the OpenLayers map has a non-empty layer collection", async ({ page }) => 
 });
 
 test("our OpenFreeMap base layers are present", async ({ page }) => {
-  const openFreeMap = (await mapLayerNames(page)).filter((n) => typeof n === "string" && n.startsWith("OpenFreeMap"));
-  expect(openFreeMap.length).toBeGreaterThan(0);
+  const names = await mapLayerNames(page);
+  for (const layer of ["OpenFreeMapLiberty", "OpenFreeMapPositron", "OpenFreeMapBright", "OpenFreeMapDark", "OpenFreeMapFiord"]) {
+    expect(names, `missing base layer ${layer}`).toContain(layer);
+  }
 });
 
 test("ESRI base layer (aggregator-gated)", async ({ page }) => {
