@@ -1,7 +1,7 @@
 {
-  "name": "tar1090-globe-ads-e2e",
+  "name": "tar1090-adsbx-e2e",
   "private": true,
-  "description": "Playwright E2E for the panel-driven Freestar ad lifecycle on the globe. Docker-optional: runs against any deployed URL via BASE_URL (CI-ready) or the local Docker recipe. Needs no aircraft — panels are driven by toggling visibility.",
+  "description": "Playwright tests for tar1090",
   "scripts": {
     "e2e": "playwright test",
     "e2e:dev": "cross-env BASE_URL=https://globe.dev.adsbexchange.com TARGET=dev playwright test",
