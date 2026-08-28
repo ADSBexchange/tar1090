@@ -365,6 +365,7 @@ function processReceiverUpdate(data, init) {
     }
 }
 let lastGateMint = 0;
+let gateMintPending = false;
 function fetchFail(jqxhr, status, error) {
     try {
         pendingFetches--;
@@ -382,7 +383,20 @@ function fetchFail(jqxhr, status, error) {
             && typeof globeGateActive === 'function' && globeGateActive()
             && typeof globeEnsureToken === 'function') {
             lastGateMint = gateMintNow;
-            globeEnsureToken(true);
+            gateMintPending = true;
+            globeEnsureToken(true).then(function () {
+                gateMintPending = false;
+                // Refetch on the next tick rather than waiting out the poll
+                // interval, which grows with session age.
+                triggerRefresh++;
+            }, function () {
+                gateMintPending = false;
+            });
+        }
+        // A refusal that a new token may fix is not worth reporting as a
+        // connection problem; the retry surfaces it if it persists.
+        if (gateMintPending) {
+            return;
         }
         if (jqxhr.readyState == 0) error = "Can't connect to server, check your network!";
         let errText = status + (error ? (": " + error) : "");
@@ -645,6 +659,13 @@ function fetchData(options) {
         return;
     }
     if (heatmap || replay || showTrace || pTracks || !loadFinished || inhibitFetch) {
+        return;
+    }
+    // A request is only held back once one has actually been refused and a new
+    // token is on its way: the browser may already hold a valid one, and
+    // blocking on that assumption costs a full challenge on every load.
+    // checkMovement calls back every 50 ms, so the wait is self-clearing.
+    if (gateMintPending) {
         return;
     }
     let currentTime = new Date().getTime();

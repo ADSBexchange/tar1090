@@ -198,9 +198,18 @@ var globeTokenReady;
         doMint();
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', start);
-    } else {
+    // Safety net: nothing should wait on the gate indefinitely if start() never
+    // runs or a mint never settles.
+    setTimeout(settleReadyOnce, 10000);
+
+    // Start at once rather than at DOMContentLoaded: the config-*.js globals this
+    // reads are loaded immediately before this file, and the remaining scripts
+    // would otherwise be parsed before the challenge even begins. document.body
+    // exists here because this script sits at the end of the body; the listener
+    // is the fallback for any placement where it does not.
+    if (document.body) {
         start();
+    } else {
+        document.addEventListener('DOMContentLoaded', start);
     }
 })();
