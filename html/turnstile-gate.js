@@ -1,11 +1,9 @@
 // Historical-data access gate (client half).
 //
-// On the ADSBx globe, historical trace/heatmap files under /globe_history/ are
-// protected by the globe-turnstile Cloudflare Worker: a request needs a
-// short-lived signed cookie that is only issued after a Cloudflare Turnstile
-// challenge. This module obtains that cookie on page load and refreshes it
-// before it expires, so a real browser transparently keeps access while bulk
-// scrapers (which never run the challenge) do not.
+// Requests for historical trace/heatmap files under /globe_history/ can require
+// a short-lived signed cookie, issued after a Cloudflare Turnstile challenge.
+// This module obtains that cookie on page load and refreshes it before it
+// expires.
 //
 // It is inert unless `turnstileSiteKey` is a real key: on upstream tar1090
 // installs and non-globe deployments the whole module is a no-op, and the
@@ -38,6 +36,7 @@ var globeTokenReady;
     var attempt = null;      // { settle, timer } for the challenge currently running
     var inFlight = null;
     var refreshTimer = null;
+    var tokenExp = 0;
     var readyResolvedOnce = false;
     var resolveReady;
 
@@ -128,10 +127,19 @@ var globeTokenReady;
     }
 
     function scheduleRefresh(expEpochSec) {
+        tokenExp = expEpochSec;
         if (refreshTimer) clearTimeout(refreshTimer);
         var msUntil = (expEpochSec * 1000) - Date.now() - REFRESH_MARGIN_MS;
         if (msUntil < 0) msUntil = RETRY_DELAY_MS;
         refreshTimer = setTimeout(function () { doMint(); }, msUntil);
+    }
+
+    // The refresh timer does not fire while the device is asleep or the tab is
+    // frozen, so re-check the remaining lifetime when the page comes back.
+    function refreshIfDue() {
+        if (!enabled) return;
+        if (tokenExp && (tokenExp * 1000) - Date.now() > REFRESH_MARGIN_MS) return;
+        doMint();
     }
 
     function backoff() {
@@ -155,8 +163,8 @@ var globeTokenReady;
                     scheduleRefresh(data.exp);
                 } else {
                     // Config/verification problem: retry later without wedging the
-                    // page. In log-only mode this has no user impact; in enforce
-                    // mode the fetch path surfaces a 403 and re-triggers a mint.
+                    // page. A request that needs a cookie surfaces a 403, which
+                    // re-triggers a mint.
                     backoff();
                 }
                 return data;
@@ -183,12 +191,25 @@ var globeTokenReady;
     function start() {
         computeEnabled();
         if (!enabled) { settleReadyOnce(); return; }
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) refreshIfDue();
+        });
+        window.addEventListener('focus', refreshIfDue);
         doMint();
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', start);
-    } else {
+    // Safety net: nothing should wait on the gate indefinitely if start() never
+    // runs or a mint never settles.
+    setTimeout(settleReadyOnce, 10000);
+
+    // Start at once rather than at DOMContentLoaded: the config-*.js globals this
+    // reads are loaded immediately before this file, and the remaining scripts
+    // would otherwise be parsed before the challenge even begins. document.body
+    // exists here because this script sits at the end of the body; the listener
+    // is the fallback for any placement where it does not.
+    if (document.body) {
         start();
+    } else {
+        document.addEventListener('DOMContentLoaded', start);
     }
 })();

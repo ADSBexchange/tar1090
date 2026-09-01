@@ -345,6 +345,8 @@ function processReceiverUpdate(data, init) {
         processAircraft(data.aircraft[j], init, uat);
     }
 }
+let lastGateMint = 0;
+let gateMintPending = false;
 function fetchFail(jqxhr, status, error) {
     try {
         pendingFetches--;
@@ -353,6 +355,30 @@ function fetchFail(jqxhr, status, error) {
             checkMovement();
         }
         status = jqxhr.status;
+        // 403: re-mint the access token so the next poll carries a fresh cookie.
+        // Rate limited, since one cycle can fail several requests at once, and
+        // 403 has other causes that a token will not fix. The clock is local
+        // rather than `now`, which only advances on a successful response.
+        const gateMintNow = (new Date()).getTime();
+        if ((status == 403 || status == '403') && gateMintNow - lastGateMint > 30000
+            && typeof globeGateActive === 'function' && globeGateActive()
+            && typeof globeEnsureToken === 'function') {
+            lastGateMint = gateMintNow;
+            gateMintPending = true;
+            globeEnsureToken(true).then(function () {
+                gateMintPending = false;
+                // Refetch on the next tick rather than waiting out the poll
+                // interval, which grows with session age.
+                triggerRefresh++;
+            }, function () {
+                gateMintPending = false;
+            });
+        }
+        // A refusal that a new token may fix is not worth reporting as a
+        // connection problem; the retry surfaces it if it persists.
+        if (gateMintPending) {
+            return;
+        }
         if (jqxhr.readyState == 0) error = "Can't connect to server, check your network!";
         let errText = status + (error ? (": " + error) : "");
         console.log(jqxhr);
@@ -548,6 +574,13 @@ function fetchData(options) {
         return;
     }
     if (heatmap || replay || showTrace || pTracks || !loadFinished || inhibitFetch) {
+        return;
+    }
+    // A request is only held back once one has actually been refused and a new
+    // token is on its way: the browser may already hold a valid one, and
+    // blocking on that assumption costs a full challenge on every load.
+    // checkMovement calls back every 50 ms, so the wait is self-clearing.
+    if (gateMintPending) {
         return;
     }
     let currentTime = new Date().getTime();
@@ -7587,16 +7620,13 @@ function getTrace(newPlane, hex, options) {
         URL1 = null;
         URL2 = 'globe_history/' + zDateString(refDate).replace(/-/g, '/') + '/traces/' + hex.slice(-2) + '/trace_full_' + hex + '.json';
         traceRate += 3;
-        options._historic = true;
     } else {
         URL1 = 'data/traces/'+ hex.slice(-2) + '/trace_recent_' + hex + '.json';
         URL2 = 'data/traces/'+ hex.slice(-2) + '/trace_full_' + hex + '.json';
         traceRate += 2;
-        options._historic = false;
     }
     if (showTrace && trace_hist_only) {
         URL2 = 'globe_history/' + zDateString(refDate).replace(/-/g, '/') + '/traces/' + hex.slice(-2) + '/trace_full_' + hex + '.json';
-        options._historic = true;
     }
 
     traceOpts.follow = (options.follow == true);
@@ -7688,13 +7718,13 @@ function getTrace(newPlane, hex, options) {
         this.options = null;
         const plane = g.planes[options.plane];
 
-        // Historical-data gate: a 403 on a globe_history request means the access
-        // token is missing or expired. Re-mint once and resume. The one-shot
+        // 403: the access token is missing or expired, for a recent trace as well
+        // as a historical one. Re-mint once and resume. The one-shot
         // options._globeGateRetried guard prevents a retry storm; a single re-mint fixes
         // the cookie for every following request. For a bulk list this resumes at
         // the next item (getTrace pops from options.list) rather than re-fetching
         // the failed one — acceptable, since the point is to re-arm the cookie.
-        if (jqxhr && jqxhr.status === 403 && options._historic && !options._globeGateRetried
+        if (jqxhr && jqxhr.status === 403 && !options._globeGateRetried
             && typeof globeGateActive === 'function' && globeGateActive()) {
             options._globeGateRetried = true;
             const retryHex = options.plane;
@@ -8120,12 +8150,21 @@ function loadReplay(ts) {
         fetch(chunk.url, { signal: replay.abortController.signal })
             .then(
                 (response) => {
+                    // 403: re-mint the access token once and reload this chunk.
+                    if (response.status === 403 && replay.gateRetriedKey != rKey
+                        && typeof globeGateActive === 'function' && globeGateActive()) {
+                        replay.gateRetriedKey = rKey;
+                        ff();
+                        globeEnsureToken(true).then(function() { loadReplay(ts); });
+                        return;
+                    }
                     if (!response.ok) {
                         throw new Error(`HTTP error, status = ${response.status}`);
                     }
                     response.arrayBuffer()
                         .then((data) => {
                             delete replay.abortController;
+                            delete replay.gateRetriedKey;
                             g.replayCache.add(rKey, data);
                             initReplay(chunk, data);
                             //console.log(`loaded: ${rKey}`);
