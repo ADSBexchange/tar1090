@@ -16,7 +16,7 @@
   window.__beacon = {
     publicKey: '__BEACON_PUBLIC_KEY__',
     apiUrl: '__BEACON_BASE_URL__/api/v1',
-    queue: [['init', { properties: { isSubscriber: hasCookie('adsbx_subscriber') } }]]
+    queue: [['init', { properties: { isPremium: hasCookie('adsbx_subscriber') } }]]
   };
   var s = document.createElement('script');
   s.src = '__BEACON_BASE_URL__/agent/sdk/__BEACON_PUBLIC_KEY__';
