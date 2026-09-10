@@ -1,0 +1,11 @@
+window.__beacon = {
+  publicKey: '__BEACON_PUBLIC_KEY__',
+  apiUrl: '__BEACON_BASE_URL__/api/v1',
+};
+(function () {
+  var s = document.createElement('script');
+  s.src = '__BEACON_BASE_URL__/agent/sdk/__BEACON_PUBLIC_KEY__';
+  s.async = true;
+  s.onload = function () { window.Beacon && window.Beacon.init(); };
+  document.head.appendChild(s);
+})();
