@@ -1,11 +1,25 @@
-window.__beacon = {
-  publicKey: '__BEACON_PUBLIC_KEY__',
-  apiUrl: '__BEACON_BASE_URL__/api/v1',
-};
 (function () {
+  function hasCookie(name) {
+    try {
+      var raw = document.cookie;
+      if (!raw) return false;
+      var cookies = raw.split(';');
+      var prefix = name + '=';
+      for (var i = 0; i < cookies.length; i++) {
+        if (cookies[i].replace(/^\s+/, '').indexOf(prefix) === 0) return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+  window.__beacon = {
+    publicKey: '__BEACON_PUBLIC_KEY__',
+    apiUrl: '__BEACON_BASE_URL__/api/v1',
+    queue: [['init', { properties: { isSubscriber: hasCookie('adsbx_subscriber') } }]]
+  };
   var s = document.createElement('script');
   s.src = '__BEACON_BASE_URL__/agent/sdk/__BEACON_PUBLIC_KEY__';
   s.async = true;
-  s.onload = function () { window.Beacon && window.Beacon.init(); };
   document.head.appendChild(s);
 })();
