@@ -138,6 +138,9 @@ PlaneObject.prototype.setNull = function() {
     this.msgs978   = 0;
     this.messageRate = 0;
     this.messageRateOld = 0;
+
+    this.airline = null;
+    this.airlineKey = null;
 };
 
 function planeCloneState(target, source) {
@@ -852,8 +855,9 @@ PlaneObject.prototype.updateIcon = function() {
     let labelText = null;
 
     if ( g.enableLabels && (!multiSelect || (multiSelect && this.selected)) &&
+        (this.dataSource != "ais" || g.zoomLvl >= labelZoomAIS) &&
         (
-            (g.zoomLvl >= labelZoom && this.altitude != "ground" && this.dataSource != "ais")
+            (g.zoomLvl >= labelZoom && this.altitude != "ground")
             || (g.zoomLvl >= labelZoomGround - 2 && this.speed > 5 && !this.fakeHex)
             || (g.zoomLvl >= labelZoomGround + 0 && !this.fakeHex)
             || (g.zoomLvl >= labelZoomGround + 1)
@@ -861,13 +865,13 @@ PlaneObject.prototype.updateIcon = function() {
         )
     ) {
         let callsign = "";
-        if (this.flight && this.flight.trim() && !(this.dataSource == "ais" && !g.extendedLabels))
+        if (this.flight && this.flight.trim())
             callsign =  this.flight.trim();
         else if (this.registration)
             callsign =  'reg: ' + this.registration;
         else
             callsign =   'hex: ' + this.icao;
-        if ((useRouteAPI || this.dataSource == "ais") && this.routeString) {
+        if (useRouteAPI && this.dataSource != "ais" && this.routeString) {
             if (0 && g.extendedLabels) {
                 callsign += ' - ' + this.routeString;
             } else {
@@ -2879,8 +2883,34 @@ PlaneObject.prototype.setTypeFlagsReg = function(data) {
         if (this.pia)
             this.registration = null;
     }
-    if (data.r) this.registration = `${data.r}`;
+    if (data.r) {
+        const newRegistration = `${data.r}`;
+        if (newRegistration !== this.registration) {
+            this.registration = newRegistration;
+            this.clearAirlineCache();
+        }
+    }
 }
+
+PlaneObject.prototype.clearAirlineCache = function() {
+    this.airline = null;
+    this.airlineKey = null;
+};
+
+PlaneObject.prototype.getAirline = function() {
+    if (!airlineLookup || !operatorsCache || typeof lookupAirlineForCallsign !== 'function') {
+        return null;
+    }
+    const callsign = this.name || '';
+    const registration = this.registration || '';
+    const key = `${callsign}|${registration}`;
+    if (this.airlineKey === key) {
+        return this.airline;
+    }
+    this.airlineKey = key;
+    this.airline = lookupAirlineForCallsign(callsign, registration);
+    return this.airline;
+};
 
 PlaneObject.prototype.checkForDB = function(data) {
     if (!this.dbinfoLoaded && this.icao >= 'ae6620' && this.icao <= 'ae6899') {
@@ -3014,8 +3044,12 @@ PlaneObject.prototype.routeCheck = function() {
         // we have all the pieces that allow us to lookup a route
         let route_check = { 'callsign': currentName, icao: this.icao};
         if (!this.position) {
-            // no lookup (for now)
-            return;
+            if (routeApiUrl.includes("adsb.im") && this.messages > 100) {
+                // check without plausibility check if we have received enough messages
+            } else {
+                // no lookup (for now)
+                return;
+            }
         } else if (showTrace || replay) {
             if (!routeApiUrl.includes("adsb.im")) {
                 route_check['lat'] = this.position[1];
@@ -3167,6 +3201,7 @@ function routeDoLookup() {
 }
 
 PlaneObject.prototype.setFlight = function(flight) {
+    const oldName = this.name;
     if (flight == null) {
         if (now - this.flightTs > 10 * 60) {
             this.flight = null;
@@ -3236,6 +3271,9 @@ PlaneObject.prototype.setFlight = function(flight) {
                 }
             }
         }
+    }
+    if (this.name !== oldName) {
+        this.clearAirlineCache();
     }
 }
 

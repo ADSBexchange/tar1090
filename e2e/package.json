@@ -1,0 +1,14 @@
+{
+  "name": "tar1090-adsbx-e2e",
+  "private": true,
+  "description": "Playwright tests for tar1090",
+  "scripts": {
+    "e2e": "playwright test",
+    "e2e:dev": "cross-env BASE_URL=https://globe.dev.adsbexchange.com TARGET=dev playwright test",
+    "install:browser": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "cross-env": "^10.1.0"
+  }
+}

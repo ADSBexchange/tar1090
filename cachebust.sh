@@ -8,6 +8,9 @@ if [[ -z "$1" ]] || [[ -z "$2" ]]; then
     exit 1
 fi
 
+# most common way to use this:
+# ./cachebust.sh cachebust.list <tar1090_html_folder>
+
 LISTPATH="$1"
 HTMLFOLDER="$2"
 
