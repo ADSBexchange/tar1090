@@ -469,32 +469,6 @@ function createBaseLayers() {
         type: 'base',
     }));
 
-    if (loStore['bingKey'] != undefined)
-        BingMapsAPIKey = loStore['bingKey'];
-
-    if (BingMapsAPIKey) {
-        world.push(new ol.layer.Tile({
-            source: new ol.source.BingMaps({
-                key: BingMapsAPIKey,
-                imagerySet: 'Aerial',
-                transition: tileTransition,
-            }),
-            name: 'bing_aerial',
-            title: 'Bing Aerial',
-            type: 'base',
-        }));
-        world.push(new ol.layer.Tile({
-            source: new ol.source.BingMaps({
-                key: BingMapsAPIKey,
-                imagerySet: 'RoadOnDemand',
-                transition: tileTransition,
-            }),
-            name: 'bing_roads',
-            title: 'Bing Roads',
-            type: 'base',
-        }));
-    }
-
     if (ChartBundleLayers) {
 
         let chartbundleTypesDirect = {
@@ -768,6 +742,12 @@ function createBaseLayers() {
             opacity: noaaRadarOpacity,
             extent: naExtent,
         });
+
+        let refreshNoaaRadar = function () {
+            noaaRadarSource.refresh();
+        }
+        refreshNoaaRadar();
+        window.setInterval(refreshNoaaRadar, 5 * 60 * 1000);
 
         us.push(noaaRadar);
     }
