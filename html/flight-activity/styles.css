@@ -159,6 +159,15 @@ ul.threeColumns li {
   border: none;
 }
 
+/* The details iframe deliberately fills 100% height, so an in-flow footer would always land below
+   the fold. Pin the footer to the bottom of the drawer's scrollport so it stays visible; it still
+   scrolls away with the drawer and is destroyed on close (not a global viewport-adhesion unit). */
+.full_details_footer_ad {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+}
+
 div#feature_landings .sectionTitle:first-child {
   border-bottom: 3px solid #313131;
 }
