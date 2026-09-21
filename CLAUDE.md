@@ -64,6 +64,7 @@ ADS-B Receiver (readsb/dump1090-fa)
 ## Key Conventions
 
 - All frontend JS uses `"use strict"` mode and shares state through global variables (no module system).
+- **Write new JavaScript in ES2017, matching upstream `wiedehopf/tar1090`** — `const`/`let` never `var`, `function name() {}` for named functions, arrows for short lambdas, template literals. No `?.`, `??`, `class` or ES modules; upstream uses none of them, and matching its dialect keeps uplifts cheap.
 - The `g` object (defined in `early.js`) is used to store large shared data structures to avoid closure-related memory issues.
 - Template files (`.tmpl`) contain placeholder tokens replaced by `install.sh` during deployment.
 - The project targets Debian/Ubuntu/Raspbian systems and Raspberry Pi hardware — keep performance considerations in mind.
