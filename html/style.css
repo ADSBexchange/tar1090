@@ -242,11 +242,6 @@ body.has-sticky-footer #layout_container {
 
 .ol-attribution {
     font-size: var(--FS1);
-    bottom: .5em;
-}
-
-.ol-scale-line {
-    bottom: 8px;
 }
 
 .warning {
