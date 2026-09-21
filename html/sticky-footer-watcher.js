@@ -5,6 +5,13 @@ const STICKY_FOOTER_HEIGHT_PROPERTY = "--STICKY-FOOTER-H";
 const STICKY_FOOTER_ZERO_HEIGHT = "0px";
 const STICKY_FOOTER_BODY_CLASS = "has-sticky-footer";
 
+function resizeMap() {
+  try {
+    if (OLMap) { OLMap.updateSize(); }
+  } catch (e) {
+  }
+}
+
 function createStickyFooterWatcher(findFooter, measureHeight, setHeightProperty) {
   function sync() {
     const footer = findFooter();
@@ -22,7 +29,7 @@ if (typeof window !== "undefined") {
     function (value) {
       rootStyle.setProperty(STICKY_FOOTER_HEIGHT_PROPERTY, value);
       document.body.classList.toggle(STICKY_FOOTER_BODY_CLASS, value !== STICKY_FOOTER_ZERO_HEIGHT);
-      if (typeof OLMap !== "undefined" && OLMap) { OLMap.updateSize(); }
+      resizeMap();
     }
   );
 
