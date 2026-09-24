@@ -2,12 +2,20 @@
 
 const test = require("node:test");
 const assert = require("node:assert");
-const { STICKY_FOOTER_MAX_WIDTH, viewportAllowsStickyFooter, shouldDisableStickyFooter } = require("../html/sticky-footer-policy.js");
+const { viewportAllowsStickyFooter, shouldDisableStickyFooter } = require("../html/sticky-footer-policy.js");
 
-test("width at or below the breakpoint is sticky footer width", () => {
-  assert.strictEqual(viewportAllowsStickyFooter(STICKY_FOOTER_MAX_WIDTH), true);
-  assert.strictEqual(viewportAllowsStickyFooter(STICKY_FOOTER_MAX_WIDTH - 1), true);
-  assert.strictEqual(viewportAllowsStickyFooter(STICKY_FOOTER_MAX_WIDTH + 1), false);
+test("width below the breakpoint is sticky footer width", () => {
+  assert.strictEqual(viewportAllowsStickyFooter(767), true);
+  assert.strictEqual(viewportAllowsStickyFooter(320), true);
+});
+
+test("the breakpoint itself is desktop width, matching Freestar's 768px viewport mapping", () => {
+  assert.strictEqual(viewportAllowsStickyFooter(768), false);
+  assert.strictEqual(shouldDisableStickyFooter(false, 768), true);
+});
+
+test("width above the breakpoint is not sticky footer width", () => {
+  assert.strictEqual(viewportAllowsStickyFooter(769), false);
 });
 
 test("desktop width disables the sticky footer", () => {

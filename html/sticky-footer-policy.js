@@ -1,9 +1,9 @@
 "use strict";
 
-const STICKY_FOOTER_MAX_WIDTH = 768;
+const FREESTAR_DESKTOP_MIN_WIDTH = 768;
 
 function viewportAllowsStickyFooter(width) {
-  return width <= STICKY_FOOTER_MAX_WIDTH;
+  return width < FREESTAR_DESKTOP_MIN_WIDTH;
 }
 
 function shouldDisableStickyFooter(isPremium, width) {
@@ -12,7 +12,7 @@ function shouldDisableStickyFooter(isPremium, width) {
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
-    STICKY_FOOTER_MAX_WIDTH,
+    FREESTAR_DESKTOP_MIN_WIDTH,
     viewportAllowsStickyFooter,
     shouldDisableStickyFooter,
   };
