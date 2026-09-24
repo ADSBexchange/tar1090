@@ -9,7 +9,7 @@
     --TXTCOLOR1: #003f4b;
     --TXTCOLOR2: #050505;
     --TXTCOLOR3: #101010;
-    --AD-FOOTER-H: 50px;
+    --STICKY-FOOTER-H: 0px;
 }
 
 html, body {
@@ -38,7 +38,11 @@ select {
 
 #layout_container {
     display: flex;
-    height: 100%;
+    height: calc(100% - var(--STICKY-FOOTER-H));
+}
+
+body.has-sticky-footer #layout_container {
+    position: relative;
 }
 
 #selected_infoblock {
@@ -249,7 +253,7 @@ select {
 }
 
 .error_box {
-    position: absolute; bottom: calc( 90px * var(--SCALE)); left: calc( 25px * var(--SCALE)); border: calc( 2px * var(--SCALE)) solid red;
+    position: absolute; bottom: calc( 90px * var(--SCALE) + var(--STICKY-FOOTER-H)); left: calc( 25px * var(--SCALE)); border: calc( 2px * var(--SCALE)) solid red;
     background-color: #FFFFA3; opacity: 0.75; filter:alpha(opacity=75); padding: calc( 5px * var(--SCALE));
     color: black;
     font-weight: bold;
@@ -267,7 +271,7 @@ select {
 
 #js_error {
     position: absolute;
-    bottom: 5px;
+    bottom: calc( 5px + var(--STICKY-FOOTER-H));
     left: 5px;
     border: calc( 2px * var(--SCALE)) solid red;
     background-color: #FFFFA3; opacity: 0.75; filter:alpha(opacity=75); padding: calc( 5px * var(--SCALE));
@@ -1163,46 +1167,6 @@ div.sticky {
 }
 
 
-#mobile_tracking_leaderboard_container {
-    display: none;
-}
-
 #adsbexchange_left_rail {
     margin: calc( 10px * var(--SCALE)) 0;
-}
-
-/* Subscribers get no ad, so collapsing the height collapses every offset derived from it. */
-body.no-ads {
-    --AD-FOOTER-H: 0px;
-}
-
-/* 768px matches the breakpoint in Freestar's own https://a.pub.network/adsbexchange-com/cls.css
-   for these placements. We don't load their stylesheet directly so this keeps working if
-   that CDN is ever unavailable. */
-@media (max-width: 768px) {
-    #layout_container {
-        height: calc(100% - var(--AD-FOOTER-H));
-    }
-
-    #mobile_tracking_leaderboard_container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: var(--AD-FOOTER-H);
-        background-color: #000000;
-    }
-
-    #selected_infoblock {
-        bottom: var(--AD-FOOTER-H);
-        height: calc(100% - var(--AD-FOOTER-H));
-    }
-
-    .error_box {
-        bottom: calc( 90px * var(--SCALE) + var(--AD-FOOTER-H));
-    }
-
-    #js_error {
-        bottom: calc( 5px + var(--AD-FOOTER-H));
-    }
 }
