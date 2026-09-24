@@ -38,7 +38,7 @@
     freestar.initCallback = function () { (freestar.config.enabled_slots.length === 0) ? freestar.initCallbackCalled = false : freestar.newAdSlots(freestar.config.enabled_slots) }
     // Page Specific
     freestar.config.disabledProducts = {
-    stickyFooter: shouldDisableStickyFooter(checkIsPremium(), window.innerWidth, location.search),
+    stickyFooter: shouldDisableStickyFooter(checkIsPremium(), window.innerWidth),
     googleInterstitial: true
     };
     let hideById = (arg) => { document.getElementById(arg) && (document.getElementById(arg).style.display="none"); };
