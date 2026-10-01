@@ -3607,6 +3607,10 @@ function refreshPhoto(selected) {
     if (!selected.dbinfoLoaded) {
         displaySil();
         return;
+    } else if (selected.registration == 'n/a' && !selected.icaoType) {
+        // Neither a registration nor a type is known; the lookup by hex is skipped as well.
+        displaySil();
+        return;
     } else if (false && selected.registration != null && selected.registration.match(/^[0-9]{0,2}\+?[0-9]{0,2}$/)) {
         urlTail = '/hex/' + selected.icao.toUpperCase();
     } else if (selected.registration != null) {
@@ -5889,6 +5893,8 @@ function getFlightAwareModeSLink(code, ident, linkText) {
 }
 
 function getPhotoLink(ac) {
+    if (ac.registration == 'n/a' && !ac.icaoType)
+        return "";
     if (jetphotoLinks) {
         if (ac.registration == null || ac.registration == "")
             return "";
