@@ -371,4 +371,5 @@ html/ax-identity.js
 html/layers.js
 html/config-feature-flags.js
 html/config-uav.js
+html/config-turnstile.js
 html/beacon-bootstrap.js
