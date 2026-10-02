@@ -45,6 +45,10 @@ body.has-sticky-footer #layout_container {
     position: relative;
 }
 
+#fs-sticky-footer .fs-close-button-sticky {
+    display: none !important;
+}
+
 #selected_infoblock {
     position: absolute;
     left: 0px;
