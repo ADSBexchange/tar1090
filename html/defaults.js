@@ -475,6 +475,8 @@ let MergeNonIcao = false; // set to true to merge non icao hex with the icao hex
 let enableUAV = false;
 
 let enableMostWatchedFilter = false;
+// Cockpit view (cockpit-shim.js). Off unless the deploy turns it on.
+let enableCockpitView = false;
 let enableMostWatchedClickTracking = false;
 let enableActiveDates = false;
 let globeDataBaseUrl = '';
