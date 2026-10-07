@@ -92,48 +92,80 @@ function runAPI(icao, fullDisplay, toggleDisplayContainer, _callback) {
       console.log("Cookies resetting");
     }
 
-    const link = "https://__ROOT_PUB_DOMAIN_NAME__/api/aircraft/v2/operations/icao";
-    //Fetch the information from API
-    jQuery.ajax({
-      url: link,
-      type: "POST",
-      dataType: "json",
-      contentType: "application/json",
-      xhrFields: {
-        withCredentials: true,
-      },
-      crossDomain: true,
-      data: JSON.stringify(apiBody(icao, token, fullDisplay)), //Sending the JSON with token and payload
-      success: function (data, xhr) {
-        //Success. We're returning either 1 or 3 days based on full display (details.html) or not (index.html block)
-        _callback(data);
-      },
-      complete: function (xhr, textStatus) {
-        jQuery(".spinner-container").hide();
-      },
-      error: function (error) {
-        jQuery(".spinner-container").hide();
-        let utcOffSet = `UTC ${-(new Date().getTimezoneOffset() / 60)}`;
-        let html = `<table id='takeoff_landing_table' class='home_table'>`;
+    // Posted to the page's own host: the request is same-origin, so the access
+    // cookie the gate mints (turnstile-gate.js) is sent with it.
+    const link = "/api/aircraft/v2/operations/icao";
+    let gateRetried = false;
 
-        html += `<tr><td colspan='3' class='utc_display'><div class='help' title="Local Time: ${utcOffSet} (${new Date().toLocaleTimeString(
-          "en-US",
-          {
-            hour: "2-digit",
-            minute: "2-digit",
+    function showNoFlights() {
+      let utcOffSet = `UTC ${-(new Date().getTimezoneOffset() / 60)}`;
+      let html = `<table id='takeoff_landing_table' class='home_table'>`;
+
+      html += `<tr><td colspan='3' class='utc_display'><div class='help' title="Local Time: ${utcOffSet} (${new Date().toLocaleTimeString(
+        "en-US",
+        {
+          hour: "2-digit",
+          minute: "2-digit",
+        }
+      )})">All times UTC (you're ${utcOffSet})</div></td></tr>`;
+
+      html += `<tr><td colspan='3'>No Flights Found.</td></tr>`;
+      html +=
+        "<tr><td colspan='3' class='utc_display center'>Last 24 hours shown <div class='help float_right' title='Takeoffs and landings shown are those detected by the ADS-B Exchange network, based on our evolving algorithm. Gaps in event coverage - particularly with military, smaller aircraft, and shorter durations - will surface occasionally as our model continues to optimize for unique takeoff and landing event patterns.'><img src='images/Question.svg' height='14' class='float_right'  /></div></td></tr>";
+      html += "</table>";
+
+      jQuery("#takeoff_landings_block").html(html);
+    }
+
+    function sendRequest() {
+      //Fetch the information from API
+      jQuery.ajax({
+        url: link,
+        type: "POST",
+        dataType: "json",
+        contentType: "application/json",
+        data: JSON.stringify(apiBody(icao, token, fullDisplay)), //Sending the JSON with token and payload
+        success: function (data, xhr) {
+          //Success. We're returning either 1 or 3 days based on full display (details.html) or not (index.html block)
+          _callback(data);
+        },
+        complete: function (xhr, textStatus) {
+          jQuery(".spinner-container").hide();
+        },
+        error: function (error) {
+          // A 403 from the gate means the access cookie is missing or expired:
+          // mint a new one and retry once, as the trace fetches do.
+          if (
+            error.status == 403 &&
+            !gateRetried &&
+            typeof globeGateActive === "function" &&
+            globeGateActive() &&
+            typeof globeEnsureToken === "function"
+          ) {
+            gateRetried = true;
+            jQuery(".spinner-container").show();
+            globeEnsureToken(true).then(sendRequest, function () {
+              jQuery(".spinner-container").hide();
+              showNoFlights();
+            });
+            return;
           }
-        )})">All times UTC (you're ${utcOffSet})</div></td></tr>`;
 
-        html += `<tr><td colspan='3'>No Flights Found.</td></tr>`;
-        html +=
-          "<tr><td colspan='3' class='utc_display center'>Last 24 hours shown <div class='help float_right' title='Takeoffs and landings shown are those detected by the ADS-B Exchange network, based on our evolving algorithm. Gaps in event coverage - particularly with military, smaller aircraft, and shorter durations - will surface occasionally as our model continues to optimize for unique takeoff and landing event patterns.'><img src='images/Question.svg' height='14' class='float_right'  /></div></td></tr>";
-        html += "</table>";
+          jQuery(".spinner-container").hide();
+          showNoFlights();
 
-        jQuery("#takeoff_landings_block").html(html);
+          console.log(`This is an API Call error ${error}`);
+        },
+      });
+    }
 
-        console.log(`This is an API Call error ${error}`);
-      },
-    });
+    // Wait for the initial token attempt so the first lookup after page load
+    // carries the cookie; resolved immediately when the gate is inactive.
+    if (typeof globeTokenReady !== "undefined" && globeTokenReady && globeTokenReady.then) {
+      globeTokenReady.then(sendRequest, sendRequest);
+    } else {
+      sendRequest();
+    }
   });
 }
 
