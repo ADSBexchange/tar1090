@@ -1,5 +1,12 @@
 "use strict";
 
+const defaultValues = new Set(['n/a', 'na', 'none', 'unknown', '-', '?']);
+
+function update(value) {
+    const reg = `${value}`;
+    return defaultValues.has(reg.trim().toLowerCase()) ? null : reg;
+}
+
 function PlaneObject(icao) {
     icao = `${icao}`;
 
@@ -2438,7 +2445,7 @@ PlaneObject.prototype.getAircraftData = function() {
             }
 
             if (data[0]) {
-                this.registration = `${data[0]}`;
+                this.registration = update(data[0]);
             }
 
             // Update country from database if present (for UAVs with $ prefix)
@@ -2884,7 +2891,7 @@ PlaneObject.prototype.setTypeFlagsReg = function(data) {
             this.registration = null;
     }
     if (data.r) {
-        const newRegistration = `${data.r}`;
+        const newRegistration = update(data.r);
         if (newRegistration !== this.registration) {
             this.registration = newRegistration;
             this.clearAirlineCache();
