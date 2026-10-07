@@ -144,7 +144,10 @@ function runAPI(icao, fullDisplay, toggleDisplayContainer, _callback) {
           ) {
             gateRetried = true;
             jQuery(".spinner-container").show();
-            globeEnsureToken(true).then(sendRequest, showNoFlights);
+            globeEnsureToken(true).then(sendRequest, function () {
+              jQuery(".spinner-container").hide();
+              showNoFlights();
+            });
             return;
           }
 
