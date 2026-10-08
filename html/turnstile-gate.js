@@ -5,6 +5,12 @@
 // This module obtains that cookie on page load and refreshes it before it
 // expires.
 //
+// A page that sets `turnstileGateLazy = true` before this script skips the
+// load-time mint and sends its requests with whatever cookie the browser
+// already holds, minting only when one of them is refused (a 403 handler calls
+// globeEnsureToken). That suits a document whose cookie is normally minted by
+// a parent page, such as details.html inside the globe.
+//
 // It is inert unless `turnstileSiteKey` is a real key: on upstream tar1090
 // installs and non-globe deployments the whole module is a no-op, and the
 // exported helpers behave as pass-throughs. Enabled-state is resolved lazily at
@@ -30,6 +36,7 @@ var globeTokenReady;
 
     var enabled = false;
     var enforce = false;
+    var lazy = false;        // mint only on demand, never at load
     var apiLoading = null;
     var widgetId = null;
     var executedOnce = false;
@@ -51,6 +58,7 @@ var globeTokenReady;
         // Guard against an unrendered template placeholder ("__TURNSTILE_SITE_KEY__").
         enabled = !!k && k.indexOf('__') !== 0;
         enforce = enabled && (typeof turnstileEnforce !== 'undefined') && turnstileEnforce === true;
+        lazy = enabled && (typeof turnstileGateLazy !== 'undefined') && turnstileGateLazy === true;
     }
 
     // Settles the challenge currently in flight, exactly once.
@@ -138,6 +146,7 @@ var globeTokenReady;
     // frozen, so re-check the remaining lifetime when the page comes back.
     function refreshIfDue() {
         if (!enabled) return;
+        if (lazy && !tokenExp) return;
         if (tokenExp && (tokenExp * 1000) - Date.now() > REFRESH_MARGIN_MS) return;
         doMint();
     }
@@ -195,6 +204,7 @@ var globeTokenReady;
             if (!document.hidden) refreshIfDue();
         });
         window.addEventListener('focus', refreshIfDue);
+        if (lazy) { settleReadyOnce(); return; }
         doMint();
     }
 
