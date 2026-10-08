@@ -11,3 +11,5 @@ registrations.js
 style.css
 activityHistory.js
 beacon-bootstrap.js
+cockpit-shim.js
+cockpit-shim.css
