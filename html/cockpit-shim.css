@@ -1,0 +1,31 @@
+/* cockpit-shim.css - SPDX-License-Identifier: GPL-2.0-or-later
+   Part of the ADS-B Exchange tar1090 fork. Only the overlay that holds the
+   cockpit iframe, and the one-line notices the shim shows. */
+
+#cockpit_overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;        /* above map controls */
+    background: #000;
+}
+#cockpit_overlay iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+.cockpit-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%);
+    z-index: 2147483001;
+    max-width: min(90vw, 460px);
+    padding: 9px 15px;
+    border-radius: 4px;
+    background: rgba(10, 14, 20, 0.92);
+    color: #fff;
+    font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+    text-align: center;
+    pointer-events: none;
+}
