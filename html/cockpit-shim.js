@@ -2,37 +2,16 @@
 // selected aircraft.
 //
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Part of the ADS-B Exchange tar1090 fork and licensed with it. The cockpit it
-// opens is a separate program served from its own URL; this file and its
-// stylesheet are the whole of what tar1090 carries for it.
+// Part of the ADS-B Exchange tar1090 fork and licensed with it.
 //
-// What it does, and all it does:
-//   * adds a "Cockpit view" button to the selected-aircraft panel
-//   * adds a "Cockpit view (beta)" switch to Settings, unless optIn is 'none'
-//   * on click, overlays an iframe and sends it the selected aircraft over
-//     window.postMessage (protocol "adsbx-cockpit", version 1), plus nearby
-//     altitude pairs for the cockpit's altitude correction
-//   * for a viewer who is not entitled, shows the feeder preview instead - a
-//     recorded simulated flight and "You need to be an ADS-B Exchange feeder
-//     to use this feature" - with Become a feeder / Sign in / Close
-//   * closes the overlay when the cockpit says "exit", or on Escape
+// Adds a "Cockpit view" button to the selected-aircraft panel and an opt-in
+// switch to Settings. On click it overlays an iframe and sends it the selected
+// aircraft over window.postMessage (protocol "adsbx-cockpit", version 1).
 //
-// It never reads the cockpit's code or configuration, and the cockpit never
-// reads tar1090's internals: the messages below are the entire interface.
+// The view stays off unless the deploy-time flag enableCockpitView is true.
 //
-// Three switches, all of which must be on, each failing CLOSED:
-//   enableCockpitView           deploy-time flag in config-feature-flags.js
-//   <cockpit url>flag.json      server-side kill switch; no redeploy needed
-//   Settings > Cockpit view     the viewer's own opt-in, when optIn != 'none'
-//
-// Sign-in is checked here for the user experience only. isLoggedIn() reads a
-// cookie the page can see, so it is trivially forged; the real check is the
-// server's, in front of the cockpit's files (see deploy/nginx-cockpit.conf in
-// the cockpit repository).
-//
-// Optional overrides, in config.js:
-//   cockpitViewConfig = { url: 'https://cockpit.adsbexchange.com/', optIn: 'default-off',
-//                         feederUrl: 'https://www.adsbexchange.com/become-a-feeder/' };
+// Optional override, in config.js:
+//   cockpitViewConfig = { url: '/cockpit/', optIn: 'default-off' };
 
 "use strict";
 
@@ -44,8 +23,7 @@
         url: '/cockpit/',        // where the cockpit is served; may be another origin
         optIn: 'default-on',     // 'none' | 'default-on' | 'default-off'
         requireLogin: true,      // UX only - see above
-        // Where "Become a feeder" goes. Set HERE, on the parent: the preview can
-        // only ask for it to be opened, never supply a URL of its own.
+        // Set here, on the parent: the iframe can ask for it, never supply a URL.
         feederUrl: 'https://www.adsbexchange.com/become-a-feeder/',
         follow: true,            // keep the map on the aircraft while the cockpit is open
         stateMs: 250,            // how often to look for a new fix
@@ -136,7 +114,7 @@
     const cockpitUrl = new URL(cfg.url, window.location.href);
     const cockpitOrigin = cockpitUrl.origin;
 
-    let serverFlag = null;       // null until flag.json has answered
+    let serverFlag = null;       // null until the availability check has answered
     let toggle = null;
     let button = null;
     let open = null;             // the one open cockpit, or null
@@ -194,17 +172,13 @@
 
     function start(hex) {
         if (open) return;
-        // The kill switch is re-read on every open, so turning it off reaches
-        // people who loaded the map before it was flipped.
+        // Availability is re-read on every open.
         button.disabled = true;
         fetchFlag().then(function () {
             button.disabled = false;
             if (open) return;
             if (!available()) { toast('Cockpit view is unavailable right now.'); return; }
-            // Signed out: the preview straight away, rather than loading the
-            // cockpit only for the server to refuse it. A viewer who IS signed
-            // in but not a feeder is refused by the server gate, which serves
-            // the same preview in the cockpit's place.
+            // Signed out: show the preview directly.
             const preview = cfg.requireLogin && !signedIn();
 
             const overlay = document.createElement('div');
@@ -214,8 +188,7 @@
             // Defence in depth when the cockpit is on its own origin; on the
             // same origin allow-same-origin makes this advisory only.
             iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-            // The Cesium ion allowed-URL restriction reads the Referer header,
-            // so the cockpit's origin has to be sent.
+            // Send the cockpit's origin as the referrer.
             iframe.referrerPolicy = 'strict-origin-when-cross-origin';
 
             open = { hex: preview ? null : hex, overlay: overlay, iframe: iframe, timer: null,
@@ -240,9 +213,7 @@
         if (!isMsg(d)) return;
         if (d.kind === 'ready') { if (open.hex) sendInit(); }
         else if (d.kind === 'preview') {
-            // Not entitled: whether the shim chose the preview or the server
-            // did, stop feeding - there is no aircraft to fly - and say whether
-            // to offer sign-in.
+            // Preview shown: stop feeding and report the sign-in state.
             clearInterval(open.timer);
             open.timer = null;
             post('context', { signedIn: signedIn() });
