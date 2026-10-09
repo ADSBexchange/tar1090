@@ -2,16 +2,41 @@
 // selected aircraft.
 //
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Part of the ADS-B Exchange tar1090 fork and licensed with it.
+// Part of the ADS-B Exchange tar1090 fork and licensed with it. The cockpit it
+// opens is a separate program served from its own URL; this file and its
+// stylesheet are the whole of what tar1090 carries for it.
 //
-// Adds a "Cockpit view" button to the selected-aircraft panel and an opt-in
-// switch to Settings. On click it overlays an iframe and sends it the selected
-// aircraft over window.postMessage (protocol "adsbx-cockpit", version 1).
+// What it does, and all it does:
+//   * adds a "Cockpit view" button to the selected-aircraft panel
+//   * adds a "Cockpit view (beta)" switch to Settings, unless optIn is 'none'
+//   * on click, overlays an iframe and sends it the selected aircraft over
+//     window.postMessage (protocol "adsbx-cockpit", version 1), plus nearby
+//     altitude pairs for the cockpit's altitude correction
+//   * for a viewer who is not entitled, shows the feeder preview instead - a
+//     recorded simulated flight and "You need to be an ADS-B Exchange feeder
+//     to use this feature" - with Become a feeder / Sign in / Close
+//   * closes the overlay when the cockpit says "exit", or on Escape
 //
-// The view stays off unless the deploy-time flag enableCockpitView is true.
+// It never reads the cockpit's code or configuration, and the cockpit never
+// reads tar1090's internals: the messages below are the entire interface.
 //
-// Optional override, in config.js:
-//   cockpitViewConfig = { url: '/cockpit/', optIn: 'default-off' };
+// Three switches, all of which must be on, each failing CLOSED:
+//   enableCockpitView           deploy-time flag in config-feature-flags.js
+//   <cockpit url>flag.json      server-side kill switch; no redeploy needed
+//   Settings > Cockpit view     the viewer's own opt-in, when optIn != 'none'
+//
+// Sign-in is checked here for the user experience only. isLoggedIn() reads a
+// cookie the page can see, so it is trivially forged; the real check is the
+// server's, in front of the cockpit's files (see deploy/nginx-cockpit.conf in
+// the cockpit repository). What that check needs from this page is a proof of
+// the account: before the cockpit opens, the shim exchanges the browser's
+// account-service session for a short-lived token (flag.json's entitlementUrl)
+// and parks it as a cookie on this origin, scoped to the cockpit's path, where
+// the server forwards it to the account service on every gated request.
+//
+// Optional overrides, in config.js:
+//   cockpitViewConfig = { url: 'https://cockpit.adsbexchange.com/', optIn: 'default-off',
+//                         feederUrl: 'https://www.adsbexchange.com/become-a-feeder/' };
 
 "use strict";
 
@@ -23,7 +48,8 @@
         url: '/cockpit/',        // where the cockpit is served; may be another origin
         optIn: 'default-on',     // 'none' | 'default-on' | 'default-off'
         requireLogin: true,      // UX only - see above
-        // Set here, on the parent: the iframe can ask for it, never supply a URL.
+        // Where "Become a feeder" goes. Set HERE, on the parent: the preview can
+        // only ask for it to be opened, never supply a URL of its own.
         feederUrl: 'https://www.adsbexchange.com/become-a-feeder/',
         follow: true,            // keep the map on the aircraft while the cockpit is open
         stateMs: 250,            // how often to look for a new fix
@@ -114,7 +140,10 @@
     const cockpitUrl = new URL(cfg.url, window.location.href);
     const cockpitOrigin = cockpitUrl.origin;
 
-    let serverFlag = null;       // null until the availability check has answered
+    const TOKEN_COOKIE = 'adsbx_entitlement';
+
+    let flag = null;             // flag.json as last read; null until it has answered
+    let serverFlag = null;       // null until flag.json has answered
     let toggle = null;
     let button = null;
     let open = null;             // the one open cockpit, or null
@@ -131,9 +160,45 @@
     function fetchFlag() {
         return fetch(new URL('flag.json', cockpitUrl).href, { cache: 'no-store', credentials: 'include' })
             .then(function (r) { return r.ok ? r.json() : null; })
-            .then(function (j) { serverFlag = !!(j && j.enabled === true); })
-            .catch(function () { serverFlag = false; })
-            .then(sync);
+            .then(function (j) { flag = (j && typeof j === 'object') ? j : null; })
+            .catch(function () { flag = null; })
+            .then(function () { serverFlag = !!(flag && flag.enabled === true); sync(); });
+    }
+
+    // The account service's own session cookie is HttpOnly and scoped to its
+    // host, so nothing on this origin can present it to the server gate.
+    // Instead the signed-in browser exchanges it there for a token naming the
+    // account, good for minutes, and that token travels to the gate as a
+    // cookie of this origin. Same-origin cockpit only: a page cannot set a
+    // cookie for another host.
+    //
+    // Resolves to 'ok' (cookie set, or no exchange configured - the server
+    // gate then decides alone), 'signed-out' (the account service has no
+    // session for this browser) or 'failed' (anything else).
+    function fetchToken() {
+        const url = (flag && typeof flag.entitlementUrl === 'string') ? flag.entitlementUrl : '';
+        if (!url) return Promise.resolve('ok');
+        return fetch(new URL(url, cockpitUrl).href, { credentials: 'include', cache: 'no-store' })
+            .then(function (r) {
+                if (r.status === 401) return 'signed-out';
+                if (!r.ok) return 'failed';
+                return r.json().then(function (j) {
+                    const a = (j && j.data && j.data.attributes) || {};
+                    if (typeof a.token !== 'string' || !a.token) return 'failed';
+                    setTokenCookie(a.token, a.expires_in);
+                    return 'ok';
+                });
+            })
+            .catch(function () { return 'failed'; });
+    }
+
+    // Max-Age 0 removes it. The token is base64url, so it needs no encoding
+    // and reaches the account service byte for byte.
+    function setTokenCookie(token, expiresIn) {
+        const ttl = (typeof expiresIn === 'number' && expiresIn > 0) ? Math.floor(expiresIn) : 0;
+        document.cookie = TOKEN_COOKIE + '=' + token + '; Path=' + cockpitUrl.pathname
+            + '; Max-Age=' + ttl + '; SameSite=Strict'
+            + (window.location.protocol === 'https:' ? '; Secure' : '');
     }
 
     function sync() {
@@ -172,14 +237,27 @@
 
     function start(hex) {
         if (open) return;
-        // Availability is re-read on every open.
+        // The kill switch is re-read on every open, so turning it off reaches
+        // people who loaded the map before it was flipped.
         button.disabled = true;
         fetchFlag().then(function () {
+            if (open || !available()) return 'unavailable';
+            // Signed out: the preview straight away, rather than loading the
+            // cockpit only for the server to refuse it.
+            if (cfg.requireLogin && !signedIn()) return 'signed-out';
+            return fetchToken();
+        }).then(function (state) {
             button.disabled = false;
             if (open) return;
-            if (!available()) { toast('Cockpit view is unavailable right now.'); return; }
-            // Signed out: show the preview directly.
-            const preview = cfg.requireLogin && !signedIn();
+            if (state !== 'ok' && state !== 'signed-out') { toast('Cockpit view is unavailable right now.'); return; }
+            // 'signed-out' also covers a browser whose readable cookie says
+            // signed in while the account service has no session for it
+            // (ended there, or set by hand): the preview, with Sign in
+            // offered. A viewer who IS signed in but not a feeder is refused
+            // by the server gate, which serves the same preview in the
+            // cockpit's place, and Sign in is not offered.
+            const preview = state === 'signed-out';
+            if (preview) setTokenCookie('', 0);
 
             const overlay = document.createElement('div');
             overlay.id = 'cockpit_overlay';
@@ -188,10 +266,11 @@
             // Defence in depth when the cockpit is on its own origin; on the
             // same origin allow-same-origin makes this advisory only.
             iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-            // Send the cockpit's origin as the referrer.
+            // The Cesium ion allowed-URL restriction reads the Referer header,
+            // so the cockpit's origin has to be sent.
             iframe.referrerPolicy = 'strict-origin-when-cross-origin';
 
-            open = { hex: preview ? null : hex, overlay: overlay, iframe: iframe, timer: null,
+            open = { hex: preview ? null : hex, signedIn: !preview, overlay: overlay, iframe: iframe, timer: null,
                      lastSig: '', lastSent: 0, lastField: 0, lostSent: false,
                      followWas: (!preview && typeof FollowSelected !== 'undefined') ? FollowSelected : null };
             // Listen BEFORE the frame loads, so its first message is heard.
@@ -213,10 +292,12 @@
         if (!isMsg(d)) return;
         if (d.kind === 'ready') { if (open.hex) sendInit(); }
         else if (d.kind === 'preview') {
-            // Preview shown: stop feeding and report the sign-in state.
+            // Not entitled: whether the shim chose the preview or the server
+            // did, stop feeding - there is no aircraft to fly - and say whether
+            // to offer sign-in: only when the account service had no session.
             clearInterval(open.timer);
             open.timer = null;
-            post('context', { signedIn: signedIn() });
+            post('context', { signedIn: open.signedIn });
         }
         else if (d.kind === 'sign-in') { close(); signIn(); }
         else if (d.kind === 'feeder') openFeeder();
