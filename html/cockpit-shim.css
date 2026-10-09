@@ -5,7 +5,7 @@
 #cockpit_overlay {
     position: fixed;
     inset: 0;
-    z-index: 2147483000;        /* above map controls */
+    z-index: 2147483000;        /* above map controls and ad slots */
     background: #000;
 }
 #cockpit_overlay iframe {
