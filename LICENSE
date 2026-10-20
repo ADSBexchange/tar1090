@@ -6,6 +6,101 @@ Thank you Flightaware for developing Open Source!
 
 This version of tar1090 is licensed under the GPL, v2 or later.
 
+======================================================================
+      THIRD-PARTY COMPONENTS NOT COVERED BY THE GPL
+======================================================================
+
+The following files are the property of Progress Software Corporation
+and/or its subsidiaries or affiliates ("Progress") and are part of the
+commercial product Progress Kendo UI (the "Kendo UI Files"):
+
+    html/leaderboard/kendo.all.min.js
+    html/leaderboard/default-ocean-blue.css
+    html/libs/classic-silver.css
+    html/libs/font-icons/index.css
+    html/libs/font-icons/kendo-font-icons.ttf
+    html/libs/kendo-ui-license.js.tmpl (and the rendered
+        html/libs/kendo-ui-license.js)
+
+Copyright (C) Progress Software Corporation and/or one of its
+subsidiaries or affiliates. All rights reserved. Kendo UI is a
+registered trademark of Progress Software Corporation.
+
+The Kendo UI Files are included in this repository under a commercial
+Developer License held by ADS-B Exchange ("ADSBx") and are
+redistributed only as embedded in the ADSBx web application (the
+"Integrated Product"), in minified form, under the terms of this
+section and the Progress End User License Agreement for Kendo UI,
+available at https://www.telerik.com/purchase/license-agreement/kendo-ui.
+
+NOTHING IN THE GNU GENERAL PUBLIC LICENSE BELOW GRANTS ANY RIGHT IN
+THE KENDO UI FILES. The GPL applies to the remainder of this
+repository only.
+
+1. Limited use. You may use the Kendo UI Files solely as part of the
+   Integrated Product, for the purpose of running or viewing it. You
+   may not use the Kendo UI Files for software or application
+   development, or in any other application, unless you hold your own
+   Developer License from Progress.
+
+2. No further distribution. You may not redistribute, sublicense,
+   rent, lease, sell, lend, or otherwise transfer the Kendo UI Files,
+   in whole or in part, separately from the Integrated Product. Forking
+   or copying this repository does not grant you any right to
+   redistribute the Kendo UI Files; if you fork or copy this repository
+   for any purpose other than contributing to it, you must remove the
+   Kendo UI Files or obtain your own license from Progress.
+
+3. Restrictions. You may not (a) copy, modify, adapt, translate or
+   create derivative works of the Kendo UI Files; (b) decompile,
+   reverse engineer or otherwise attempt to derive their source code,
+   except to the extent expressly permitted by applicable law;
+   (c) remove or alter any proprietary notice, legend or label in the
+   Kendo UI Files; (d) use the Kendo UI Files to develop, test, support
+   or market products that compete with or provide similar
+   functionality to Kendo UI; or (e) use the Kendo UI Files in any
+   manner that violates applicable law or the rights of any third
+   party, or that purports to subject Progress to any obligation.
+
+4. Ownership. The Kendo UI Files are licensed, not sold. Progress and
+   its licensors retain all right, title and interest in the Kendo UI
+   Files, including all intellectual property rights.
+
+5. NO WARRANTY; LIMITATION OF LIABILITY. THE KENDO UI FILES ARE
+   PROVIDED "AS IS". TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE
+   LAW, PROGRESS, ITS AFFILIATES AND ITS AND THEIR LICENSORS, SUPPLIERS
+   AND AUTHORIZED RESELLERS DISCLAIM ALL WARRANTIES, EXPRESS OR
+   IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
+   TITLE AND NON-INFRINGEMENT, AND SHALL HAVE NO LIABILITY TO YOU FOR
+   ANY DAMAGES WHATSOEVER, WHETHER DIRECT, INDIRECT, SPECIAL,
+   INCIDENTAL OR CONSEQUENTIAL, ARISING OUT OF OR RELATED TO THE KENDO
+   UI FILES OR THEIR USE.
+
+6. Export compliance. The Kendo UI Files are subject to United States
+   export control laws and regulations and the export laws of other
+   applicable jurisdictions. You agree to comply with all such laws and
+   not to export or re-export the Kendo UI Files in violation of them
+   or for any prohibited end use.
+
+7. U.S. Government end users. The Kendo UI Files are "commercial
+   items" consisting of "commercial computer software" and
+   "commercial computer software documentation" as those terms are used
+   in 48 C.F.R. 2.101 and 12.212. Consistent with 48 C.F.R. 12.212 and
+   227.7202-1 through 227.7202-4, U.S. Government end users acquire
+   the Kendo UI Files with only the rights set out in this section.
+
+8. Third-party notices. The Kendo UI Files may contain or be
+   accompanied by third-party components subject to additional license
+   terms, which are identified in the notice files distributed by
+   Progress with Kendo UI. Those terms apply to those components.
+
+9. Termination. Your rights under this section end automatically if
+   you breach it. Progress is an intended third-party beneficiary of
+   this section and may enforce it directly.
+
+Questions about the Kendo UI Files, or requests for a license, should
+be directed to Progress at https://www.telerik.com/purchase.aspx.
+======================================================================
 
 
                     GNU GENERAL PUBLIC LICENSE
@@ -348,98 +443,3 @@ consider it more useful to permit linking proprietary applications with the
 library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.
 
-======================================================================
-      THIRD-PARTY COMPONENTS NOT COVERED BY THE GPL
-======================================================================
-
-The following files are the property of Progress Software Corporation
-and/or its subsidiaries or affiliates ("Progress") and are part of the
-commercial product Progress Kendo UI (the "Kendo UI Files"):
-
-    html/leaderboard/kendo.all.min.js
-    html/leaderboard/default-ocean-blue.css
-    html/libs/classic-silver.css
-    html/libs/font-icons/index.css
-    html/libs/font-icons/kendo-font-icons.ttf
-    html/libs/kendo-ui-license.js.tmpl (and the rendered
-        html/libs/kendo-ui-license.js)
-
-Copyright (C) Progress Software Corporation and/or one of its
-subsidiaries or affiliates. All rights reserved. Kendo UI is a
-registered trademark of Progress Software Corporation.
-
-The Kendo UI Files are included in this repository under a commercial
-Developer License held by ADS-B Exchange ("ADSBx") and are
-redistributed only as embedded in the ADSBx web application (the
-"Integrated Product"), in minified form, under the terms of this
-section and the Progress End User License Agreement for Kendo UI,
-available at https://www.telerik.com/purchase/license-agreement/kendo-ui.
-
-NOTHING IN THE GNU GENERAL PUBLIC LICENSE BELOW GRANTS ANY RIGHT IN
-THE KENDO UI FILES. The GPL applies to the remainder of this
-repository only.
-
-1. Limited use. You may use the Kendo UI Files solely as part of the
-   Integrated Product, for the purpose of running or viewing it. You
-   may not use the Kendo UI Files for software or application
-   development, or in any other application, unless you hold your own
-   Developer License from Progress.
-
-2. No further distribution. You may not redistribute, sublicense,
-   rent, lease, sell, lend, or otherwise transfer the Kendo UI Files,
-   in whole or in part, separately from the Integrated Product. Forking
-   or copying this repository does not grant you any right to
-   redistribute the Kendo UI Files; if you fork or copy this repository
-   for any purpose other than contributing to it, you must remove the
-   Kendo UI Files or obtain your own license from Progress.
-
-3. Restrictions. You may not (a) copy, modify, adapt, translate or
-   create derivative works of the Kendo UI Files; (b) decompile,
-   reverse engineer or otherwise attempt to derive their source code,
-   except to the extent expressly permitted by applicable law;
-   (c) remove or alter any proprietary notice, legend or label in the
-   Kendo UI Files; (d) use the Kendo UI Files to develop, test, support
-   or market products that compete with or provide similar
-   functionality to Kendo UI; or (e) use the Kendo UI Files in any
-   manner that violates applicable law or the rights of any third
-   party, or that purports to subject Progress to any obligation.
-
-4. Ownership. The Kendo UI Files are licensed, not sold. Progress and
-   its licensors retain all right, title and interest in the Kendo UI
-   Files, including all intellectual property rights.
-
-5. NO WARRANTY; LIMITATION OF LIABILITY. THE KENDO UI FILES ARE
-   PROVIDED "AS IS". TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE
-   LAW, PROGRESS, ITS AFFILIATES AND ITS AND THEIR LICENSORS, SUPPLIERS
-   AND AUTHORIZED RESELLERS DISCLAIM ALL WARRANTIES, EXPRESS OR
-   IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE,
-   TITLE AND NON-INFRINGEMENT, AND SHALL HAVE NO LIABILITY TO YOU FOR
-   ANY DAMAGES WHATSOEVER, WHETHER DIRECT, INDIRECT, SPECIAL,
-   INCIDENTAL OR CONSEQUENTIAL, ARISING OUT OF OR RELATED TO THE KENDO
-   UI FILES OR THEIR USE.
-
-6. Export compliance. The Kendo UI Files are subject to United States
-   export control laws and regulations and the export laws of other
-   applicable jurisdictions. You agree to comply with all such laws and
-   not to export or re-export the Kendo UI Files in violation of them
-   or for any prohibited end use.
-
-7. U.S. Government end users. The Kendo UI Files are "commercial
-   items" consisting of "commercial computer software" and
-   "commercial computer software documentation" as those terms are used
-   in 48 C.F.R. 2.101 and 12.212. Consistent with 48 C.F.R. 12.212 and
-   227.7202-1 through 227.7202-4, U.S. Government end users acquire
-   the Kendo UI Files with only the rights set out in this section.
-
-8. Third-party notices. The Kendo UI Files may contain or be
-   accompanied by third-party components subject to additional license
-   terms, which are identified in the notice files distributed by
-   Progress with Kendo UI. Those terms apply to those components.
-
-9. Termination. Your rights under this section end automatically if
-   you breach it. Progress is an intended third-party beneficiary of
-   this section and may enforce it directly.
-
-Questions about the Kendo UI Files, or requests for a license, should
-be directed to Progress at https://www.telerik.com/purchase.aspx.
-======================================================================
