@@ -793,6 +793,9 @@ table.infoSectionTable tr td {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
+    max-width: calc( 440px * var(--SCALE));
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .mapNavigationLinks a {
