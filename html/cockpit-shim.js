@@ -16,6 +16,9 @@
 //     recorded simulated flight and "You need to be an ADS-B Exchange feeder
 //     to use this feature" - with Become a feeder / Sign in / Close
 //   * closes the overlay when the cockpit says "exit", or on Escape
+//   * stays away from replay, historical-trace and heatmap views: the cockpit
+//     flies live fixes only, so the button is hidden there and an open
+//     cockpit closes if the page switches into one of them
 //
 // It never reads the cockpit's code or configuration, and the cockpit never
 // reads tar1090's internals: the messages below are the entire interface.
@@ -122,6 +125,14 @@
         return true;
     }
 
+    // tar1090 views that show something other than live aircraft: a replay
+    // (?replay=), a historical trace (?showTrace= or the trace toggle) or the
+    // heatmap. `modes` carries tar1090's own globals, truthy when that view is
+    // on; absent globals count as off.
+    function liveMode(modes) {
+        return !modes || !(modes.replay || modes.showTrace || modes.heatmap);
+    }
+
     function isMsg(d) {
         return !!d && typeof d === 'object' && d.proto === PROTO && d.v === VERSION && typeof d.kind === 'string';
     }
@@ -129,7 +140,7 @@
 
     // Node (tests) gets the pure parts and nothing else; inert in the browser.
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { PROTO, VERSION, DEFAULTS, snapshot, fieldFrom, flyable, isMsg, msg };
+        module.exports = { PROTO, VERSION, DEFAULTS, snapshot, fieldFrom, flyable, liveMode, isMsg, msg };
         return;
     }
 
@@ -150,7 +161,14 @@
 
     function deployFlag() { return typeof enableCockpitView !== 'undefined' && enableCockpitView === true; }
     function optedIn() { return cfg.optIn === 'none' || !!(toggle && toggle.state); }
-    function available() { return deployFlag() && serverFlag === true && optedIn(); }
+    function live() {
+        return liveMode({
+            replay: typeof replay !== 'undefined' && replay,
+            showTrace: typeof showTrace !== 'undefined' && showTrace,
+            heatmap: typeof heatmap !== 'undefined' && heatmap,
+        });
+    }
+    function available() { return deployFlag() && serverFlag === true && optedIn() && live(); }
     function selected() { return (typeof SelectedPlane !== 'undefined') ? SelectedPlane : null; }
     function dataNow() { return (typeof now !== 'undefined') ? now : null; }
     function planeNow() {
@@ -203,6 +221,7 @@
 
     function sync() {
         if (!button) return;
+        if (open && !live()) { close(); return; }   // the view left live data under it
         button.style.display = (available() && flyable(selected()) && !open) ? '' : 'none';
     }
 
