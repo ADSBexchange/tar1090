@@ -479,6 +479,7 @@ let enableMostWatchedFilter = false;
 let enableCockpitView = false;
 let enableMostWatchedClickTracking = false;
 let enableActiveDates = false;
+let enableTailvisionLink = false;
 let globeDataBaseUrl = '';
 
 // Historical-data (globe_history) Turnstile gate. Empty site key = inert; the

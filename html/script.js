@@ -1921,6 +1921,8 @@ jQuery('#selected_altitude_geom1')
 
     if (aggregator) {
         jQuery('#aggregator_header').show();
+        if (enableTailvisionLink)
+            jQuery('#tailvision_link').show();
         jQuery('#credits').show();
         if (!onMobile) {
             jQuery('#creditsSelected').show();
