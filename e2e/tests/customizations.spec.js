@@ -45,6 +45,17 @@ test("our feature flags are in their expected state", async ({ page }) => {
   expect(await readGlobal(page, "routeApiUrl")).toBe("");
 });
 
+test("Tailvision link follows enableTailvisionLink", async ({ page }) => {
+  await gotoGlobe(page);
+  const link = page.locator("#tailvision_link");
+  await expect(link).toHaveText("Tailvision app");
+  await expect(link).toHaveAttribute("href", "https://www.adsbexchange.com/maps/tailvision/");
+  await expect(link).toHaveAttribute("target", "_blank");
+  const display = await link.evaluate((el) => getComputedStyle(el).display);
+  if (await readGlobal(page, "enableTailvisionLink")) expect(display).not.toBe("none");
+  else expect(display).toBe("none");
+});
+
 // ?feed is normalized into filterUuid (upstream feedAsUuid). Assert via waitForFunction resolving, not a
 // follow-up evaluate — feed mode pegs the main thread ~15s, which would block a one-shot evaluate.
 test("?feed= normalizes into filterUuid", async ({ page }) => {
