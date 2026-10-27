@@ -71,8 +71,80 @@ var globeTokenReady;
         lazy = enabled && (typeof turnstileGateLazy !== 'undefined') && turnstileGateLazy === true;
     }
 
+    // The widget renders into a centered card on a dimmed overlay. The overlay
+    // stays in the layout but invisible (visibility, not display:none, so the
+    // widget can run) and only shows while Turnstile asks the visitor to
+    // interact, between the before- and after-interactive callbacks. Its
+    // z-index sits above the map controls, ad slots and the cockpit overlay.
+    let overlay = null;
+
+    function buildOverlay() {
+        overlay = document.createElement('div');
+        overlay.id = 'turnstile-gate-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-labelledby', 'turnstile-gate-title');
+        Object.assign(overlay.style, {
+            position: 'fixed', top: '0', right: '0', bottom: '0', left: '0',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(0, 0, 0, 0.6)', zIndex: '2147483002',
+            visibility: 'hidden', pointerEvents: 'none'
+        });
+
+        const card = document.createElement('div');
+        Object.assign(card.style, {
+            background: '#fff', color: '#222', borderRadius: '8px', padding: '20px 24px',
+            maxWidth: 'calc(100vw - 32px)', boxSizing: 'border-box', textAlign: 'center',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)', fontFamily: 'sans-serif'
+        });
+
+        const title = document.createElement('div');
+        title.id = 'turnstile-gate-title';
+        title.textContent = 'Quick check before we load flight data';
+        Object.assign(title.style, { fontSize: '18px', fontWeight: 'bold', marginBottom: '6px' });
+
+        const text = document.createElement('div');
+        text.textContent = 'Tick the box to confirm you are human.';
+        Object.assign(text.style, { fontSize: '14px', marginBottom: '14px' });
+
+        const container = document.createElement('div');
+        container.id = 'turnstile-gate-container';
+        Object.assign(container.style, { display: 'flex', justifyContent: 'center', minHeight: '65px' });
+
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.textContent = 'Not now';
+        Object.assign(close.style, {
+            marginTop: '12px', background: 'none', border: 'none', color: '#555',
+            fontSize: '13px', textDecoration: 'underline', cursor: 'pointer'
+        });
+        close.addEventListener('click', hideOverlay);
+
+        card.appendChild(title);
+        card.appendChild(text);
+        card.appendChild(container);
+        card.appendChild(close);
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+    }
+
+    function showOverlay() {
+        if (!overlay) return;
+        overlay.style.visibility = 'visible';
+        overlay.style.pointerEvents = 'auto';
+    }
+
+    function hideOverlay() {
+        if (!overlay) return;
+        overlay.style.visibility = 'hidden';
+        overlay.style.pointerEvents = 'none';
+    }
+
     // Settles the challenge currently in flight, exactly once.
     function settleAttempt(err, token) {
+        // A failed check keeps its message on screen until the visitor
+        // dismisses it; a pass needs no acknowledgement.
+        if (token) hideOverlay();
         if (!attempt) return;
         var a = attempt;
         attempt = null;
@@ -84,18 +156,8 @@ var globeTokenReady;
         if (apiLoading) return apiLoading;
         apiLoading = new Promise(function (resolve, reject) {
             // interaction-only + execution:execute keeps the widget hidden until a
-            // challenge genuinely needs interaction, so keep the container in the
-            // layout (not display:none) in case that rare fallback UI appears.
-            var container = document.getElementById('turnstile-gate-container');
-            if (!container) {
-                container = document.createElement('div');
-                container.id = 'turnstile-gate-container';
-                container.style.position = 'fixed';
-                container.style.bottom = '0';
-                container.style.right = '0';
-                container.style.zIndex = '2000';
-                document.body.appendChild(container);
-            }
+            // challenge genuinely needs interaction.
+            if (!overlay) buildOverlay();
             window.globeOnTurnstileLoad = function () {
                 try {
                     widgetId = window.turnstile.render('#turnstile-gate-container', {
@@ -103,6 +165,8 @@ var globeTokenReady;
                         execution: 'execute',
                         appearance: 'interaction-only',
                         callback: function (token) { settleAttempt(null, token); },
+                        'before-interactive-callback': showOverlay,
+                        'after-interactive-callback': hideOverlay,
                         'error-callback': function () { settleAttempt(new Error('turnstile error')); return true; },
                         'timeout-callback': function () { settleAttempt(new Error('turnstile timeout')); }
                     });
