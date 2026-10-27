@@ -55,7 +55,7 @@ function loadGate({ storage, mintExp = 2000000000 } = {}) {
       },
     },
     getElementById: () => null,
-    createElement: () => ({ style: {} }),
+    createElement: () => ({ style: {}, setAttribute: () => {}, appendChild: () => {}, addEventListener: () => {} }),
     addEventListener: () => {},
     hidden: false,
   };
