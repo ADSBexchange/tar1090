@@ -5,6 +5,15 @@
 // This module obtains that cookie on page load and refreshes it before it
 // expires.
 //
+// The cookie is HttpOnly, so the page cannot read it. Each successful mint
+// stores the cookie's expiry in localStorage instead, shared by every tab on
+// the origin. A page load, or a due refresh, that finds a stored expiry more
+// than REFRESH_MARGIN_MS away adopts it and runs no challenge, so reloads,
+// extra tabs and a tab refreshed by another tab do not each solve one. If the
+// cookie is gone despite the stored expiry (cleared cookies, a key rotation),
+// the first gated request is refused and its 403 handler re-mints through
+// globeEnsureToken, which ignores the stored value.
+//
 // A page that sets `turnstileGateLazy = true` before this script skips the
 // load-time mint and sends its requests with whatever cookie the browser
 // already holds, minting only when one of them is refused (a 403 handler calls
@@ -33,6 +42,7 @@ var globeTokenReady;
     var TURNSTILE_API = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
     var REFRESH_MARGIN_MS = 5 * 60 * 1000; // re-mint 5 min before expiry
     var RETRY_DELAY_MS = 60 * 1000;        // back off after a failed attempt
+    const EXP_STORAGE_KEY = 'globeTurnstileExp';
 
     var enabled = false;
     var enforce = false;
@@ -134,12 +144,49 @@ var globeTokenReady;
         });
     }
 
+    // Storage can be unavailable (private windows, blocked site data); every
+    // access falls back to minting as if nothing were stored.
+    function readStoredExp() {
+        try {
+            const v = parseInt(localStorage.getItem(EXP_STORAGE_KEY), 10);
+            return v > 0 ? v : 0;
+        } catch (e) {
+            return 0;
+        }
+    }
+
+    function writeStoredExp(expEpochSec) {
+        try {
+            if (expEpochSec) localStorage.setItem(EXP_STORAGE_KEY, String(expEpochSec));
+            else localStorage.removeItem(EXP_STORAGE_KEY);
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    function hasLifeLeft(expEpochSec) {
+        return expEpochSec * 1000 - Date.now() > REFRESH_MARGIN_MS;
+    }
+
+    // Adopts an expiry stored by an earlier page load or another tab when it
+    // still has life left. Returns whether it did, i.e. whether a mint can be
+    // skipped.
+    function adoptStoredExp() {
+        const stored = readStoredExp();
+        if (!stored || !hasLifeLeft(stored)) return false;
+        scheduleRefresh(stored);
+        return true;
+    }
+
     function scheduleRefresh(expEpochSec) {
         tokenExp = expEpochSec;
         if (refreshTimer) clearTimeout(refreshTimer);
         var msUntil = (expEpochSec * 1000) - Date.now() - REFRESH_MARGIN_MS;
         if (msUntil < 0) msUntil = RETRY_DELAY_MS;
-        refreshTimer = setTimeout(function () { doMint(); }, msUntil);
+        refreshTimer = setTimeout(function () {
+            // Another tab may have refreshed the shared cookie in the meantime.
+            if (!adoptStoredExp()) doMint();
+        }, msUntil);
     }
 
     // The refresh timer does not fire while the device is asleep or the tab is
@@ -147,7 +194,8 @@ var globeTokenReady;
     function refreshIfDue() {
         if (!enabled) return;
         if (lazy && !tokenExp) return;
-        if (tokenExp && (tokenExp * 1000) - Date.now() > REFRESH_MARGIN_MS) return;
+        if (tokenExp && hasLifeLeft(tokenExp)) return;
+        if (adoptStoredExp()) return;
         doMint();
     }
 
@@ -169,6 +217,7 @@ var globeTokenReady;
         }).then(function (resp) {
             return resp.json().catch(function () { return {}; }).then(function (data) {
                 if (resp.ok && data && data.ok && data.exp) {
+                    writeStoredExp(data.exp);
                     scheduleRefresh(data.exp);
                 } else {
                     // Config/verification problem: retry later without wedging the
@@ -193,7 +242,12 @@ var globeTokenReady;
 
     window.globeEnsureToken = function (force) {
         if (!enabled) return Promise.resolve();
-        if (force && !inFlight && refreshTimer) clearTimeout(refreshTimer);
+        if (force) {
+            // The caller was refused, so the stored expiry describes a cookie
+            // the server no longer accepts.
+            writeStoredExp(0);
+            if (!inFlight && refreshTimer) clearTimeout(refreshTimer);
+        }
         return doMint();
     };
 
@@ -205,6 +259,7 @@ var globeTokenReady;
         });
         window.addEventListener('focus', refreshIfDue);
         if (lazy) { settleReadyOnce(); return; }
+        if (adoptStoredExp()) { settleReadyOnce(); return; }
         doMint();
     }
 
