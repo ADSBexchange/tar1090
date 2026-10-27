@@ -74,8 +74,14 @@ var globeTokenReady;
     // The widget renders into a centered card on a dimmed overlay. The overlay
     // stays in the layout but invisible (visibility, not display:none, so the
     // widget can run) and only shows while Turnstile asks the visitor to
-    // interact, between the before- and after-interactive callbacks. Its
-    // z-index sits above the map controls, ad slots and the cockpit overlay.
+    // interact, between the before- and after-interactive callbacks.
+    //
+    // On the globe the overlay covers only the map, below the in-map ad
+    // (#tracking_leaderboard_container, z-index 99), so no ad slot is dimmed or
+    // covered: the sidebar ads and the sticky footer are outside the map. Pages
+    // without a map get a full-viewport overlay.
+    const MAP_OVERLAY_Z = '98';
+    const PAGE_OVERLAY_Z = '2147483002';
     let overlay = null;
 
     function buildOverlay() {
@@ -84,10 +90,11 @@ var globeTokenReady;
         overlay.setAttribute('role', 'dialog');
         overlay.setAttribute('aria-modal', 'true');
         overlay.setAttribute('aria-labelledby', 'turnstile-gate-title');
+        const map = document.getElementById('map_container');
         Object.assign(overlay.style, {
-            position: 'fixed', top: '0', right: '0', bottom: '0', left: '0',
+            position: map ? 'absolute' : 'fixed', top: '0', right: '0', bottom: '0', left: '0',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(0, 0, 0, 0.6)', zIndex: '2147483002',
+            background: 'rgba(0, 0, 0, 0.6)', zIndex: map ? MAP_OVERLAY_Z : PAGE_OVERLAY_Z,
             visibility: 'hidden', pointerEvents: 'none'
         });
 
@@ -125,7 +132,7 @@ var globeTokenReady;
         card.appendChild(container);
         card.appendChild(close);
         overlay.appendChild(card);
-        document.body.appendChild(overlay);
+        (map || document.body).appendChild(overlay);
     }
 
     function showOverlay() {
