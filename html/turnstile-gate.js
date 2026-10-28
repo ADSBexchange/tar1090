@@ -303,13 +303,18 @@ var globeTokenReady;
         return apiLoading;
     }
 
-    // The non-interactive widget runs first and never shows anything; it lives
-    // in an empty off-screen container. retry:never makes a failure reach
-    // error-callback at once, so the managed widget can take over.
+    // The non-interactive widget runs first and never shows anything. Its
+    // container has the widget's normal size, because Turnstile does not run a
+    // widget in a zero-size frame, and is kept invisible and click-through.
+    // retry:never makes a failure reach error-callback at once, so the managed
+    // widget can take over.
     function renderSilentWidget() {
         const box = document.createElement('div');
         box.id = 'turnstile-gate-silent';
-        Object.assign(box.style, { position: 'absolute', width: '0', height: '0', overflow: 'hidden' });
+        Object.assign(box.style, {
+            position: 'fixed', left: '0', bottom: '0', width: '300px', height: '65px',
+            visibility: 'hidden', pointerEvents: 'none', zIndex: '-1'
+        });
         document.body.appendChild(box);
         silentWidgetId = window.turnstile.render('#turnstile-gate-silent', {
             sitekey: silentKey,
