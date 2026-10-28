@@ -42,6 +42,7 @@ var globeTokenReady;
     var TURNSTILE_API = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
     var REFRESH_MARGIN_MS = 5 * 60 * 1000; // re-mint 5 min before expiry
     var RETRY_DELAY_MS = 60 * 1000;        // back off after a failed attempt
+    const ATTEMPT_TIMEOUT_MS = 30 * 1000;  // limit on a silent challenge
     const EXP_STORAGE_KEY = 'globeTurnstileExp';
 
     var enabled = false;
@@ -74,7 +75,9 @@ var globeTokenReady;
     // The widget renders into a centered card on a dimmed overlay. The overlay
     // stays in the layout but invisible (visibility, not display:none, so the
     // widget can run) and only shows while Turnstile asks the visitor to
-    // interact, between the before- and after-interactive callbacks.
+    // interact, between the before- and after-interactive callbacks. It has no
+    // dismiss control: gated data cannot load until the check passes. If the
+    // check fails while the overlay is up, the card says so and offers a reload.
     //
     // On the globe the overlay covers only the map, below the in-map ad
     // (#tracking_leaderboard_container, z-index 99), so no ad slot is dimmed or
@@ -83,6 +86,11 @@ var globeTokenReady;
     const MAP_OVERLAY_Z = '98';
     const PAGE_OVERLAY_Z = '2147483002';
     let overlay = null;
+    let cardTitle = null;
+    let cardText = null;
+    let cardContainer = null;
+    let reloadButton = null;
+    let awaitingTick = false;  // Turnstile is showing its checkbox
 
     function buildOverlay() {
         overlay = document.createElement('div');
@@ -105,40 +113,76 @@ var globeTokenReady;
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)', fontFamily: 'sans-serif'
         });
 
-        const title = document.createElement('div');
-        title.id = 'turnstile-gate-title';
-        title.textContent = 'Quick check before we load flight data';
-        Object.assign(title.style, { fontSize: '18px', fontWeight: 'bold', marginBottom: '6px' });
+        cardTitle = document.createElement('div');
+        cardTitle.id = 'turnstile-gate-title';
+        Object.assign(cardTitle.style, { fontSize: '18px', fontWeight: 'bold', marginBottom: '6px' });
 
-        const text = document.createElement('div');
-        text.textContent = 'Tick the box to confirm you are human.';
-        Object.assign(text.style, { fontSize: '14px', marginBottom: '14px' });
+        cardText = document.createElement('div');
+        Object.assign(cardText.style, { fontSize: '14px', marginBottom: '14px' });
 
-        const container = document.createElement('div');
-        container.id = 'turnstile-gate-container';
-        Object.assign(container.style, { display: 'flex', justifyContent: 'center', minHeight: '65px' });
+        cardContainer = document.createElement('div');
+        cardContainer.id = 'turnstile-gate-container';
+        Object.assign(cardContainer.style, { display: 'flex', justifyContent: 'center', minHeight: '65px' });
 
-        const close = document.createElement('button');
-        close.type = 'button';
-        close.textContent = 'Not now';
-        Object.assign(close.style, {
-            marginTop: '12px', background: 'none', border: 'none', color: '#555',
-            fontSize: '13px', textDecoration: 'underline', cursor: 'pointer'
+        reloadButton = document.createElement('button');
+        reloadButton.type = 'button';
+        reloadButton.textContent = 'Reload';
+        Object.assign(reloadButton.style, {
+            padding: '6px 16px', fontSize: '14px', cursor: 'pointer', display: 'none'
         });
-        close.addEventListener('click', hideOverlay);
+        reloadButton.addEventListener('click', () => window.location.reload());
 
-        card.appendChild(title);
-        card.appendChild(text);
-        card.appendChild(container);
-        card.appendChild(close);
+        showCheckCard();
+        card.appendChild(cardTitle);
+        card.appendChild(cardText);
+        card.appendChild(cardContainer);
+        card.appendChild(reloadButton);
         overlay.appendChild(card);
         (map || document.body).appendChild(overlay);
+    }
+
+    function showCheckCard() {
+        cardTitle.textContent = 'Quick check before we load flight data';
+        cardText.textContent = 'Tick the box to confirm you are human.';
+        cardContainer.style.display = 'flex';
+        reloadButton.style.display = 'none';
+    }
+
+    function showFailedCard() {
+        cardTitle.textContent = 'Flight data could not be verified';
+        cardText.textContent = 'Reload the page to try again.';
+        cardContainer.style.display = 'none';
+        reloadButton.style.display = 'inline-block';
+    }
+
+    function overlayVisible() {
+        return !!overlay && overlay.style.visibility === 'visible';
     }
 
     function showOverlay() {
         if (!overlay) return;
         overlay.style.visibility = 'visible';
         overlay.style.pointerEvents = 'auto';
+    }
+
+    function onBeforeInteractive() {
+        awaitingTick = true;
+        if (overlay) showCheckCard();
+        showOverlay();
+    }
+
+    function onAfterInteractive() {
+        awaitingTick = false;
+        hideOverlay();
+    }
+
+    // A check that fails while the visitor can see the card replaces the
+    // checkbox with the failure message; a failure during a silent check stays
+    // silent and the next attempt runs after RETRY_DELAY_MS.
+    function failAttempt(err) {
+        awaitingTick = false;
+        if (overlayVisible()) showFailedCard();
+        settleAttempt(err);
     }
 
     function hideOverlay() {
@@ -149,9 +193,10 @@ var globeTokenReady;
 
     // Settles the challenge currently in flight, exactly once.
     function settleAttempt(err, token) {
-        // A failed check keeps its message on screen until the visitor
-        // dismisses it; a pass needs no acknowledgement.
-        if (token) hideOverlay();
+        if (token) {
+            awaitingTick = false;
+            hideOverlay();
+        }
         if (!attempt) return;
         var a = attempt;
         attempt = null;
@@ -172,10 +217,10 @@ var globeTokenReady;
                         execution: 'execute',
                         appearance: 'interaction-only',
                         callback: function (token) { settleAttempt(null, token); },
-                        'before-interactive-callback': showOverlay,
-                        'after-interactive-callback': hideOverlay,
-                        'error-callback': function () { settleAttempt(new Error('turnstile error')); return true; },
-                        'timeout-callback': function () { settleAttempt(new Error('turnstile timeout')); }
+                        'before-interactive-callback': onBeforeInteractive,
+                        'after-interactive-callback': onAfterInteractive,
+                        'error-callback': function () { failAttempt(new Error('turnstile error')); return true; },
+                        'timeout-callback': function () { failAttempt(new Error('turnstile timeout')); }
                     });
                     resolve(widgetId);
                 } catch (e) {
@@ -192,6 +237,17 @@ var globeTokenReady;
         return apiLoading;
     }
 
+    // Gives a silent challenge 30 s to settle. While the checkbox is on screen
+    // the attempt stays open, so a slow tick still mints; Turnstile's own
+    // timeout-callback ends an abandoned checkbox.
+    function armAttemptTimeout(a) {
+        a.timer = setTimeout(function () {
+            if (attempt !== a) return;
+            if (awaitingTick) { armAttemptTimeout(a); return; }
+            settleAttempt(new Error('turnstile timeout'));
+        }, ATTEMPT_TIMEOUT_MS);
+    }
+
     // Runs the (deferred) Turnstile challenge and resolves with a fresh response
     // token delivered to the render-level callback.
     function getTurnstileToken() {
@@ -199,11 +255,8 @@ var globeTokenReady;
             return new Promise(function (resolve, reject) {
                 // Only one challenge at a time; abandon any prior wait.
                 settleAttempt(new Error('superseded'));
-                attempt = {
-                    resolve: resolve,
-                    reject: reject,
-                    timer: setTimeout(function () { settleAttempt(new Error('turnstile timeout')); }, 30000)
-                };
+                attempt = { resolve: resolve, reject: reject, timer: null };
+                armAttemptTimeout(attempt);
                 try {
                     if (executedOnce) window.turnstile.reset(widgetId);
                     window.turnstile.execute(widgetId);

@@ -21,9 +21,11 @@ function memoryStorage(initial) {
 
 // Loads turnstile-gate.js into a fresh context with a stub DOM, Turnstile API
 // and token endpoint. Timers are recorded, and run only when a test calls one.
-function loadGate({ storage, mintExp = 2000000000 } = {}) {
+// `onExecute` replaces the default challenge, which passes at once.
+function loadGate({ storage, mintExp = 2000000000, onExecute } = {}) {
   const calls = { scripts: 0, executes: 0, posts: 0 };
   const timers = [];
+  const elements = [];
   let renderOptions = null;
   const ctx = {
     turnstileSiteKey: "0xSITEKEY",
@@ -42,7 +44,11 @@ function loadGate({ storage, mintExp = 2000000000 } = {}) {
     },
     turnstile: {
       render: (_el, opts) => { renderOptions = opts; return "w1"; },
-      execute: () => { calls.executes++; Promise.resolve().then(() => renderOptions.callback("tok")); },
+      execute: () => {
+        calls.executes++;
+        if (onExecute) onExecute(renderOptions);
+        else Promise.resolve().then(() => renderOptions.callback("tok"));
+      },
       reset: () => {},
     },
   };
@@ -55,7 +61,11 @@ function loadGate({ storage, mintExp = 2000000000 } = {}) {
       },
     },
     getElementById: () => null,
-    createElement: () => ({ style: {}, setAttribute: () => {}, appendChild: () => {}, addEventListener: () => {} }),
+    createElement: () => {
+      const el = { style: {}, setAttribute: () => {}, appendChild: () => {}, addEventListener: () => {} };
+      elements.push(el);
+      return el;
+    },
     addEventListener: () => {},
     hidden: false,
   };
@@ -63,8 +73,12 @@ function loadGate({ storage, mintExp = 2000000000 } = {}) {
   ctx.window = ctx;
   vm.createContext(ctx);
   vm.runInContext(SOURCE, ctx);
-  return { ctx, calls, timers };
+  return { ctx, calls, timers, elements };
 }
+
+const flush = () => new Promise((r) => setImmediate(r));
+const overlayOf = (elements) => elements.find((el) => el.id === "turnstile-gate-overlay");
+const titleOf = (elements) => elements.find((el) => el.id === "turnstile-gate-title");
 
 const nowSec = () => Math.floor(Date.now() / 1000);
 
@@ -137,4 +151,46 @@ test("the refresh timer mints when no fresher expiry is stored", async () => {
   refresh.fn();
   await ctx.globeEnsureToken(false);
   assert.strictEqual(calls.posts, 1);
+});
+
+test("a tick after the silent-challenge timeout still mints", async () => {
+  const storage = memoryStorage();
+  let opts = null;
+  const { ctx, calls, timers, elements } = loadGate({
+    storage,
+    onExecute: (o) => { opts = o; o["before-interactive-callback"](); },
+  });
+  await flush();
+  assert.strictEqual(overlayOf(elements).style.visibility, "visible");
+  const timeout = timers.find((t) => t.ms === 30 * 1000);
+  timeout.fn();
+  timers[timers.length - 1].fn();
+  assert.strictEqual(calls.posts, 0);
+  opts["after-interactive-callback"]();
+  opts.callback("tok");
+  await ctx.globeTokenReady;
+  assert.strictEqual(calls.posts, 1);
+  assert.strictEqual(overlayOf(elements).style.visibility, "hidden");
+});
+
+test("a failure while the checkbox is shown replaces it with the reload message", async () => {
+  const storage = memoryStorage();
+  const { ctx, calls, elements } = loadGate({
+    storage,
+    onExecute: (o) => { o["before-interactive-callback"](); o["error-callback"](); },
+  });
+  await ctx.globeTokenReady;
+  assert.strictEqual(calls.posts, 0);
+  assert.strictEqual(overlayOf(elements).style.visibility, "visible");
+  assert.strictEqual(titleOf(elements).textContent, "Flight data could not be verified");
+});
+
+test("a failure during a silent challenge keeps the overlay hidden", async () => {
+  const storage = memoryStorage();
+  const { ctx, elements } = loadGate({
+    storage,
+    onExecute: (o) => { o["error-callback"](); },
+  });
+  await ctx.globeTokenReady;
+  assert.strictEqual(overlayOf(elements).style.visibility, "hidden");
 });
