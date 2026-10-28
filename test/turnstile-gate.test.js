@@ -24,13 +24,17 @@ function memoryStorage(initial) {
 // `onExecute` replaces the default challenge, which passes at once.
 // `clock`, when given, replaces Date.now inside the gate: { t: <ms> }.
 // `cookiesKept: false` makes document.cookie drop writes, as a per-site block does.
-function loadGate({ storage, mintExp = 2000000000, onExecute, scriptFails = false, cookieEnabled, cookiesKept = true, clock } = {}) {
-  const calls = { scripts: 0, executes: 0, posts: 0 };
+// `silentKey` sets turnstileSilentSiteKey; `onSilentExecute` replaces the silent
+// widget's challenge, which passes at once by default.
+function loadGate({ storage, mintExp = 2000000000, onExecute, scriptFails = false, cookieEnabled, cookiesKept = true, clock, silentKey, onSilentExecute } = {}) {
+  const calls = { scripts: 0, executes: 0, silentExecutes: 0, posts: 0, bodies: [] };
   const timers = [];
   const elements = [];
   let renderOptions = null;
+  let silentOptions = null;
   const ctx = {
     turnstileSiteKey: "0xSITEKEY",
+    turnstileSilentSiteKey: silentKey,
     localStorage: storage,
     Date: clock ? { now: () => clock.t } : Date,
     JSON,
@@ -40,13 +44,24 @@ function loadGate({ storage, mintExp = 2000000000, onExecute, scriptFails = fals
     Error,
     setTimeout: (fn, ms) => { timers.push({ fn, ms }); return timers.length; },
     clearTimeout: () => {},
-    fetch: () => {
+    fetch: (_url, init) => {
       calls.posts++;
+      calls.bodies.push(JSON.parse(init.body));
       return Promise.resolve({ ok: true, json: () => Promise.resolve({ ok: true, exp: mintExp }) });
     },
     turnstile: {
-      render: (_el, opts) => { renderOptions = opts; return "w1"; },
-      execute: () => {
+      render: (_el, opts) => {
+        if (opts.sitekey === silentKey) { silentOptions = opts; return "silent"; }
+        renderOptions = opts;
+        return "w1";
+      },
+      execute: (id) => {
+        if (id === "silent") {
+          calls.silentExecutes++;
+          if (onSilentExecute) onSilentExecute(silentOptions);
+          else Promise.resolve().then(() => silentOptions.callback("silent-tok"));
+          return;
+        }
         calls.executes++;
         if (onExecute) onExecute(renderOptions);
         else Promise.resolve().then(() => renderOptions.callback("tok"));
@@ -263,4 +278,41 @@ test("a site-level cookie block shows the cookie message without a challenge", a
   assert.strictEqual(calls.scripts, 0);
   assert.strictEqual(overlayOf(elements).style.visibility, "visible");
   assert.match(hintOf(elements), /not keeping this site's cookies/);
+});
+
+test("the silent widget's token is sent with widget: silent and the managed widget never runs", async () => {
+  const storage = memoryStorage();
+  const { ctx, calls } = loadGate({ storage, silentKey: "0xSILENT" });
+  await ctx.globeTokenReady;
+  assert.strictEqual(calls.silentExecutes, 1);
+  assert.strictEqual(calls.executes, 0);
+  assert.deepStrictEqual(calls.bodies, [{ token: "silent-tok", widget: "silent" }]);
+});
+
+test("a failed silent check falls back to the managed widget", async () => {
+  const storage = memoryStorage();
+  const { ctx, calls } = loadGate({ storage, silentKey: "0xSILENT", onSilentExecute: (o) => o["error-callback"]() });
+  await ctx.globeTokenReady;
+  assert.strictEqual(calls.silentExecutes, 1);
+  assert.strictEqual(calls.executes, 1);
+  assert.deepStrictEqual(calls.bodies, [{ token: "tok" }]);
+});
+
+test("a silent check that never settles falls back after the timeout", async () => {
+  const storage = memoryStorage();
+  const { ctx, calls, timers } = loadGate({ storage, silentKey: "0xSILENT", onSilentExecute: () => {} });
+  await flush();
+  assert.strictEqual(calls.executes, 0);
+  timers.find((t) => t.ms === 30 * 1000).fn();
+  await ctx.globeTokenReady;
+  assert.strictEqual(calls.executes, 1);
+  assert.deepStrictEqual(calls.bodies, [{ token: "tok" }]);
+});
+
+test("an unrendered silent key placeholder leaves only the managed widget", async () => {
+  const storage = memoryStorage();
+  const { ctx, calls } = loadGate({ storage, silentKey: "__TURNSTILE_SILENT_SITE_KEY__" });
+  await ctx.globeTokenReady;
+  assert.strictEqual(calls.silentExecutes, 0);
+  assert.deepStrictEqual(calls.bodies, [{ token: "tok" }]);
 });
