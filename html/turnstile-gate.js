@@ -20,6 +20,12 @@
 // globeEnsureToken). That suits a document whose cookie is normally minted by
 // a parent page, such as details.html inside the globe.
 //
+// When `turnstileSilentSiteKey` is also set, each mint first runs that
+// non-interactive widget, which never asks the visitor for anything, and runs
+// the `turnstileSiteKey` widget (managed, can show a checkbox) only when the
+// silent one fails. The token request names the widget so the server verifies
+// it against the matching secret.
+//
 // It is inert unless `turnstileSiteKey` is a real key: on upstream tar1090
 // installs and non-globe deployments the whole module is a no-op, and the
 // exported helpers behave as pass-throughs. Enabled-state is resolved lazily at
@@ -58,6 +64,10 @@ var globeTokenReady;
     var apiLoading = null;
     var widgetId = null;
     var executedOnce = false;
+    let silentKey = '';
+    let silentWidgetId = null;
+    let silentExecutedOnce = false;
+    let silentAttempt = null;  // { resolve, reject, timer } for the silent widget
     var attempt = null;      // { settle, timer } for the challenge currently running
     var inFlight = null;
     let stopped = false;     // a stuck state is on screen; no further challenges
@@ -78,6 +88,8 @@ var globeTokenReady;
         // Guard against an unrendered template placeholder ("__TURNSTILE_SITE_KEY__").
         enabled = !!k && k.indexOf('__') !== 0;
         enforce = enabled && (typeof turnstileEnforce !== 'undefined') && turnstileEnforce === true;
+        const sk = (typeof turnstileSilentSiteKey !== 'undefined') ? turnstileSilentSiteKey : '';
+        silentKey = enabled && !!sk && sk.indexOf('__') !== 0 ? sk : '';
         lazy = enabled && (typeof turnstileGateLazy !== 'undefined') && turnstileGateLazy === true;
     }
 
@@ -262,6 +274,7 @@ var globeTokenReady;
             if (!overlay) buildOverlay();
             window.globeOnTurnstileLoad = function () {
                 try {
+                    if (silentKey) renderSilentWidget();
                     widgetId = window.turnstile.render('#turnstile-gate-container', {
                         sitekey: turnstileSiteKey,
                         execution: 'execute',
@@ -290,6 +303,53 @@ var globeTokenReady;
         return apiLoading;
     }
 
+    // The non-interactive widget runs first and never shows anything. Its
+    // container has the widget's normal size, because Turnstile does not run a
+    // widget in a zero-size frame, and is kept invisible and click-through.
+    // retry:never makes a failure reach error-callback at once, so the managed
+    // widget can take over.
+    function renderSilentWidget() {
+        const box = document.createElement('div');
+        box.id = 'turnstile-gate-silent';
+        Object.assign(box.style, {
+            position: 'fixed', left: '0', bottom: '0', width: '300px', height: '65px',
+            visibility: 'hidden', pointerEvents: 'none', zIndex: '-1'
+        });
+        document.body.appendChild(box);
+        silentWidgetId = window.turnstile.render('#turnstile-gate-silent', {
+            sitekey: silentKey,
+            execution: 'execute',
+            appearance: 'interaction-only',
+            retry: 'never',
+            callback: function (token) { settleSilent(null, token); },
+            'error-callback': function () { settleSilent(new Error('silent turnstile error')); return true; },
+            'timeout-callback': function () { settleSilent(new Error('silent turnstile timeout')); }
+        });
+    }
+
+    function settleSilent(err, token) {
+        if (!silentAttempt) return;
+        const a = silentAttempt;
+        silentAttempt = null;
+        clearTimeout(a.timer);
+        if (err) a.reject(err); else a.resolve(token);
+    }
+
+    function runSilentWidget() {
+        return new Promise(function (resolve, reject) {
+            settleSilent(new Error('superseded'));
+            silentAttempt = { resolve: resolve, reject: reject, timer: null };
+            silentAttempt.timer = setTimeout(function () { settleSilent(new Error('silent turnstile timeout')); }, ATTEMPT_TIMEOUT_MS);
+            try {
+                if (silentExecutedOnce) window.turnstile.reset(silentWidgetId);
+                window.turnstile.execute(silentWidgetId);
+                silentExecutedOnce = true;
+            } catch (e) {
+                settleSilent(e);
+            }
+        });
+    }
+
     // Gives a silent challenge 30 s to settle. While the checkbox is on screen
     // the attempt stays open, so a slow tick still mints; Turnstile's own
     // timeout-callback ends an abandoned checkbox.
@@ -301,23 +361,31 @@ var globeTokenReady;
         }, ATTEMPT_TIMEOUT_MS);
     }
 
-    // Runs the (deferred) Turnstile challenge and resolves with a fresh response
-    // token delivered to the render-level callback.
+    // Resolves with { token, widget }: the silent widget's token when it passes,
+    // otherwise the managed widget's, which may show the checkbox.
     function getTurnstileToken() {
         return loadTurnstileApi().then(function () {
-            return new Promise(function (resolve, reject) {
-                // Only one challenge at a time; abandon any prior wait.
-                settleAttempt(new Error('superseded'));
-                attempt = { resolve: resolve, reject: reject, timer: null };
-                armAttemptTimeout(attempt);
-                try {
-                    if (executedOnce) window.turnstile.reset(widgetId);
-                    window.turnstile.execute(widgetId);
-                    executedOnce = true;
-                } catch (e) {
-                    settleAttempt(e);
-                }
-            });
+            const managed = () => runManagedWidget().then((token) => ({ token: token, widget: 'managed' }));
+            if (silentWidgetId === null) return managed();
+            return runSilentWidget().then((token) => ({ token: token, widget: 'silent' }), managed);
+        });
+    }
+
+    // Runs the managed widget and resolves with the token delivered to its
+    // render-level callback.
+    function runManagedWidget() {
+        return new Promise(function (resolve, reject) {
+            // Only one challenge at a time; abandon any prior wait.
+            settleAttempt(new Error('superseded'));
+            attempt = { resolve: resolve, reject: reject, timer: null };
+            armAttemptTimeout(attempt);
+            try {
+                if (executedOnce) window.turnstile.reset(widgetId);
+                window.turnstile.execute(widgetId);
+                executedOnce = true;
+            } catch (e) {
+                settleAttempt(e);
+            }
         });
     }
 
@@ -384,11 +452,12 @@ var globeTokenReady;
     function doMint() {
         if (!enabled || stopped) { settleReadyOnce(); return Promise.resolve(); }
         if (inFlight) return inFlight;
-        inFlight = getTurnstileToken().then(function (token) {
+        inFlight = getTurnstileToken().then(function (result) {
+            const body = result.widget === 'silent' ? { token: result.token, widget: 'silent' } : { token: result.token };
             return fetch(TOKEN_ENDPOINT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: token }),
+                body: JSON.stringify(body),
                 credentials: 'same-origin'
             });
         }).then(function (resp) {

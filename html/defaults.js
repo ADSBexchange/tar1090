@@ -485,4 +485,5 @@ let globeDataBaseUrl = '';
 // Historical-data (globe_history) Turnstile gate. Empty site key = inert; the
 // rendered config-turnstile.js overrides these on ADSBx globe deployments.
 let turnstileSiteKey = '';
+let turnstileSilentSiteKey = '';
 let turnstileEnforce = false;
