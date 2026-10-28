@@ -43,6 +43,13 @@ var globeTokenReady;
     var REFRESH_MARGIN_MS = 5 * 60 * 1000; // re-mint 5 min before expiry
     var RETRY_DELAY_MS = 60 * 1000;        // back off after a failed attempt
     const ATTEMPT_TIMEOUT_MS = 30 * 1000;  // limit on a silent challenge
+    // This many successful mints inside the window means the browser is not
+    // keeping the cookie: each mint is followed by a refused request.
+    const STUCK_MINTS = 3;
+    const STUCK_WINDOW_MS = 2 * 60 * 1000;
+    // A refusal this soon after a mint is a request sent before the cookie was
+    // set; its retry carries the new cookie, so no new mint is needed.
+    const RECENT_MINT_MS = 10 * 1000;
     const EXP_STORAGE_KEY = 'globeTurnstileExp';
 
     var enabled = false;
@@ -53,6 +60,8 @@ var globeTokenReady;
     var executedOnce = false;
     var attempt = null;      // { settle, timer } for the challenge currently running
     var inFlight = null;
+    let stopped = false;     // a stuck state is on screen; no further challenges
+    let mintTimes = [];
     var refreshTimer = null;
     var tokenExp = 0;
     var readyResolvedOnce = false;
@@ -79,6 +88,9 @@ var globeTokenReady;
     // dismiss control: gated data cannot load until the check passes. If the
     // check fails while the overlay is up, the card says so and offers a reload.
     // Each card carries a short hint on why the check appears and what helps.
+    // Two states that another challenge cannot fix also show the failure card
+    // and stop minting: the browser not keeping the cookie, and the Turnstile
+    // script failing to load.
     //
     // On the globe the overlay covers only the map, below the in-map ad
     // (#tracking_leaderboard_container, z-index 99), so no ad slot is dimmed or
@@ -154,6 +166,10 @@ var globeTokenReady;
     const FAILED_HINT = 'If this keeps happening, try turning off your VPN or switching servers, ' +
         'allowing challenges.cloudflare.com in your ad or script blocker, allowing cookies for ' +
         'this site, or updating your browser.';
+    const COOKIE_HINT = 'Your browser is not keeping this site\'s cookies. Allow cookies for ' +
+        'this site, then reload.';
+    const BLOCKED_HINT = 'The verification script from challenges.cloudflare.com did not load. ' +
+        'Allow it in your ad or script blocker, then reload.';
 
     function showCheckCard() {
         cardTitle.textContent = 'Quick check before we load flight data';
@@ -163,10 +179,10 @@ var globeTokenReady;
         reloadButton.style.display = 'none';
     }
 
-    function showFailedCard() {
+    function showFailedCard(hint) {
         cardTitle.textContent = 'Flight data could not be verified';
         cardText.textContent = 'Reload the page to try again.';
-        cardHint.textContent = FAILED_HINT;
+        cardHint.textContent = hint || FAILED_HINT;
         cardContainer.style.display = 'none';
         reloadButton.style.display = 'inline-block';
     }
@@ -190,6 +206,24 @@ var globeTokenReady;
     function onAfterInteractive() {
         awaitingTick = false;
         hideOverlay();
+    }
+
+    // Shows the failure card with `hint` and stops minting until the page is
+    // reloaded, for states another challenge cannot fix.
+    function stopWithCard(hint) {
+        stopped = true;
+        if (refreshTimer) clearTimeout(refreshTimer);
+        if (!overlay) buildOverlay();
+        showFailedCard(hint);
+        showOverlay();
+        settleReadyOnce();
+    }
+
+    function noteMint() {
+        const now = Date.now();
+        mintTimes = mintTimes.filter((t) => now - t < STUCK_WINDOW_MS);
+        mintTimes.push(now);
+        if (mintTimes.length >= STUCK_MINTS) stopWithCard(COOKIE_HINT);
     }
 
     // A check that fails while the visitor can see the card replaces the
@@ -247,7 +281,10 @@ var globeTokenReady;
             s.src = TURNSTILE_API + '&onload=globeOnTurnstileLoad';
             s.async = true;
             s.defer = true;
-            s.onerror = function () { reject(new Error('turnstile api load failed')); };
+            s.onerror = function () {
+                stopWithCard(BLOCKED_HINT);
+                reject(new Error('turnstile api load failed'));
+            };
             document.head.appendChild(s);
         });
         return apiLoading;
@@ -345,7 +382,7 @@ var globeTokenReady;
     }
 
     function doMint() {
-        if (!enabled) { settleReadyOnce(); return Promise.resolve(); }
+        if (!enabled || stopped) { settleReadyOnce(); return Promise.resolve(); }
         if (inFlight) return inFlight;
         inFlight = getTurnstileToken().then(function (token) {
             return fetch(TOKEN_ENDPOINT, {
@@ -359,6 +396,7 @@ var globeTokenReady;
                 if (resp.ok && data && data.ok && data.exp) {
                     writeStoredExp(data.exp);
                     scheduleRefresh(data.exp);
+                    noteMint();
                 } else {
                     // Config/verification problem: retry later without wedging the
                     // page. A request that needs a cookie surfaces a 403, which
@@ -382,6 +420,9 @@ var globeTokenReady;
 
     window.globeEnsureToken = function (force) {
         if (!enabled) return Promise.resolve();
+        if (force && mintTimes.length && Date.now() - mintTimes[mintTimes.length - 1] < RECENT_MINT_MS) {
+            return Promise.resolve();
+        }
         if (force) {
             // The caller was refused, so the stored expiry describes a cookie
             // the server no longer accepts.
@@ -398,6 +439,10 @@ var globeTokenReady;
             if (!document.hidden) refreshIfDue();
         });
         window.addEventListener('focus', refreshIfDue);
+        if (typeof navigator !== 'undefined' && navigator.cookieEnabled === false) {
+            stopWithCard(COOKIE_HINT);
+            return;
+        }
         if (lazy) { settleReadyOnce(); return; }
         if (adoptStoredExp()) { settleReadyOnce(); return; }
         doMint();
