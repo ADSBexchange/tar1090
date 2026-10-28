@@ -78,6 +78,7 @@ var globeTokenReady;
     // interact, between the before- and after-interactive callbacks. It has no
     // dismiss control: gated data cannot load until the check passes. If the
     // check fails while the overlay is up, the card says so and offers a reload.
+    // Each card carries a short hint on why the check appears and what helps.
     //
     // On the globe the overlay covers only the map, below the in-map ad
     // (#tracking_leaderboard_container, z-index 99), so no ad slot is dimmed or
@@ -89,6 +90,7 @@ var globeTokenReady;
     let cardTitle = null;
     let cardText = null;
     let cardContainer = null;
+    let cardHint = null;
     let reloadButton = null;
     let awaitingTick = false;  // Turnstile is showing its checkbox
 
@@ -124,6 +126,11 @@ var globeTokenReady;
         cardContainer.id = 'turnstile-gate-container';
         Object.assign(cardContainer.style, { display: 'flex', justifyContent: 'center', minHeight: '65px' });
 
+        cardHint = document.createElement('div');
+        Object.assign(cardHint.style, {
+            fontSize: '12px', color: '#555', maxWidth: '320px', margin: '12px auto 0', lineHeight: '1.4'
+        });
+
         reloadButton = document.createElement('button');
         reloadButton.type = 'button';
         reloadButton.textContent = 'Reload';
@@ -137,13 +144,21 @@ var globeTokenReady;
         card.appendChild(cardText);
         card.appendChild(cardContainer);
         card.appendChild(reloadButton);
+        card.appendChild(cardHint);
         overlay.appendChild(card);
         (map || document.body).appendChild(overlay);
     }
 
+    const CHECK_HINT = 'Cloudflare asks for this when it cannot confirm your browser ' +
+        'automatically, which is common with VPNs, privacy extensions and automated browsers.';
+    const FAILED_HINT = 'If this keeps happening, try turning off your VPN or switching servers, ' +
+        'allowing challenges.cloudflare.com in your ad or script blocker, allowing cookies for ' +
+        'this site, or updating your browser.';
+
     function showCheckCard() {
         cardTitle.textContent = 'Quick check before we load flight data';
         cardText.textContent = 'Tick the box to confirm you are human.';
+        cardHint.textContent = CHECK_HINT;
         cardContainer.style.display = 'flex';
         reloadButton.style.display = 'none';
     }
@@ -151,6 +166,7 @@ var globeTokenReady;
     function showFailedCard() {
         cardTitle.textContent = 'Flight data could not be verified';
         cardText.textContent = 'Reload the page to try again.';
+        cardHint.textContent = FAILED_HINT;
         cardContainer.style.display = 'none';
         reloadButton.style.display = 'inline-block';
     }
