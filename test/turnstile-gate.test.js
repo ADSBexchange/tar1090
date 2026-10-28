@@ -22,7 +22,9 @@ function memoryStorage(initial) {
 // Loads turnstile-gate.js into a fresh context with a stub DOM, Turnstile API
 // and token endpoint. Timers are recorded, and run only when a test calls one.
 // `onExecute` replaces the default challenge, which passes at once.
-function loadGate({ storage, mintExp = 2000000000, onExecute } = {}) {
+// `clock`, when given, replaces Date.now inside the gate: { t: <ms> }.
+// `cookiesKept: false` makes document.cookie drop writes, as a per-site block does.
+function loadGate({ storage, mintExp = 2000000000, onExecute, scriptFails = false, cookieEnabled, cookiesKept = true, clock } = {}) {
   const calls = { scripts: 0, executes: 0, posts: 0 };
   const timers = [];
   const elements = [];
@@ -30,7 +32,7 @@ function loadGate({ storage, mintExp = 2000000000, onExecute } = {}) {
   const ctx = {
     turnstileSiteKey: "0xSITEKEY",
     localStorage: storage,
-    Date,
+    Date: clock ? { now: () => clock.t } : Date,
     JSON,
     Promise,
     parseInt,
@@ -55,9 +57,9 @@ function loadGate({ storage, mintExp = 2000000000, onExecute } = {}) {
   ctx.document = {
     body: { appendChild: () => {} },
     head: {
-      appendChild: () => {
+      appendChild: (el) => {
         calls.scripts++;
-        Promise.resolve().then(() => ctx.globeOnTurnstileLoad());
+        Promise.resolve().then(() => (scriptFails ? el.onerror() : ctx.globeOnTurnstileLoad()));
       },
     },
     getElementById: () => null,
@@ -69,7 +71,17 @@ function loadGate({ storage, mintExp = 2000000000, onExecute } = {}) {
     addEventListener: () => {},
     hidden: false,
   };
+  let jar = "";
+  Object.defineProperty(ctx.document, "cookie", {
+    get: () => jar,
+    set: (v) => {
+      if (!cookiesKept) return;
+      const [pair] = v.split(";");
+      jar = /Max-Age=0/.test(v) ? "" : pair;
+    },
+  });
   ctx.addEventListener = () => {};
+  if (cookieEnabled !== undefined) ctx.navigator = { cookieEnabled };
   ctx.window = ctx;
   vm.createContext(ctx);
   vm.runInContext(SOURCE, ctx);
@@ -183,6 +195,7 @@ test("a failure while the checkbox is shown replaces it with the reload message"
   assert.strictEqual(calls.posts, 0);
   assert.strictEqual(overlayOf(elements).style.visibility, "visible");
   assert.strictEqual(titleOf(elements).textContent, "Flight data could not be verified");
+  assert.ok(elements.some((el) => /challenges\.cloudflare\.com/.test(el.textContent || "")));
 });
 
 test("a failure during a silent challenge keeps the overlay hidden", async () => {
@@ -193,4 +206,61 @@ test("a failure during a silent challenge keeps the overlay hidden", async () =>
   });
   await ctx.globeTokenReady;
   assert.strictEqual(overlayOf(elements).style.visibility, "hidden");
+});
+
+const hintOf = (elements) => elements.map((el) => el.textContent || "").join(" ");
+
+test("a refusal right after a mint retries without minting again", async () => {
+  const storage = memoryStorage();
+  const clock = { t: Date.now() };
+  const { ctx, calls } = loadGate({ storage, mintExp: nowSec() + 3600, clock });
+  await ctx.globeTokenReady;
+  clock.t += 3000;
+  await ctx.globeEnsureToken(true);
+  assert.strictEqual(calls.posts, 1);
+});
+
+test("a third mint inside two minutes shows the cookie message and stops minting", async () => {
+  const storage = memoryStorage();
+  const clock = { t: Date.now() };
+  const { ctx, calls, elements } = loadGate({ storage, mintExp: nowSec() + 3600, clock });
+  await ctx.globeTokenReady;
+  clock.t += 15000;
+  await ctx.globeEnsureToken(true);
+  assert.strictEqual(overlayOf(elements).style.visibility, "hidden");
+  clock.t += 15000;
+  await ctx.globeEnsureToken(true);
+  assert.strictEqual(calls.posts, 3);
+  assert.strictEqual(overlayOf(elements).style.visibility, "visible");
+  assert.match(hintOf(elements), /not keeping this site's cookies/);
+  clock.t += 15000;
+  await ctx.globeEnsureToken(true);
+  assert.strictEqual(calls.executes, 3);
+});
+
+test("a browser with cookies off gets the cookie message without a challenge", async () => {
+  const storage = memoryStorage();
+  const { ctx, calls, elements } = loadGate({ storage, cookieEnabled: false });
+  await ctx.globeTokenReady;
+  assert.strictEqual(calls.scripts, 0);
+  assert.strictEqual(overlayOf(elements).style.visibility, "visible");
+  assert.match(hintOf(elements), /not keeping this site's cookies/);
+});
+
+test("a Turnstile script that fails to load shows the blocker message", async () => {
+  const storage = memoryStorage();
+  const { ctx, calls, elements } = loadGate({ storage, scriptFails: true });
+  await ctx.globeTokenReady;
+  assert.strictEqual(calls.posts, 0);
+  assert.strictEqual(overlayOf(elements).style.visibility, "visible");
+  assert.match(hintOf(elements), /challenges\.cloudflare\.com did not load/);
+});
+
+test("a site-level cookie block shows the cookie message without a challenge", async () => {
+  const storage = memoryStorage();
+  const { ctx, calls, elements } = loadGate({ storage, cookiesKept: false });
+  await ctx.globeTokenReady;
+  assert.strictEqual(calls.scripts, 0);
+  assert.strictEqual(overlayOf(elements).style.visibility, "visible");
+  assert.match(hintOf(elements), /not keeping this site's cookies/);
 });
