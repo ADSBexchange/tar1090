@@ -183,6 +183,7 @@ test("a failure while the checkbox is shown replaces it with the reload message"
   assert.strictEqual(calls.posts, 0);
   assert.strictEqual(overlayOf(elements).style.visibility, "visible");
   assert.strictEqual(titleOf(elements).textContent, "Flight data could not be verified");
+  assert.ok(elements.some((el) => /challenges\.cloudflare\.com/.test(el.textContent || "")));
 });
 
 test("a failure during a silent challenge keeps the overlay hidden", async () => {
