@@ -23,7 +23,8 @@ function memoryStorage(initial) {
 // and token endpoint. Timers are recorded, and run only when a test calls one.
 // `onExecute` replaces the default challenge, which passes at once.
 // `clock`, when given, replaces Date.now inside the gate: { t: <ms> }.
-function loadGate({ storage, mintExp = 2000000000, onExecute, scriptFails = false, cookieEnabled, clock } = {}) {
+// `cookiesKept: false` makes document.cookie drop writes, as a per-site block does.
+function loadGate({ storage, mintExp = 2000000000, onExecute, scriptFails = false, cookieEnabled, cookiesKept = true, clock } = {}) {
   const calls = { scripts: 0, executes: 0, posts: 0 };
   const timers = [];
   const elements = [];
@@ -70,6 +71,15 @@ function loadGate({ storage, mintExp = 2000000000, onExecute, scriptFails = fals
     addEventListener: () => {},
     hidden: false,
   };
+  let jar = "";
+  Object.defineProperty(ctx.document, "cookie", {
+    get: () => jar,
+    set: (v) => {
+      if (!cookiesKept) return;
+      const [pair] = v.split(";");
+      jar = /Max-Age=0/.test(v) ? "" : pair;
+    },
+  });
   ctx.addEventListener = () => {};
   if (cookieEnabled !== undefined) ctx.navigator = { cookieEnabled };
   ctx.window = ctx;
@@ -244,4 +254,13 @@ test("a Turnstile script that fails to load shows the blocker message", async ()
   assert.strictEqual(calls.posts, 0);
   assert.strictEqual(overlayOf(elements).style.visibility, "visible");
   assert.match(hintOf(elements), /challenges\.cloudflare\.com did not load/);
+});
+
+test("a site-level cookie block shows the cookie message without a challenge", async () => {
+  const storage = memoryStorage();
+  const { ctx, calls, elements } = loadGate({ storage, cookiesKept: false });
+  await ctx.globeTokenReady;
+  assert.strictEqual(calls.scripts, 0);
+  assert.strictEqual(overlayOf(elements).style.visibility, "visible");
+  assert.match(hintOf(elements), /not keeping this site's cookies/);
 });

@@ -432,6 +432,21 @@ var globeTokenReady;
         return doMint();
     };
 
+    // navigator.cookieEnabled stays true when cookies are blocked for one site,
+    // so also write a short-lived probe cookie and read it back. A browser that
+    // drops it would drop the session cookie too.
+    function cookiesWork() {
+        if (typeof navigator !== 'undefined' && navigator.cookieEnabled === false) return false;
+        try {
+            document.cookie = 'globe_cookie_probe=1; Max-Age=10; Path=/; SameSite=Lax';
+            const kept = document.cookie.indexOf('globe_cookie_probe=1') !== -1;
+            document.cookie = 'globe_cookie_probe=; Max-Age=0; Path=/; SameSite=Lax';
+            return kept;
+        } catch (e) {
+            return true;
+        }
+    }
+
     function start() {
         computeEnabled();
         if (!enabled) { settleReadyOnce(); return; }
@@ -439,7 +454,7 @@ var globeTokenReady;
             if (!document.hidden) refreshIfDue();
         });
         window.addEventListener('focus', refreshIfDue);
-        if (typeof navigator !== 'undefined' && navigator.cookieEnabled === false) {
+        if (!cookiesWork()) {
             stopWithCard(COOKIE_HINT);
             return;
         }
