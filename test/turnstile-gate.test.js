@@ -26,8 +26,9 @@ function memoryStorage(initial) {
 // `cookiesKept: false` makes document.cookie drop writes, as a per-site block does.
 // `silentKey` sets turnstileSilentSiteKey; `onSilentExecute` replaces the silent
 // widget's challenge, which passes at once by default.
-function loadGate({ storage, mintExp = 2000000000, onExecute, scriptFails = false, cookieEnabled, cookiesKept = true, clock, silentKey, onSilentExecute } = {}) {
-  const calls = { scripts: 0, executes: 0, silentExecutes: 0, posts: 0, bodies: [] };
+// `protocol` sets location.protocol; every document.cookie write is recorded.
+function loadGate({ storage, mintExp = 2000000000, onExecute, scriptFails = false, cookieEnabled, cookiesKept = true, clock, silentKey, onSilentExecute, protocol = "https:" } = {}) {
+  const calls = { scripts: 0, executes: 0, silentExecutes: 0, posts: 0, bodies: [], cookieWrites: [] };
   const timers = [];
   const elements = [];
   let renderOptions = null;
@@ -90,12 +91,14 @@ function loadGate({ storage, mintExp = 2000000000, onExecute, scriptFails = fals
   Object.defineProperty(ctx.document, "cookie", {
     get: () => jar,
     set: (v) => {
+      calls.cookieWrites.push(v);
       if (!cookiesKept) return;
       const [pair] = v.split(";");
       jar = /Max-Age=0/.test(v) ? "" : pair;
     },
   });
   ctx.addEventListener = () => {};
+  ctx.location = { protocol };
   if (cookieEnabled !== undefined) ctx.navigator = { cookieEnabled };
   ctx.window = ctx;
   vm.createContext(ctx);
@@ -278,6 +281,26 @@ test("a site-level cookie block shows the cookie message without a challenge", a
   assert.strictEqual(calls.scripts, 0);
   assert.strictEqual(overlayOf(elements).style.visibility, "visible");
   assert.match(hintOf(elements), /not keeping this site's cookies/);
+});
+
+test("over HTTPS the cookie probe uses the session cookie's cross-site attributes", async () => {
+  const { ctx, calls } = loadGate({ storage: memoryStorage() });
+  await ctx.globeTokenReady;
+  assert.strictEqual(calls.cookieWrites.length, 2);
+  for (const w of calls.cookieWrites) {
+    assert.match(w, /^globe_cookie_probe=/);
+    assert.match(w, /; SameSite=None; Secure; Partitioned$/);
+  }
+});
+
+test("over HTTP the cookie probe uses SameSite=Lax without Secure", async () => {
+  const { ctx, calls } = loadGate({ storage: memoryStorage(), protocol: "http:" });
+  await ctx.globeTokenReady;
+  assert.strictEqual(calls.cookieWrites.length, 2);
+  for (const w of calls.cookieWrites) {
+    assert.match(w, /; SameSite=Lax$/);
+    assert.doesNotMatch(w, /Secure/);
+  }
 });
 
 test("the silent widget's token is sent with widget: silent and the managed widget never runs", async () => {

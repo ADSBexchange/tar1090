@@ -503,13 +503,18 @@ var globeTokenReady;
 
     // navigator.cookieEnabled stays true when cookies are blocked for one site,
     // so also write a short-lived probe cookie and read it back. A browser that
-    // drops it would drop the session cookie too.
+    // drops it would drop the session cookie too. Over HTTPS the probe carries
+    // the session cookie's SameSite=None; Secure; Partitioned attributes, so it
+    // is kept or dropped the same way, including in another site's iframe.
     function cookiesWork() {
         if (typeof navigator !== 'undefined' && navigator.cookieEnabled === false) return false;
+        const attrs = location.protocol === 'https:'
+            ? '; Path=/; SameSite=None; Secure; Partitioned'
+            : '; Path=/; SameSite=Lax';
         try {
-            document.cookie = 'globe_cookie_probe=1; Max-Age=10; Path=/; SameSite=Lax';
+            document.cookie = 'globe_cookie_probe=1; Max-Age=10' + attrs;
             const kept = document.cookie.indexOf('globe_cookie_probe=1') !== -1;
-            document.cookie = 'globe_cookie_probe=; Max-Age=0; Path=/; SameSite=Lax';
+            document.cookie = 'globe_cookie_probe=; Max-Age=0' + attrs;
             return kept;
         } catch (e) {
             return true;
