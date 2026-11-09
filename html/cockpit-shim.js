@@ -47,6 +47,33 @@
     const PROTO = 'adsbx-cockpit';
     const VERSION = 1;
 
+    const MAP_ID = 'map_container';
+    const OVERLAY_ID = 'cockpit_overlay';
+    const PANEL_ID = 'selected_infoblock';
+    const RAIL_ID = 'header_side';
+    const OPEN_CLASS = 'is-open';
+    const MAP_OPEN_CLASS = 'cockpit-open';
+    const EXIT_CLASS = 'cockpit-exit';
+    const EXIT_LABEL = 'Exit cockpit';
+    const INNER_CLASS = 'cockpit-inner';
+    const TRANSITION = 'map-dive';
+    const EDGE_PX = 2;
+    const EXIT_GAP_PX = 10;
+    const EXIT_MS = 260;
+    const REDUCED_EXIT_MS = 150;
+    const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+    const EXIT_STEP_PX = 8;
+    const MAP_ORIGIN_X_VAR = '--cockpit-map-origin-x';
+    const MAP_ORIGIN_Y_VAR = '--cockpit-map-origin-y';
+    const AD_SLOTS = [
+        '[data-freestar-ad]',
+        '[id^="adsbexchange_"]',
+        '#tracking_leaderboard_container',
+        '[id^="FreeStarVideoAdContainer"]',
+        '#fs-sticky-footer',
+    ].join(', ');
+    const KEEP_OPEN = ['#cockpit_view', '.cockpit-toast', '#toggle_sidebar_control', '#splitter', AD_SLOTS].join(', ');
+
     const DEFAULTS = {
         url: '/cockpit/',        // where the cockpit is served; may be another origin
         optIn: 'default-on',     // 'none' | 'default-on' | 'default-off'
@@ -130,17 +157,82 @@
     // heatmap. `modes` carries tar1090's own globals, truthy when that view is
     // on; absent globals count as off.
     function liveMode(modes) {
-        return !modes || !(modes.replay || modes.showTrace || modes.heatmap);
+        return !modes || !(modes.replay || modes.showTrace || modes.heatmap || modes.tableOnly);
     }
 
     function isMsg(d) {
         return !!d && typeof d === 'object' && d.proto === PROTO && d.v === VERSION && typeof d.kind === 'string';
     }
     function msg(kind, body) { return Object.assign({ proto: PROTO, v: VERSION, kind: kind }, body || {}); }
+    function contextFor(signedIn) { return { signedIn: signedIn, embedded: true }; }
+
+    function shown(r) { return !!r && r.width > 0 && r.height > 0; }
+
+    function frameInsets(map, panel, rail) {
+        const insets = { left: 0, right: 0 };
+        if (!shown(map)) return insets;
+        if (shown(panel) && panel.top <= map.top + EDGE_PX && panel.bottom >= map.bottom - EDGE_PX
+            && panel.left <= map.left + EDGE_PX && panel.right > map.left) {
+            insets.left = Math.round(Math.min(panel.right - map.left, map.width));
+        }
+        if (shown(rail) && rail.left < map.right && rail.right >= map.right - EDGE_PX) {
+            insets.right = Math.round(Math.min(map.right - rail.left, map.width - insets.left));
+        }
+        return insets;
+    }
+
+    function closesOn(target, overlay) {
+        if (!target || typeof target.closest !== 'function') return false;
+        if (overlay && typeof overlay.contains === 'function' && overlay.contains(target)) return false;
+        return !target.closest(KEEP_OPEN);
+    }
+
+    function switchedAway(openedHex, selectedHex) {
+        return !!openedHex && !!selectedHex && openedHex !== selectedHex;
+    }
+
+    function revealOrigin(pixel, insets, width, height) {
+        const centre = { x: Math.round(width / 2), y: Math.round(height / 2) };
+        if (!Array.isArray(pixel) || num(pixel[0]) === null || num(pixel[1]) === null) return centre;
+        const left = pixel[0] - insets.left, top = pixel[1];
+        if (left < 0 || left > width || top < 0 || top > height) return centre;
+        return { x: Math.round(left), y: Math.round(top) };
+    }
+
+    function intersects(a, b) {
+        return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+    }
+
+    function exitSpot(area, size, obstacles) {
+        const blocking = (obstacles || []).filter(shown);
+        const sides = ['right', 'left'];
+        for (let s = 0; s < sides.length; s++) {
+            const left = sides[s] === 'right' ? area.width - EXIT_GAP_PX - size.width : EXIT_GAP_PX;
+            for (let top = EXIT_GAP_PX; top + size.height + EXIT_GAP_PX <= area.height; top += EXIT_STEP_PX) {
+                const box = { left: area.left + left, top: area.top + top,
+                              right: area.left + left + size.width, bottom: area.top + top + size.height };
+                if (!blocking.some(function (obstacle) { return intersects(box, obstacle); })) return { side: sides[s], top: top };
+            }
+        }
+        return { side: 'right', top: EXIT_GAP_PX };
+    }
+
+    function exitMs(reducedMotion) { return reducedMotion ? REDUCED_EXIT_MS : EXIT_MS; }
+
+    function ownsEntry(state, token) {
+        return !!state && typeof state === 'object' && state.cockpit === token;
+    }
+
+    function onOwnEntry(entry, state, historyLength) {
+        if (!entry || !entry.token) return false;
+        return ownsEntry(state, entry.token) || historyLength === entry.historyLength;
+    }
 
     // Node (tests) gets the pure parts and nothing else; inert in the browser.
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { PROTO, VERSION, DEFAULTS, snapshot, fieldFrom, flyable, liveMode, isMsg, msg };
+        module.exports = { PROTO, VERSION, DEFAULTS, snapshot, fieldFrom, flyable, liveMode, isMsg, msg,
+                           frameInsets, closesOn, switchedAway, revealOrigin, exitSpot, exitMs, ownsEntry, onOwnEntry,
+                           TRANSITION, contextFor };
         return;
     }
 
@@ -158,6 +250,8 @@
     let toggle = null;
     let button = null;
     let open = null;             // the one open cockpit, or null
+    let historySeq = 0;
+    let ignoredPops = 0;
 
     function deployFlag() { return typeof enableCockpitView !== 'undefined' && enableCockpitView === true; }
     function optedIn() { return cfg.optIn === 'none' || !!(toggle && toggle.state); }
@@ -166,14 +260,16 @@
             replay: typeof replay !== 'undefined' && replay,
             showTrace: typeof showTrace !== 'undefined' && showTrace,
             heatmap: typeof heatmap !== 'undefined' && heatmap,
+            tableOnly: typeof mapIsVisible !== 'undefined' && mapIsVisible === false,
         });
     }
     function available() { return deployFlag() && serverFlag === true && optedIn() && live(); }
     function selected() { return (typeof SelectedPlane !== 'undefined') ? SelectedPlane : null; }
     function dataNow() { return (typeof now !== 'undefined') ? now : null; }
-    function planeNow() {
-        return (open && typeof g !== 'undefined' && g.planes) ? g.planes[open.hex] || null : null;
+    function planeOf(hex) {
+        return (hex && typeof g !== 'undefined' && g.planes) ? g.planes[hex] || null : null;
     }
+    function planeNow() { return open ? planeOf(open.hex) : null; }
 
     function fetchFlag() {
         return fetch(new URL('flag.json', cockpitUrl).href, { cache: 'no-store', credentials: 'include' })
@@ -222,7 +318,140 @@
     function sync() {
         if (!button) return;
         if (open && !live()) { close(); return; }   // the view left live data under it
-        button.style.display = (available() && flyable(selected()) && !open) ? '' : 'none';
+        const sp = selected();
+        if (open && switchedAway(open.origin, sp && sp.icao)) { close({ switched: true }); return; }
+        if (open) { layout(open); markEntry(open); }
+        button.style.display = (available() && flyable(sp) && !open) ? '' : 'none';
+    }
+
+    function reducedMotion() {
+        return typeof window.matchMedia === 'function' && window.matchMedia(REDUCED_MOTION_QUERY).matches;
+    }
+
+    function rectOf(id) {
+        const node = document.getElementById(id);
+        return node ? node.getBoundingClientRect() : null;
+    }
+
+    function layout(cockpit) {
+        if (!cockpit.map) return;
+        const map = cockpit.map.getBoundingClientRect();
+        const insets = frameInsets(map, rectOf(PANEL_ID), rectOf(RAIL_ID));
+        const style = cockpit.overlay.style;
+        style.left = insets.left + 'px';
+        style.right = insets.right + 'px';
+        cockpit.insets = insets;
+        placeExit(cockpit, adSlotRects());
+        setOrigin(cockpit);
+    }
+
+    function adSlotRects() {
+        return Array.prototype.map.call(document.querySelectorAll(AD_SLOTS), function (node) {
+            return node.getBoundingClientRect();
+        });
+    }
+
+    function watchLayout(cockpit) {
+        if (!cockpit.map || typeof ResizeObserver !== 'function') return;
+        cockpit.observer = new ResizeObserver(function () { if (open === cockpit) layout(cockpit); });
+        [cockpit.map, cockpit.overlay, document.getElementById(PANEL_ID), document.getElementById(RAIL_ID)].forEach(function (node) {
+            if (node) cockpit.observer.observe(node);
+        });
+    }
+
+    function exitOf(overlay) { return overlay.querySelector('.' + EXIT_CLASS); }
+
+    function placeExit(cockpit, obstacles) {
+        const exit = exitOf(cockpit.overlay);
+        if (!exit) return;
+        const spot = exitSpot(cockpit.overlay.getBoundingClientRect(),
+                              { width: exit.offsetWidth, height: exit.offsetHeight }, obstacles);
+        exit.style.top = spot.top + 'px';
+        exit.style.left = spot.side === 'left' ? EXIT_GAP_PX + 'px' : 'auto';
+        exit.style.right = spot.side === 'right' ? EXIT_GAP_PX + 'px' : 'auto';
+    }
+
+    function setOrigin(cockpit) {
+        const width = cockpit.overlay.clientWidth, height = cockpit.overlay.clientHeight;
+        const insets = cockpit.insets || { left: 0, right: 0 };
+        const at = revealOrigin(aircraftPixel(cockpit), insets, width, height);
+        if (cockpit.map) {
+            cockpit.map.style.setProperty(MAP_ORIGIN_X_VAR, (at.x + insets.left) + 'px');
+            cockpit.map.style.setProperty(MAP_ORIGIN_Y_VAR, at.y + 'px');
+        }
+    }
+
+    function aircraftPixel(cockpit) {
+        const plane = planeOf(cockpit.origin);
+        if (!plane || !Array.isArray(plane.position) || typeof OLMap === 'undefined' || !OLMap || typeof ol === 'undefined') return null;
+        try { return OLMap.getPixelFromCoordinate(ol.proj.fromLonLat(plane.position)); } catch (err) { return null; }
+    }
+
+    function pushEntry(cockpit) {
+        cockpit.token = ++historySeq;
+        try { history.pushState({ cockpit: cockpit.token }, '', window.location.href); } catch (err) { cockpit.token = 0; }
+        cockpit.historyLength = history.length;
+    }
+
+    function dropEntry(cockpit) {
+        if (!onOwnEntry(cockpit, history.state, history.length)) return;
+        ignoredPops++;
+        history.back();
+    }
+
+    function markEntry(cockpit) {
+        if (!cockpit.token || ownsEntry(history.state, cockpit.token)) return;
+        try { history.replaceState({ cockpit: cockpit.token }, '', window.location.href); } catch (err) { cockpit.token = 0; }
+    }
+
+    function cockpitFrame() {
+        const iframe = document.createElement('iframe');
+        iframe.title = 'Cockpit view';
+        // Defence in depth when the cockpit is on its own origin; on the
+        // same origin allow-same-origin makes this advisory only.
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+        // The Cesium ion allowed-URL restriction reads the Referer header,
+        // so the cockpit's origin has to be sent.
+        iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+        // Give the cockpit the keyboard as soon as it loads, so C and
+        // Escape work without a click into it first.
+        iframe.addEventListener('load', function () { try { iframe.focus(); } catch (err) { /* ignore */ } });
+        return iframe;
+    }
+
+    function buildOverlay(iframe) {
+        const overlay = document.createElement('div');
+        overlay.id = OVERLAY_ID;
+        overlay.setAttribute('data-transition', TRANSITION);
+        const inner = document.createElement('div');
+        inner.className = INNER_CLASS;
+        inner.appendChild(iframe);
+        overlay.appendChild(inner);
+        overlay.appendChild(exitButton());
+        return overlay;
+    }
+
+    function focusQuietly(node) {
+        try { node.focus({ preventScroll: true }); } catch (err) { node.focus(); }
+    }
+
+    function exitButton() {
+        const exit = document.createElement('button');
+        exit.type = 'button';
+        exit.className = EXIT_CLASS;
+        exit.title = EXIT_LABEL;
+        exit.setAttribute('aria-label', EXIT_LABEL);
+        exit.addEventListener('click', function () { close(); });
+        return exit;
+    }
+
+    function onPress(e) {
+        if (open && closesOn(e.target, open.overlay)) close({ pressed: true });
+    }
+
+    function onPop() {
+        if (ignoredPops > 0) { ignoredPops--; return; }
+        if (open) close({ popped: true });
     }
 
     function toast(text) {
@@ -275,31 +504,31 @@
             // offered. A viewer who IS signed in but not a feeder is refused
             // by the server gate, which serves the same preview in the
             // cockpit's place, and Sign in is not offered.
+            const current = selected();
+            if (!current || current.icao !== hex) return;
+            const leaving = document.getElementById(OVERLAY_ID);
+            if (leaving) finishExit(leaving);
             const preview = state === 'signed-out';
             if (preview) setTokenCookie('', 0);
 
-            const overlay = document.createElement('div');
-            overlay.id = 'cockpit_overlay';
-            const iframe = document.createElement('iframe');
-            iframe.title = 'Cockpit view';
-            // Defence in depth when the cockpit is on its own origin; on the
-            // same origin allow-same-origin makes this advisory only.
-            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-            // The Cesium ion allowed-URL restriction reads the Referer header,
-            // so the cockpit's origin has to be sent.
-            iframe.referrerPolicy = 'strict-origin-when-cross-origin';
-
-            open = { hex: preview ? null : hex, signedIn: !preview, overlay: overlay, iframe: iframe, timer: null,
-                     lastSig: '', lastSent: 0, lastField: 0, lostSent: false,
-                     followWas: (!preview && typeof FollowSelected !== 'undefined') ? FollowSelected : null };
+            const map = document.getElementById(MAP_ID);
+            const iframe = cockpitFrame();
+            const overlay = buildOverlay(iframe);
+            const cockpit = { hex: preview ? null : hex, origin: hex, signedIn: !preview, overlay: overlay, iframe: iframe,
+                              map: map, insets: null, observer: null, token: 0, historyLength: 0, timer: null,
+                              lastSig: '', lastSent: 0, lastField: 0, lostSent: false,
+                              followWas: (!preview && typeof FollowSelected !== 'undefined') ? FollowSelected : null };
+            open = cockpit;
             // Listen BEFORE the frame loads, so its first message is heard.
             window.addEventListener('message', onMessage);
-            // Give the cockpit the keyboard as soon as it loads, so C and
-            // Escape work without a click into it first.
-            iframe.addEventListener('load', function () { try { iframe.focus(); } catch (err) { /* ignore */ } });
             iframe.src = preview ? new URL('preview.html', cockpitUrl).href : cockpitUrl.href;
-            overlay.appendChild(iframe);
-            document.body.appendChild(overlay);
+            (map || document.body).appendChild(overlay);
+            if (map) map.classList.add(MAP_OPEN_CLASS);
+            layout(cockpit);
+            watchLayout(cockpit);
+            beginEntry(cockpit);
+            pushEntry(cockpit);
+            focusQuietly(exitOf(overlay));
             if (!preview && cfg.follow && typeof toggleFollow === 'function') toggleFollow(true);
             sync();
         });
@@ -309,14 +538,17 @@
         if (!open || e.origin !== cockpitOrigin || e.source !== open.iframe.contentWindow) return;
         const d = e.data;
         if (!isMsg(d)) return;
-        if (d.kind === 'ready') { if (open.hex) sendInit(); }
+        if (d.kind === 'ready') {
+            post('context', contextFor(open.signedIn));
+            if (open.hex) sendInit();
+        }
         else if (d.kind === 'preview') {
             // Not entitled: whether the shim chose the preview or the server
             // did, stop feeding - there is no aircraft to fly - and say whether
             // to offer sign-in: only when the account service had no session.
             clearInterval(open.timer);
             open.timer = null;
-            post('context', { signedIn: open.signedIn });
+            post('context', contextFor(open.signedIn));
         }
         else if (d.kind === 'sign-in') { close(); signIn(); }
         else if (d.kind === 'feeder') openFeeder();
@@ -361,15 +593,47 @@
         }
     }
 
-    function close() {
+    function close(how) {
         if (!open) return;
-        const o = open;
+        how = how || {};
+        const cockpit = open;
         open = null;
-        clearInterval(o.timer);
+        clearInterval(cockpit.timer);
         window.removeEventListener('message', onMessage);
+        if (cockpit.observer) cockpit.observer.disconnect();
+        const focusWasInside = !document.activeElement || document.activeElement === document.body
+            || cockpit.overlay.contains(document.activeElement);
+        beginExit(cockpit);
+        if (!how.popped) dropEntry(cockpit);
+        if (!how.switched) restoreSelection(cockpit);
+        if (cfg.follow && cockpit.followWas !== null && typeof toggleFollow === 'function') toggleFollow(cockpit.followWas);
+        sync();
+        if (focusWasInside && !how.switched && !how.pressed && button && button.style.display !== 'none') {
+            focusQuietly(button);
+        }
+    }
+
+    function beginEntry(cockpit) {
+        cockpit.overlay.getBoundingClientRect();
+        cockpit.overlay.classList.add(OPEN_CLASS);
+    }
+
+    function beginExit(cockpit) {
+        cockpit.overlay.classList.remove(OPEN_CLASS);
+        if (cockpit.map) cockpit.map.classList.remove(MAP_OPEN_CLASS);
+        setTimeout(function () { finishExit(cockpit.overlay); }, exitMs(reducedMotion()));
+    }
+
+    function finishExit(overlay) {
+        const parent = overlay.parentNode;
+        if (!parent) return;
+        const iframe = overlay.querySelector('iframe');
         // Unloading the frame releases its WebGL context and terrain cache.
-        o.iframe.src = 'about:blank';
-        if (o.overlay.parentNode) o.overlay.parentNode.removeChild(o.overlay);
+        if (iframe) iframe.src = 'about:blank';
+        parent.removeChild(overlay);
+    }
+
+    function restoreSelection(cockpit) {
         // Leave the viewer on the map with THIS aircraft selected.
         //
         // Normally it still is, and must not be reselected: selectPlaneByHex on
@@ -380,12 +644,9 @@
         // during the session, the selection may already be gone. So: only if
         // it is not this aircraft, put it back.
         const sp = selected();
-        if ((!sp || sp.icao !== o.hex) && typeof selectPlaneByHex === 'function'
-            && typeof g !== 'undefined' && g.planes && g.planes[o.hex]) {
-            selectPlaneByHex(o.hex, { noDeselect: true, follow: false });
+        if ((!sp || sp.icao !== cockpit.origin) && typeof selectPlaneByHex === 'function' && planeOf(cockpit.origin)) {
+            selectPlaneByHex(cockpit.origin, { noDeselect: true, follow: false });
         }
-        if (cfg.follow && o.followWas !== null && typeof toggleFollow === 'function') toggleFollow(o.followWas);
-        sync();
     }
 
     // Escape on the MAP closes the cockpit too. (Inside the cockpit, which has
@@ -426,6 +687,9 @@
             });
         }
         window.addEventListener('keydown', onKey, true);
+        document.addEventListener('pointerdown', onPress, true);
+        window.addEventListener('popstate', onPop);
+        window.addEventListener('resize', function () { if (open) layout(open); });
         setInterval(sync, 500);                    // follows selection changes; cheap
         fetchFlag();
     }
