@@ -1371,8 +1371,7 @@ function earlyInitPage() {
     });
 
     // Set up event handlers for buttons
-    jQuery("#expand_sidebar_button").click(expandSidebar);
-    jQuery("#shrink_sidebar_button").click(showMap);
+    initSidebarDrag();
 
     jQuery("#altimeter_form").submit(onAltimeterChange);
     jQuery("#altimeter_set_standard").click(onAltimeterSetStandard);
@@ -1750,40 +1749,25 @@ jQuery('#selected_altitude_geom1')
         button: '#toggle_sidebar_button',
         init: (onMobile ? false : true),
         setState: function (state) {
+            finishSidebarGlide();
             if (state) {
-                jQuery("#sidebar_container").show();
-                jQuery("#expand_sidebar_button").show();
+                showSidebar(true);
                 jQuery("#toggle_sidebar_button").removeClass("show_sidebar");
-                jQuery("#toggle_sidebar_button").addClass("hide_sidebar");
                 if (!g.sidebar_initiated) {
                     g.sidebar_initiated = true;
-                    // Set up map/sidebar splitter
-                    jQuery("#sidebar_container").resizable({
-                        handles: {
-                            w: '#splitter'
-                        },
-                        minWidth: 150,
-                        maxWidth: (jQuery(window).innerWidth() *0.8),
-                    });
-
-                    jQuery("#splitter").dblclick(function() {
-                        jQuery('#legend').hide();
-                        jQuery('#sidebar_container').width('auto');
-                        updateMapSize();
-                        loStore['sidebar_width'] = jQuery('#sidebar_container').width();
-                        jQuery('#sidebar_container').width(loStore['sidebar_width']);
-                        jQuery('#legend').show();
-                    });
+                    jQuery("#splitter").dblclick(resetSidebarWidth);
 
                 }
                 if (!hideButtons) {
                     jQuery('#splitter').show();
                 }
             } else {
+                if (!mapIsVisible) {
+                    returnToMapFromFullTable();
+                    return false;
+                }
                 if (loadFinished) {
-                    jQuery("#sidebar_container").hide();
-                    jQuery("#expand_sidebar_button").hide();
-                    jQuery("#toggle_sidebar_button").removeClass("hide_sidebar");
+                    showSidebar(false);
                     jQuery("#toggle_sidebar_button").addClass("show_sidebar");
                 }
             }
@@ -3013,6 +2997,8 @@ function showHideButtons() {
         jQuery('#header_top').hide();
         jQuery('#header_side').hide();
         jQuery('#splitter').hide();
+        if (mapIsVisible)
+            jQuery('#toggle_sidebar_control').hide();
         jQuery('#tabs').hide();
         jQuery('#filterButton').hide();
         jQuery('.ol-zoom').hide();
@@ -3021,6 +3007,7 @@ function showHideButtons() {
         jQuery('#header_top').show();
         jQuery('#header_side').show();
         jQuery('#splitter').show();
+        jQuery('#toggle_sidebar_control').show();
         jQuery('#tabs').show();
         jQuery('#filterButton').show();
         jQuery('.ol-zoom').show();
@@ -5072,12 +5059,11 @@ function updateMapSize() {
 }
 
 function expandSidebar(e) {
-    e.preventDefault();
+    if (e) e.preventDefault();
     jQuery("#map_container").hide()
     mapIsVisible = false;
-    jQuery("#toggle_sidebar_control").hide();
     jQuery("#splitter").hide();
-    jQuery("#shrink_sidebar_button").show();
+    jQuery(LAYOUT_CONTAINER_SELECTOR).addClass(SIDEBAR_FULL_CLASS);
     jQuery("#sidebar_container").width("100%");
     TAR.planeMan.redraw();
     updateMapSize();
@@ -5085,12 +5071,13 @@ function expandSidebar(e) {
 }
 
 function showMap() {
-    jQuery('#sidebar_container').width(loStore['sidebar_width']).css('margin-left', '0');
+    jQuery('#sidebar_container').width(loStore['sidebar_width']);
+    jQuery('#' + SIDEBAR_EDGE_ID).css('margin-left', '0');
+    jQuery(LAYOUT_CONTAINER_SELECTOR).removeClass(SIDEBAR_FULL_CLASS);
     jQuery("#map_container").show()
     mapIsVisible = true;
-    jQuery("#toggle_sidebar_control").show();
+    jQuery("#toggle_sidebar_control").toggle(!hideButtons);
     jQuery("#splitter").show();
-    jQuery("#shrink_sidebar_button").hide();
     TAR.planeMan.redraw();
     updateMapSize();
 }
@@ -5120,7 +5107,7 @@ function adjustInfoBlock() {
     if (SelectedPlane && toggles['enableInfoblock'].state) {
 
         if (!mapIsVisible)
-            jQuery("#sidebar_container").css('margin-left', '140pt');
+            jQuery('#' + SIDEBAR_EDGE_ID).css('margin-left', infoBlockWidth * globalScale + 'px');
         //jQuery('#sidebar_canvas').css('margin-bottom', jQuery('#selected_infoblock').height() + 'px');
         //
         if (mapIsVisible && document.getElementById('map_canvas').clientWidth < parseFloat(jQuery('#selected_infoblock').css('width')) * 3) {
@@ -5153,7 +5140,7 @@ function adjustInfoBlock() {
         }
     } else {
         if (!mapIsVisible)
-            jQuery("#sidebar_container").css('margin-left', '0');
+            jQuery('#' + SIDEBAR_EDGE_ID).css('margin-left', '0');
         //jQuery('#sidebar_canvas').css('margin-bottom', 0);
 
         jQuery('.ol-scale-line').css('left', '8px');

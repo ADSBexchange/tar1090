@@ -4,8 +4,51 @@
 
 #cockpit_overlay {
     position: fixed;
-    inset: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     z-index: 2147483000;        /* above map controls and ad slots */
+    background: #000;
+}
+#map_container > #cockpit_overlay {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 0;
+    background: transparent;
+    visibility: hidden;
+    pointer-events: none;
+    contain: paint;
+    margin-right: calc(-1 * var(--panel-slide-shift, 0px));
+}
+#map_container.panel-sliding > #cockpit_overlay[data-transition].is-open {
+    transition: margin-right var(--panel-slide-ms, 240ms) var(--panel-slide-ease, cubic-bezier(.2, 0, 0, 1)),
+                opacity 760ms cubic-bezier(.2, 0, 0, 1) 520ms, visibility 0s;
+}
+#map_container > #cockpit_overlay.is-open {
+    visibility: visible;
+    pointer-events: auto;
+}
+#map_container.cockpit-open > #header_top,
+#map_container.cockpit-open .ol-control {
+    visibility: hidden;
+}
+#map_container.cockpit-open > #header_side {
+    display: none;
+}
+#map_container.cockpit-open > #map_canvas {
+    isolation: isolate;
+    transform-origin: var(--cockpit-map-origin-x, 50%) var(--cockpit-map-origin-y, 50%);
+}
+#cockpit_overlay .cockpit-inner {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     background: #000;
 }
 #cockpit_overlay iframe {
@@ -14,6 +57,85 @@
     height: 100%;
     border: 0;
 }
+#cockpit_overlay .cockpit-exit {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 3;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    color: #d9a066;
+    cursor: pointer;
+}
+#cockpit_overlay .cockpit-exit::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    bottom: 3px;
+    left: 3px;
+    background: currentColor;
+    -webkit-mask: url('images/close-settings.png') center / contain no-repeat;
+    mask: url('images/close-settings.png') center / contain no-repeat;
+}
+#cockpit_overlay .cockpit-exit:hover { color: #ffd54a; }
+#cockpit_overlay .cockpit-exit:focus-visible { outline: 2px solid #ffd54a; outline-offset: 2px; }
+
+#map_container > #cockpit_overlay[data-transition="map-dive"] {
+    opacity: 0;
+    transition: opacity 180ms cubic-bezier(.4, 0, 1, 1), visibility 0s linear 180ms;
+}
+#map_container > #cockpit_overlay[data-transition="map-dive"].is-open {
+    opacity: 1;
+    transition: opacity 760ms cubic-bezier(.2, 0, 0, 1) 520ms, visibility 0s;
+}
+#map_container > #cockpit_overlay[data-transition="map-dive"] .cockpit-inner {
+    transform: scale(1.08);
+    transition: transform 0s linear 180ms;
+}
+#map_container > #cockpit_overlay[data-transition="map-dive"].is-open .cockpit-inner {
+    transform: none;
+    transition: transform 880ms cubic-bezier(.2, 0, 0, 1) 520ms;
+}
+@keyframes cockpit-map-dive {
+    0% {
+        transform: none;
+        opacity: 1;
+        animation-timing-function: cubic-bezier(.6, 0, .2, 1);
+    }
+    85%, 100% {
+        transform: perspective(900px) rotateX(34deg) scale(1.7);
+        opacity: .35;
+    }
+}
+#map_container.cockpit-open {
+    overflow: hidden;
+}
+#map_container.cockpit-open > #map_canvas {
+    animation: cockpit-map-dive 1320ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #map_container > #cockpit_overlay[data-transition] {
+        transition: opacity 150ms linear, visibility 0s linear 150ms;
+    }
+    #map_container > #cockpit_overlay[data-transition].is-open {
+        transition: opacity 150ms linear, visibility 0s;
+    }
+    #map_container > #cockpit_overlay[data-transition] .cockpit-inner,
+    #map_container > #cockpit_overlay[data-transition].is-open .cockpit-inner {
+        transform: none;
+        transition: none;
+    }
+    #map_container.cockpit-open > #map_canvas {
+        animation: none;
+    }
+}
+
 .cockpit-toast {
     position: fixed;
     left: 50%;
