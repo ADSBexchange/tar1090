@@ -2,7 +2,16 @@
 
 const test = require("node:test");
 const assert = require("node:assert");
-const { AdSlots, createAdSlotManager } = require("../html/ad-slots.js");
+const fs = require("node:fs");
+const path = require("node:path");
+const { AdSlots, AdContainers, createAdSlotManager } = require("../html/ad-slots.js");
+
+const INDEX_HTML = fs.readFileSync(path.join(__dirname, "..", "html", "index.html"), "utf8");
+const ID_SELECTOR = /^#([\w-]+)$/;
+const FREESTAR_AD_ID = /<[^>]*\bdata-freestar-ad\b[^>]*\bid="([^"]+)"/g;
+const DATA_FREESTAR_AD = "[data-freestar-ad]";
+const VENDOR_INJECTED_IDS = ["fs-sticky-footer"];
+const IN_MAP_CONTAINER_ID = "tracking_leaderboard_container";
 
 function makeFreestar() {
   const calls = { newAdSlots: [], deleteAdSlots: [] };
@@ -79,4 +88,37 @@ test("request only adds the currently-inactive slots", () => {
   assert.deepStrictEqual(calls.newAdSlots[1], [
     { placementName: AdSlots.FULL_DETAILS_FOOTER, slotId: AdSlots.FULL_DETAILS_FOOTER },
   ]);
+});
+
+function markupIds(selectors) {
+  return selectors.map((selector) => ID_SELECTOR.exec(selector))
+    .filter(Boolean)
+    .map((match) => match[1])
+    .filter((id) => !VENDOR_INJECTED_IDS.includes(id));
+}
+
+function freestarAdIds(html) {
+  return Array.from(html.matchAll(FREESTAR_AD_ID), (match) => match[1]);
+}
+
+function coversFreestarAd(selectors, id) {
+  return selectors.includes(DATA_FREESTAR_AD) || selectors.includes(`#${id}`);
+}
+
+test("AdContainers is a non-empty list of selectors", () => {
+  assert.ok(Array.isArray(AdContainers), "AdContainers is exported");
+  assert.ok(AdContainers.length > 0);
+  for (const selector of AdContainers) assert.strictEqual(typeof selector, "string");
+});
+
+test("every markup-owned id in AdContainers exists in index.html", () => {
+  const ids = markupIds(AdContainers);
+  assert.ok(ids.includes(IN_MAP_CONTAINER_ID), `${IN_MAP_CONTAINER_ID} is an ad container`);
+  for (const id of ids) assert.ok(INDEX_HTML.includes(`id="${id}"`), `index.html has id="${id}"`);
+});
+
+test("every data-freestar-ad element in index.html is covered by AdContainers", () => {
+  const ids = freestarAdIds(INDEX_HTML);
+  assert.ok(ids.length > 0, "index.html declares freestar ad slots");
+  for (const id of ids) assert.ok(coversFreestarAd(AdContainers, id), `${id} is covered`);
 });

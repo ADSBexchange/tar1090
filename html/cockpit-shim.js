@@ -65,14 +65,8 @@
     const EXIT_STEP_PX = 8;
     const MAP_ORIGIN_X_VAR = '--cockpit-map-origin-x';
     const MAP_ORIGIN_Y_VAR = '--cockpit-map-origin-y';
-    const AD_SLOTS = [
-        '[data-freestar-ad]',
-        '[id^="adsbexchange_"]',
-        '#tracking_leaderboard_container',
-        '[id^="FreeStarVideoAdContainer"]',
-        '#fs-sticky-footer',
-    ].join(', ');
-    const KEEP_OPEN = ['#cockpit_view', '.cockpit-toast', '#toggle_sidebar_control', '#splitter', AD_SLOTS].join(', ');
+    const KEEP_OPEN = ['#cockpit_view', '.cockpit-toast', '#toggle_sidebar_control', '#splitter'];
+    const SELECTOR_SEPARATOR = ', ';
 
     const DEFAULTS = {
         url: '/cockpit/',        // where the cockpit is served; may be another origin
@@ -181,10 +175,10 @@
         return insets;
     }
 
-    function closesOn(target, overlay) {
+    function closesOn(target, overlay, ads) {
         if (!target || typeof target.closest !== 'function') return false;
         if (overlay && typeof overlay.contains === 'function' && overlay.contains(target)) return false;
-        return !target.closest(KEEP_OPEN);
+        return !target.closest(KEEP_OPEN.concat(ads || []).join(SELECTOR_SEPARATOR));
     }
 
     function switchedAway(openedHex, selectedHex) {
@@ -345,8 +339,14 @@
         setOrigin(cockpit);
     }
 
+    function adContainers() {
+        return (typeof AdContainers !== 'undefined' && Array.isArray(AdContainers)) ? AdContainers : [];
+    }
+
     function adSlotRects() {
-        return Array.prototype.map.call(document.querySelectorAll(AD_SLOTS), function (node) {
+        const ads = adContainers();
+        if (ads.length === 0) return [];
+        return Array.prototype.map.call(document.querySelectorAll(ads.join(SELECTOR_SEPARATOR)), function (node) {
             return node.getBoundingClientRect();
         });
     }
@@ -446,7 +446,7 @@
     }
 
     function onPress(e) {
-        if (open && closesOn(e.target, open.overlay)) close({ pressed: true });
+        if (open && closesOn(e.target, open.overlay, adContainers())) close({ pressed: true });
     }
 
     function onPop() {

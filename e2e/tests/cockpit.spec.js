@@ -3,6 +3,7 @@ const { test } = require("@playwright/test");
 const { expect, readGlobal } = require("../lib/globe");
 const { expectNoUiOverlap } = require("../lib/ui-layout-check");
 const { DEFAULT_CENTRE, FULL_TABLE_RELEASE_SHARE, openMap, rectOf, touchSender } = require("../lib/map-page");
+const { FAKE_AD_CLASS, fillAdContainers } = require("../lib/ad-containers");
 
 const ORIGIN_HEX = "a1b2c3";
 const OTHER_HEX = "d4e5f6";
@@ -17,6 +18,8 @@ const AD_BLOCKS = [
   { id: "fs-sticky-footer", width: 320, height: 50, place: "footer" },
 ];
 const ADS_OVER_COCKPIT = AD_BLOCKS.map((block) => `#${block.id}`);
+const IN_MAP_AD = `#tracking_leaderboard_container .${FAKE_AD_CLASS}`;
+const IN_MAP_AD_CLOSE_BAR = '#tracking_leaderboard_container > [title="Close"]';
 const LAYOUT_SIZES = {
   desktop: [{ width: 1400, height: 900 }, { width: 800, height: 900 }],
   mobile: [null],
@@ -34,36 +37,11 @@ const AIRCRAFT = [
   aircraft(OTHER_HEX, CENTRE.lat + 0.1, CENTRE.lon + 0.2, "TEST456 "),
 ];
 
-async function fillAdSlots(page) {
-  await page.evaluate((blocks) => {
-    const block = (width, height) => {
-      const box = document.createElement("div");
-      box.className = "e2e-ad";
-      box.style.cssText = `width:${width}px;height:${height}px;background:repeating-linear-gradient(45deg,#c33,#c33 8px,#e66 8px,#e66 16px)`;
-      return box;
-    };
-    const leaderboard = document.getElementById("adsbexchange_tracking_leaderboard");
-    if (leaderboard) leaderboard.appendChild(block(970, 90));
-    const medrec = document.getElementById("adsbexchange_medrec_atf");
-    if (medrec) medrec.appendChild(block(300, 250));
-    const map = document.getElementById("map_container").getBoundingClientRect();
-    for (const b of blocks) {
-      const host = document.createElement("div");
-      host.id = b.id;
-      host.style.cssText = "position:fixed;z-index:2147483600";
-      if (b.place === "video") { host.style.left = `${map.left + 50}px`; host.style.top = `${map.top}px`; }
-      else { host.style.left = "50%"; host.style.bottom = "0"; host.style.transform = "translateX(-50%)"; }
-      host.appendChild(block(b.width, b.height));
-      document.body.appendChild(host);
-    }
-  }, AD_BLOCKS);
-}
-
 async function adBoxes(page) {
-  return page.evaluate(() => Array.from(document.querySelectorAll(".e2e-ad"))
+  return page.evaluate((adClass) => Array.from(document.querySelectorAll(`.${adClass}`))
     .map((el) => el.getBoundingClientRect())
     .filter((rect) => rect.width > 0 && rect.height > 0)
-    .map((rect) => ({ left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom })));
+    .map((rect) => ({ left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom })), FAKE_AD_CLASS);
 }
 
 function overlaps(a, b) {
@@ -80,7 +58,7 @@ async function openGlobe(page, baseURL) {
   });
   await openMap(page, baseURL, { aircraft: AIRCRAFT, centre: CENTRE });
   await page.waitForFunction((hex) => typeof g !== "undefined" && g.planes && !!g.planes[hex], ORIGIN_HEX, { timeout: 30_000 });
-  await fillAdSlots(page);
+  await fillAdContainers(page, AD_BLOCKS);
 }
 
 async function selectPlane(page, hex) {
@@ -352,10 +330,10 @@ test.describe("Cockpit view in the map frame", () => {
       const visible = await page.locator(panel.selector).first().isVisible();
       test.skip(!visible, `${panel.name} is not shown at this size`);
       const box = await page.locator(panel.selector).first().boundingBox();
-      const underAd = await page.evaluate(({ x, y }) => {
+      const underAd = await page.evaluate(({ x, y, adClass }) => {
         const el = document.elementFromPoint(x, y);
-        return !!el && !!el.closest(".e2e-ad");
-      }, { x: box.x + box.width / 2, y: box.y + box.height / 2 });
+        return !!el && !!el.closest(`.${adClass}`);
+      }, { x: box.x + box.width / 2, y: box.y + box.height / 2, adClass: FAKE_AD_CLASS });
       test.skip(underAd, `an ad covers ${panel.name} at this size`);
       await pressOn(page, panel.selector);
       await expectClosed(page);
@@ -472,14 +450,18 @@ test.describe("Cockpit view in the map frame", () => {
   test("a press on an ad keeps it open", async ({ page, baseURL }) => {
     await openGlobe(page, baseURL);
     await openCockpit(page);
-    for (const id of AD_BLOCKS.map((block) => `#${block.id} .e2e-ad`)) {
+    for (const id of AD_BLOCKS.map((block) => `#${block.id} .${FAKE_AD_CLASS}`)) {
       await pressOn(page, id);
       await expect(page.locator("#cockpit_overlay.is-open")).toHaveCount(1);
     }
-    const leaderboard = page.locator("#tracking_leaderboard_container .e2e-ad");
-    if (await leaderboard.isVisible()) {
-      await pressOn(page, "#tracking_leaderboard_container .e2e-ad");
-      await expect(page.locator("#cockpit_overlay.is-open")).toHaveCount(1);
+    if (await readGlobal(page, "onMobile")) {
+      await expect(page.locator(IN_MAP_AD)).toBeHidden();
+      return;
+    }
+    for (const selector of [IN_MAP_AD, IN_MAP_AD_CLOSE_BAR]) {
+      await expect(page.locator(selector)).toBeVisible();
+      await pressOn(page, selector);
+      await expect(page.locator("#cockpit_overlay.is-open"), selector).toHaveCount(1);
     }
   });
 
