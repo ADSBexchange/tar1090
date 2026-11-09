@@ -13,3 +13,4 @@ activityHistory.js
 beacon-bootstrap.js
 cockpit-shim.js
 cockpit-shim.css
+sidebar-drawer.js
