@@ -5066,6 +5066,7 @@ const PANEL_DRAGGING_CLASS = 'dragging';
 const PANEL_SLIDE_SHIFT_VAR = '--panel-slide-shift';
 const PANEL_DRAG_THRESHOLD_PX = 4;
 const PANEL_HOLD_MS = 300;
+const NON_POINTER_CLICK_DETAIL = 0;
 const SIDEBAR_MIN_WIDTH_PX = 150;
 const SIDEBAR_MAX_WIDTH_SHARE = 0.8;
 const SIDEBAR_STRETCH_RESISTANCE = 0.3;
@@ -5280,8 +5281,12 @@ function movePanelHandle(handle, press, e) {
 
 function releasePanelHandle(handle, press, letGo) {
     clearTimeout(press.holdTimer);
+    const pressed = press.startX !== null;
     press.startX = null;
-    if (!panelDragging) return;
+    if (!panelDragging) {
+        if (letGo && pressed) tapPanelHandle(handle, press);
+        return;
+    }
     panelDragging = false;
     press.suppressClick = true;
     handle.classList.remove(PANEL_DRAGGING_CLASS);
@@ -5295,8 +5300,13 @@ function settlePanelDrag(press, letGo) {
     else if (sidebarStretched()) springBackToMaxWidth();
 }
 
+function tapPanelHandle(handle, press) {
+    handle.click();
+    press.suppressClick = true;
+}
+
 function suppressClickAfterDrag(handle, press, e) {
-    if (!press.suppressClick || !handle.contains(e.target)) return;
+    if (!press.suppressClick || e.detail === NON_POINTER_CLICK_DETAIL || !handle.contains(e.target)) return;
     press.suppressClick = false;
     e.stopPropagation();
     e.preventDefault();
