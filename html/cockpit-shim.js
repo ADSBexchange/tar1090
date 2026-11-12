@@ -17,7 +17,7 @@
 //     to use this feature" - with Become a feeder / Sign in / Close
 //   * closes the overlay when the cockpit says "exit", or on Escape
 //   * stays away from replay, historical-trace and heatmap views: the cockpit
-//     flies live fixes only, so the button is hidden there and an open
+//     flies live fixes only, so the button is disabled there and an open
 //     cockpit closes if the page switches into one of them
 //
 // It never reads the cockpit's code or configuration, and the cockpit never
@@ -67,6 +67,8 @@
     const MAP_ORIGIN_Y_VAR = '--cockpit-map-origin-y';
     const KEEP_OPEN = ['#cockpit_view', '.cockpit-toast', '#toggle_sidebar_control', '#splitter'];
     const SELECTOR_SEPARATOR = ', ';
+    const VIEW_UNAVAILABLE_TITLE = 'Not available in this view';
+    const AIRCRAFT_UNAVAILABLE_TITLE = 'Not available for this aircraft';
 
     const DEFAULTS = {
         url: '/cockpit/',        // where the cockpit is served; may be another origin
@@ -315,7 +317,10 @@
         const sp = selected();
         if (open && switchedAway(open.origin, sp && sp.icao)) { close({ switched: true }); return; }
         if (open) { layout(open); markEntry(open); }
-        button.style.display = (available() && flyable(sp) && !open) ? '' : 'none';
+        const unavailable = !live() ? VIEW_UNAVAILABLE_TITLE : (!flyable(sp) ? AIRCRAFT_UNAVAILABLE_TITLE : '');
+        button.style.display = (deployFlag() && serverFlag === true && optedIn()) ? '' : 'none';
+        button.disabled = !!open || !!unavailable;
+        button.title = open ? '' : unavailable;
     }
 
     function reducedMotion() {
@@ -495,7 +500,7 @@
             if (cfg.requireLogin && !signedIn()) return 'signed-out';
             return fetchToken();
         }).then(function (state) {
-            button.disabled = false;
+            sync();
             if (open) return;
             if (state !== 'ok' && state !== 'signed-out') { toast('Cockpit view is unavailable right now.'); return; }
             // 'signed-out' also covers a browser whose readable cookie says
@@ -608,7 +613,7 @@
         if (!how.switched) restoreSelection(cockpit);
         if (cfg.follow && cockpit.followWas !== null && typeof toggleFollow === 'function') toggleFollow(cockpit.followWas);
         sync();
-        if (focusWasInside && !how.switched && !how.pressed && button && button.style.display !== 'none') {
+        if (focusWasInside && !how.switched && !how.pressed && button && button.style.display !== 'none' && !button.disabled) {
             focusQuietly(button);
         }
     }
