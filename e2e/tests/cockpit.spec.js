@@ -1,7 +1,7 @@
 // @ts-check
 const { test } = require("@playwright/test");
 const { expect, readGlobal } = require("../lib/globe");
-const { expectNoUiOverlap } = require("../lib/ui-layout-check");
+const { expectNoUiOverlap, uiLayoutProblems } = require("../lib/ui-layout-check");
 const { DEFAULT_CENTRE, FULL_TABLE_RELEASE_SHARE, openMap, rectOf, touchSender } = require("../lib/map-page");
 const { FAKE_AD_CLASS, fillAdContainers } = require("../lib/ad-containers");
 
@@ -12,6 +12,9 @@ const FLAT_MAP_SAMPLE_MS = 300;
 const PREVIEW_LOAD_SAMPLE_MS = 2500;
 const SCREENSHOT_DIR = process.env.COCKPIT_SCREENSHOT_DIR || "";
 const MAP_CONTROLS = "#header_top, #altitude_chart, .ol-zoom, .ol-attribution, .layer-switcher";
+const PROBE_LABEL = "probe";
+const PROBE_HEIGHT_PX = 8;
+const PROBE_WIDTH_FACTOR = 2;
 const LIVE_MODE = !!process.env.COCKPIT_LIVE;
 const AD_BLOCKS = [
   { id: "FreeStarVideoAdContainer_Slider", width: 300, height: 170, place: "video" },
@@ -249,8 +252,22 @@ test.describe("Cockpit view in the map frame", () => {
       await openGlobe(page, baseURL);
       await openCockpit(page);
       await expect(page.frameLocator("#cockpit_overlay iframe").getByRole("link", { name: /become a feeder/i })).toBeVisible();
-      await expectNoUiOverlap(page, { within: "#cockpit_overlay", ignore: ADS_OVER_COCKPIT });
+      await expectNoUiOverlap(page, { within: "#cockpit_overlay", ignore: ADS_OVER_COCKPIT, coveredBy: "#cockpit_overlay" });
     }
+  });
+
+  test("an element placed over the open cockpit is still reported", async ({ page, baseURL }) => {
+    await openGlobe(page, baseURL);
+    await openCockpit(page);
+    const exit = await rectOf(page, "#cockpit_overlay .cockpit-exit");
+    await page.evaluate(({ label, width, height, centreX, centreY }) => {
+      const probe = document.createElement("button");
+      probe.textContent = label;
+      probe.style.cssText = `position:fixed;z-index:2147483647;width:${width}px;height:${height}px;left:${centreX - width / 2}px;top:${centreY - height / 2}px`;
+      document.body.appendChild(probe);
+    }, { label: PROBE_LABEL, width: exit.width * PROBE_WIDTH_FACTOR, height: PROBE_HEIGHT_PX, centreX: exit.left + exit.width / 2, centreY: exit.top + exit.height / 2 });
+    const problems = await uiLayoutProblems(page, { within: "#cockpit_overlay", ignore: ADS_OVER_COCKPIT, coveredBy: "#cockpit_overlay" });
+    expect(problems.some((problem) => problem.includes(PROBE_LABEL) && problem.includes("cockpit-exit")), problems.join(", ")).toBe(true);
   });
 
   test("the map buttons and map controls sit under it while open and come back after", async ({ page, baseURL }) => {

@@ -1,7 +1,15 @@
 // @ts-check
 // Upstream airline-lookup feature (wiedehopf), on by default like upstream.
 const { test } = require("@playwright/test");
-const { expect, gotoGlobe, readGlobal, trackOperatorsFetch, isDevTarget } = require("../lib/globe");
+const { expect, gotoGlobe, readGlobal, trackOperatorsFetch } = require("../lib/globe");
+const { openMap } = require("../lib/map-page");
+
+const OPERATORS_TIMEOUT_MS = 20_000;
+const PLANE_TIMEOUT_MS = 30_000;
+const AIRLINER = {
+  hex: "a1b2c3", flight: "AAL123  ", lat: 39.8, lon: -98.6, alt_baro: 35000, alt_geom: 35800, gs: 450, track: 270,
+  seen_pos: 0.4, seen: 0.4, messages: 1000, rssi: -20, type: "adsb_icao", category: "A3",
+};
 
 test("airlineLookup is enabled by default", async ({ page }) => {
   await gotoGlobe(page);
@@ -41,22 +49,12 @@ test("a known airline callsign resolves to its operator", async ({ page }) => {
   expect(op.n).toMatch(/american/i);
 });
 
-// Live end-to-end: find an airliner in view, select it, confirm the panel shows its airline.
-// Dev-only — local readsb crashes under the full dev feed (re-api 502 → 0 planes).
-test("selecting a live airliner shows its airline in the info panel", async ({ page }) => {
-  test.skip(!isDevTarget(), "needs a stable live feed — run with -Dev");
-  await gotoGlobe(page);
-  await page.waitForFunction(() => typeof operatorsCache !== "undefined" && operatorsCache && Object.keys(operatorsCache).length > 0, null, { timeout: 20_000 });
+test("selecting an airliner shows its airline in the info panel", async ({ page, baseURL }) => {
+  await openMap(page, baseURL, { aircraft: [AIRLINER] });
+  await page.waitForFunction(() => typeof operatorsCache !== "undefined" && operatorsCache && Object.keys(operatorsCache).length > 0, null, { timeout: OPERATORS_TIMEOUT_MS });
+  await page.waitForFunction((hex) => typeof g !== "undefined" && g.planes && g.planes[hex], AIRLINER.hex, { timeout: PLANE_TIMEOUT_MS });
 
-  const hex = await page.waitForFunction(() => {
-    for (const p of (typeof g !== "undefined" && g.planesOrdered) || []) {
-      const a = p.getAirline && p.getAirline();
-      if (a && a.n) return p.icao;
-    }
-    return null;
-  }, null, { timeout: 30_000 }).then((h) => h.jsonValue());
-
-  await page.evaluate((h) => selectPlaneByHex(h, { follow: false }), hex);
+  await page.evaluate((hex) => selectPlaneByHex(hex, { follow: false }), AIRLINER.hex);
   await expect(page.locator("#selected_airline_row")).toBeVisible();
-  await expect(page.locator("#selected_airline")).not.toHaveText(/^n\/a$/);
+  await expect(page.locator("#selected_airline")).toHaveText(/american/i);
 });

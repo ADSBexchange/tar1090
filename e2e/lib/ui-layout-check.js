@@ -6,9 +6,9 @@ const INTERACTIVE_SELECTOR = "button, a[href], input, select, textarea, [role=bu
 const POSITIONED = new Set(["absolute", "fixed", "sticky"]);
 const MAX_MEDIA_SHARE = 0.1;
 
-async function collectBoxes(frame, offset, minSize) {
+async function collectBoxes(frame, offset, minSize, coveredBy = null) {
   const boxes = await frame.evaluate(
-    ({ interactiveSelector, positioned, minSize, maxMediaShare }) => {
+    ({ interactiveSelector, positioned, minSize, maxMediaShare, coveredBy }) => {
       const out = [];
       const describe = (el) => {
         const id = el.id ? `#${el.id}` : "";
@@ -39,11 +39,16 @@ async function collectBoxes(frame, offset, minSize) {
         if (!isComponent(el)) continue;
         const r = el.getBoundingClientRect();
         if (!visible(el, r)) continue;
+        if (coveredBy) {
+          const cover = document.querySelector(coveredBy);
+          const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+          if (cover && !cover.contains(el) && top && cover.contains(top)) continue;
+        }
         out.push({ name: describe(el), x: r.left, y: r.top, w: r.width, h: r.height });
       }
       return out;
     },
-    { interactiveSelector: INTERACTIVE_SELECTOR, positioned: Array.from(POSITIONED), minSize, maxMediaShare: MAX_MEDIA_SHARE }
+    { interactiveSelector: INTERACTIVE_SELECTOR, positioned: Array.from(POSITIONED), minSize, maxMediaShare: MAX_MEDIA_SHARE, coveredBy }
   );
   const own = boxes.map((b) => ({ ...b, x: b.x + offset.x, y: b.y + offset.y }));
   let nested = [];
@@ -75,14 +80,14 @@ function contains(outer, inner) {
   return inner.x >= outer.x && inner.y >= outer.y && inner.x + inner.w <= outer.x + outer.w && inner.y + inner.h <= outer.y + outer.h;
 }
 
-async function uiLayoutProblems(page, { within, minGapPx = DEFAULT_MIN_GAP_PX, minSize = 4, ignore = [] } = {}) {
+async function uiLayoutProblems(page, { within, minGapPx = DEFAULT_MIN_GAP_PX, minSize = 4, ignore = [], coveredBy = null } = {}) {
   let region = null;
   if (within) {
     region = await page.locator(within).first().boundingBox();
     if (!region) return [`region ${within} is not visible`];
     region = { x: region.x, y: region.y, w: region.width, h: region.height };
   }
-  const all = await collectBoxes(page.mainFrame(), { x: 0, y: 0 }, minSize);
+  const all = await collectBoxes(page.mainFrame(), { x: 0, y: 0 }, minSize, coveredBy);
   const boxes = all.filter((b) => !region || intersects(b, region)).filter((b) => !ignore.some((pattern) => b.name.includes(pattern)));
   const problems = [];
   for (let i = 0; i < boxes.length; i++) {
