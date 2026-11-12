@@ -678,6 +678,7 @@ test.describe("sidebar controls", () => {
     const SPLITTER = "#splitter";
     const HEADER_CONTROLS = "#header_side";
     const DRAG_PX = 120;
+    const EDGE_GRIP_SHARE = 0.9;
     const DRAG_TOLERANCE_PX = 4;
     const MIN_EDGE_WIDTH_PX = 6;
     const MAX_EDGE_WIDTH_PX = 8;
@@ -694,7 +695,10 @@ test.describe("sidebar controls", () => {
       "button#search_clear_button",
       "button#jump_clear_button",
       'a "Privacy Policy"',
-      'a "Terms of Service"'
+      'a "Terms of Service"',
+      'a.largeText "FAQ"',
+      'a.largeText "Map Help"',
+      'a.largeText "Join Discord"'
     ];
     const NEW_CONTROLS = [EDGE_TAB];
 
@@ -740,7 +744,7 @@ test.describe("sidebar controls", () => {
       await openPanel(page, baseURL, testInfo);
       const screen = page.viewportSize().width;
       const handle = await rectOf(page, SPLITTER);
-      await dragEdge(page, handle.top + handle.height * 0.8, screen * SPRING_BACK_RELEASE_SHARE - (handle.left + handle.width / 2));
+      await dragEdge(page, handle.top + handle.height * EDGE_GRIP_SHARE, screen * SPRING_BACK_RELEASE_SHARE - (handle.left + handle.width / 2));
       await expect.poll(async () => Math.abs((await rectOf(page, PANEL)).width - screen * 0.8)).toBeLessThanOrEqual(2);
       await expect(page.locator(MAP)).toBeVisible();
     });
@@ -749,14 +753,14 @@ test.describe("sidebar controls", () => {
       await openPanel(page, baseURL, testInfo);
       const screen = page.viewportSize().width;
       const panel = await rectOf(page, PANEL);
-      await dragEdge(page, panel.top + panel.height * 0.8, screen * 0.4 - panel.left);
+      await dragEdge(page, panel.top + panel.height * EDGE_GRIP_SHARE, screen * 0.4 - panel.left);
       await expect.poll(async () => Math.abs((await rectOf(page, PANEL)).width - screen * 0.6)).toBeLessThanOrEqual(6);
     });
 
     test("dragging the edge 120 px left widens the panel by 120 px", async ({ page, baseURL }, testInfo) => {
       await openPanel(page, baseURL, testInfo);
       const before = await rectOf(page, PANEL);
-      await dragEdge(page, before.top + before.height * 0.8, -DRAG_PX);
+      await dragEdge(page, before.top + before.height * EDGE_GRIP_SHARE, -DRAG_PX);
       const after = await rectOf(page, PANEL);
       expect(Math.abs(after.width - before.width - DRAG_PX)).toBeLessThanOrEqual(DRAG_TOLERANCE_PX);
     });
@@ -781,7 +785,7 @@ test.describe("sidebar controls", () => {
       await openPanel(page, baseURL, testInfo);
       const screen = page.viewportSize().width;
       const handle = await rectOf(page, SPLITTER);
-      await dragEdge(page, handle.top + handle.height * 0.8, screen * FULL_TABLE_RELEASE_SHARE - (handle.left + handle.width / 2));
+      await dragEdge(page, handle.top + handle.height * EDGE_GRIP_SHARE, screen * FULL_TABLE_RELEASE_SHARE - (handle.left + handle.width / 2));
       await expect.poll(() => readGlobal(page, "mapIsVisible")).toBe(false);
       await expect(page.locator(MAP)).toBeHidden();
       await expect(page.locator(EDGE_TAB)).toBeVisible();
@@ -790,13 +794,15 @@ test.describe("sidebar controls", () => {
     test("double-clicking the edge still resets the width", async ({ page, baseURL }, testInfo) => {
       test.skip(testInfo.project.name === "mobile", "on a phone the reset (auto) width is the whole screen");
       await openPanel(page, baseURL, testInfo);
-      const before = await rectOf(page, PANEL);
-      await dragEdge(page, before.top + before.height * 0.8, -DRAG_PX);
+      const opened = await rectOf(page, PANEL);
+      await page.locator(SPLITTER).dblclick({ position: { x: 3, y: opened.height * 0.8 } });
+      const reset = await rectOf(page, PANEL);
+      await dragEdge(page, reset.top + reset.height * 0.8, -DRAG_PX);
       const dragged = await rectOf(page, PANEL);
-      expect(dragged.width).toBeGreaterThan(before.width + DRAG_PX / 2);
+      expect(dragged.width).toBeGreaterThan(reset.width + DRAG_PX / 2);
       await page.locator(SPLITTER).dblclick({ position: { x: 3, y: dragged.height * 0.8 } });
       const after = await rectOf(page, PANEL);
-      expect(after.width).toBeLessThan(dragged.width - DRAG_PX / 2);
+      expect(Math.abs(after.width - reset.width)).toBeLessThanOrEqual(WIDTH_TOLERANCE_PX);
     });
 
     test("the edge tab sits below page-level overlays", async ({ page, baseURL }, testInfo) => {
@@ -814,7 +820,7 @@ test.describe("sidebar controls", () => {
     test("the edge tab does not intersect the header controls", async ({ page, baseURL }, testInfo) => {
       await openPanel(page, baseURL, testInfo);
       const header = await page.evaluate((sel) => {
-        return Array.from(document.querySelectorAll(`${sel} button, ${sel} a[href], ${sel} input, ${sel} select`))
+        return Array.from(document.querySelectorAll(`${sel} button, ${sel} a[href], ${sel} input, ${sel} select, ${sel} > div > *, ${sel} [onclick]`))
           .filter((el) => { const rect = el.getBoundingClientRect(); return rect.width > 0 && rect.height > 0 && getComputedStyle(el).visibility !== "hidden"; })
           .map((el) => { const rect = el.getBoundingClientRect(); return { name: el.id || el.className || el.tagName, left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom }; });
       }, HEADER_CONTROLS);

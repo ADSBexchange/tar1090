@@ -10,7 +10,10 @@ const REPLAY_DATE = "2023-09-01";
 const DATE_PATH = REPLAY_DATE.replace(/-/g, "/");
 
 test.beforeEach(() => {
+  // Local: the local stack has no dev globe_history to replay.
   test.skip(!isDevTarget(), `historical replay needs dev globe_history; run with -Dev`);
+  // Dev: /globe_history/ is behind the Turnstile gate, whose human check blocks automated browsers. Verify replay by hand on dev.
+  test.skip(isDevTarget(), `dev's Turnstile gate on /globe_history/ blocks automated browsers; verify replay manually`);
 });
 
 test(`replaying ${REPLAY_DATE} loads that day's data and an aircraft's dated trace`, async ({ page }) => {

@@ -1,6 +1,7 @@
 {
   "name": "tar1090-adsbx-e2e",
   "private": true,
+  "engines": { "node": ">=22.17" },
   "description": "Playwright tests for tar1090",
   "scripts": {
     "e2e": "playwright test",
