@@ -108,7 +108,7 @@
         animation-timing-function: cubic-bezier(.6, 0, .2, 1);
     }
     85%, 100% {
-        transform: perspective(900px) rotateX(34deg) scale(1.7);
+        transform: perspective(900px) rotateX(34deg) scale(2.2);
         opacity: .35;
     }
 }
@@ -150,4 +150,9 @@
     font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
     text-align: center;
     pointer-events: none;
+}
+
+#cockpit_view:disabled {
+    opacity: .45;
+    cursor: default;
 }
