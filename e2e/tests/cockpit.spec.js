@@ -16,6 +16,11 @@ const PROBE_LABEL = "probe";
 const PROBE_HEIGHT_PX = 8;
 const PROBE_WIDTH_FACTOR = 2;
 const LIVE_MODE = !!process.env.COCKPIT_LIVE;
+const HISTORY_BUTTON = "#show_trace";
+const HISTORY_SECTION = "#history_collapse";
+const COCKPIT_BUTTON = "#cockpit_view";
+const HISTORY_VIEW_TITLE = "Not available in this view";
+const INFO_PANEL_TEXT = '#selected_infoblock .infoHeading[title^="The speed of the aircraft over the ground"]';
 const AD_BLOCKS = [
   { id: "FreeStarVideoAdContainer_Slider", width: 300, height: 170, place: "video" },
   { id: "fs-sticky-footer", width: 320, height: 50, place: "footer" },
@@ -148,19 +153,30 @@ async function expectSingleExit(page) {
   expect(await visibleExits(page), "one exit control on screen").toBe(1);
 }
 
+async function historyBelowCockpit(page) {
+  const cockpit = await rectOf(page, COCKPIT_BUTTON);
+  const history = await rectOf(page, HISTORY_BUTTON);
+  return { cockpitHeight: cockpit.height, historyOffset: history.top - cockpit.top, historyLeft: history.left };
+}
+
 async function signIn(page) {
   await page.goto("/dev/login");
 }
 
-async function pressOn(page, selector, inset = null) {
+async function pressOn(page, selector, inset = null, released = true) {
   const target = page.locator(selector).first();
   const box = await target.boundingBox();
   expect(box, `${selector} is on screen`).not.toBeNull();
   if (inset !== null) { box.width = inset * 2; box.height = inset * 2; }
-  await page.evaluate(({ x, y }) => {
+  await page.evaluate(({ x, y, released }) => {
     const el = document.elementFromPoint(x, y);
-    el.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, pointerType: "touch", isPrimary: true }));
-  }, { x: box.x + box.width / 2, y: box.y + box.height / 2 });
+    const at = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y };
+    const pointer = Object.assign({ pointerType: "touch", isPrimary: true }, at);
+    el.dispatchEvent(new PointerEvent("pointerdown", pointer));
+    if (!released) return;
+    el.dispatchEvent(new PointerEvent("pointerup", pointer));
+    el.dispatchEvent(new MouseEvent("click", at));
+  }, { x: box.x + box.width / 2, y: box.y + box.height / 2, released });
 }
 
 test.describe("Cockpit view in the map frame", () => {
@@ -252,7 +268,7 @@ test.describe("Cockpit view in the map frame", () => {
       await openGlobe(page, baseURL);
       await openCockpit(page);
       await expect(page.frameLocator("#cockpit_overlay iframe").getByRole("link", { name: /become a feeder/i })).toBeVisible();
-      await expectNoUiOverlap(page, { within: "#cockpit_overlay", ignore: ADS_OVER_COCKPIT, coveredBy: "#cockpit_overlay" });
+      await expectNoUiOverlap(page, { within: "#cockpit_overlay", ignore: ADS_OVER_COCKPIT.concat(COCKPIT_BUTTON), coveredBy: "#cockpit_overlay" });
     }
   });
 
@@ -339,7 +355,7 @@ test.describe("Cockpit view in the map frame", () => {
   });
 
   for (const panel of [
-    { name: "the info panel", selector: "#selected_infoblock" },
+    { name: "the info panel", selector: INFO_PANEL_TEXT },
   ]) {
     test(`a press on ${panel.name} closes it`, async ({ page, baseURL }) => {
       await openGlobe(page, baseURL);
@@ -356,6 +372,65 @@ test.describe("Cockpit view in the map frame", () => {
       await expectClosed(page);
     });
   }
+
+  test("one click on History in the info panel closes it and opens History", async ({ page, baseURL }) => {
+    await openGlobe(page, baseURL);
+    await openCockpit(page);
+    const history = page.locator(HISTORY_BUTTON);
+    test.skip(!(await history.isVisible()), "History is not shown at this size");
+    await history.click({ force: true });
+    await expectClosed(page);
+    await expect(page.locator(HISTORY_SECTION)).toBeVisible();
+  });
+
+  test("one tap on History in the info panel closes it and opens History", async ({ page, baseURL }) => {
+    test.skip(test.info().project.name !== "mobile", "a tap needs a touch screen");
+    await openGlobe(page, baseURL);
+    await openCockpit(page);
+    const history = page.locator(HISTORY_BUTTON);
+    test.skip(!(await history.isVisible()), "History is not shown at this size");
+    await history.tap({ force: true });
+    await expectClosed(page);
+    await expect(page.locator(HISTORY_SECTION)).toBeVisible();
+  });
+
+  test("while open, Cockpit view stays in place greyed out, so a press that closes it moves nothing in the panel", async ({ page, baseURL }) => {
+    await openGlobe(page, baseURL);
+    await openCockpit(page);
+    const history = page.locator(HISTORY_BUTTON);
+    test.skip(!(await history.isVisible()), "History is not shown at this size");
+    await expect(page.locator(COCKPIT_BUTTON)).toBeVisible();
+    await expect(page.locator(COCKPIT_BUTTON)).toBeDisabled();
+    const before = await rectOf(page, HISTORY_BUTTON);
+    await pressOn(page, HISTORY_BUTTON, null, false);
+    await expectClosed(page);
+    await expect(page.locator(COCKPIT_BUTTON)).toBeEnabled();
+    expect(await rectOf(page, HISTORY_BUTTON)).toEqual(before);
+  });
+
+  test("in History, Cockpit view stays in place greyed out with History not moving, and leaving History brings it back", async ({ page, baseURL }) => {
+    await openGlobe(page, baseURL);
+    await selectPlane(page, ORIGIN_HEX);
+    const cockpit = page.locator(COCKPIT_BUTTON);
+    const history = page.locator(HISTORY_BUTTON);
+    test.skip(!(await history.isVisible()), "History is not shown at this size");
+    await expect(cockpit).toBeEnabled();
+    const before = await historyBelowCockpit(page);
+    await history.click();
+    await expect(page.locator(HISTORY_SECTION)).toBeVisible();
+    await expect.poll(() => readGlobal(page, "showTrace")).toBeTruthy();
+    await expect(cockpit).toBeVisible();
+    await expect(cockpit).toBeDisabled();
+    await expect(cockpit).toHaveAttribute("title", HISTORY_VIEW_TITLE);
+    expect(await historyBelowCockpit(page)).toEqual(before);
+    await cockpit.click({ force: true });
+    await expect(page.locator("#cockpit_overlay")).toHaveCount(0);
+    await history.click();
+    await expect.poll(() => readGlobal(page, "showTrace")).toBeFalsy();
+    await expect(cockpit).toBeEnabled();
+    await expect(cockpit).not.toHaveAttribute("title", HISTORY_VIEW_TITLE);
+    expect(await historyBelowCockpit(page)).toEqual(before);
+  });
 
   test("the button rail is hidden while the cockpit is open and the cockpit meets the panel", async ({ page, baseURL }) => {
     await openGlobe(page, baseURL);
@@ -451,7 +526,7 @@ test.describe("Cockpit view in the map frame", () => {
     await expectClosed(page);
     await expect(page.locator("#map_container")).not.toHaveClass(/cockpit-open/);
     expect(await readGlobal(page, "SelectedPlane && SelectedPlane.icao")).toBe(ORIGIN_HEX);
-    await expect(page.locator("#cockpit_view")).toBeHidden();
+    await expect(page.locator(COCKPIT_BUTTON)).toBeDisabled();
   });
 
   test("a press in the sidebar closes it", async ({ page, baseURL }) => {
@@ -533,6 +608,7 @@ test.describe("Cockpit view in the map frame", () => {
   test("sliding the panel during the map dive keeps the cockpit fading in", async ({ page, baseURL }) => {
     await openGlobe(page, baseURL);
     await selectPlane(page, ORIGIN_HEX);
+    await expect(page.locator(COCKPIT_BUTTON)).toBeEnabled();
     const opacities = await page.evaluate(() => new Promise((resolve) => {
       const map = document.getElementById("map_container");
       const seen = [];
