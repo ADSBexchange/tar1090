@@ -8,8 +8,6 @@ const TURNSTILE_EXP_LIFE_S = 86400;
 
 const DEFAULT_CENTRE = { lat: 39.8, lon: -98.6 };
 const DEFAULT_ZOOM = 8;
-const FULL_TABLE_RELEASE_SHARE = 0.05;
-const RIGHT_CONTROLS = ["#header_side", "#header_top", "#map_container .ol-zoom", "#map_container .layer-switcher"];
 
 function feedOf(aircraft) {
   return { now: Date.now() / 1000, resultCount: aircraft.length, ptime: 1, aircraft };
@@ -44,9 +42,4 @@ async function rectOf(page, selector) {
   }, selector);
 }
 
-async function touchSender(page) {
-  const cdp = await page.context().newCDPSession(page);
-  return (type, touchPoints) => cdp.send("Input.dispatchTouchEvent", { type, touchPoints });
-}
-
-module.exports = { DEFAULT_CENTRE, FULL_TABLE_RELEASE_SHARE, RIGHT_CONTROLS, feedOf, routeFeed, openMap, rectOf, touchSender };
+module.exports = { DEFAULT_CENTRE, feedOf, routeFeed, openMap, rectOf };

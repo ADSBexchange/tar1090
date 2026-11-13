@@ -10,8 +10,6 @@
     --TXTCOLOR2: #050505;
     --TXTCOLOR3: #101010;
     --STICKY-FOOTER-H: 0px;
-    --panel-slide-ms: 240ms;
-    --panel-slide-ease: cubic-bezier(.2, 0, 0, 1);
 }
 
 html, body {
@@ -88,7 +86,6 @@ body.has-sticky-footer #layout_container {
 }
 
 #sidebar_container {
-    position: relative;
     display: flex;
     flex-direction: column;
     left: calc( 0px * var(--SCALE)) !important;
@@ -98,7 +95,6 @@ body.has-sticky-footer #layout_container {
 
 #map_container {
     flex: 1 1 auto;
-    min-width: 0;
     position: relative;
     height: 100%;
 }
@@ -128,126 +124,24 @@ body.has-sticky-footer #layout_container {
     border: none;
 }
 
-#sidebar_edge {
-    position: relative;
-    flex: 0 0 0;
-    width: 0;
-    height: 100%;
-}
-
-#toggle_sidebar_control {
-    position: absolute;
-    right: 0;
-    top: calc( 3px * var(--SCALE));
-    width: calc( 27px * var(--SCALE));
-    height: calc( 78px * var(--SCALE));
-    z-index: 100;
-    box-sizing: border-box;
-    border-radius: calc( 10px * var(--SCALE)) 0 0 calc( 10px * var(--SCALE));
-    background-color: #313131;
-    border: calc( 1px * var(--SCALE)) solid #555;
-    border-right: none;
-}
-
-#toggle_sidebar_control .sidebar_button {
-    width: 100%;
-    height: 100%;
-    padding: 0;
-    border-radius: inherit;
-    background-color: transparent;
-}
-
-#toggle_sidebar_button {
-    touch-action: none;
-    transform: rotate(0deg);
-    transition: transform var(--panel-slide-ms) var(--panel-slide-ease);
-}
-
-#sidebar_edge #toggle_sidebar_control,
-#map_container #header_side,
-#map_container #header_top,
-#map_container .ol-zoom,
-#map_container .ol-attribution,
-#map_container .layer-switcher,
-#map_container #altitude_chart {
-    translate: var(--panel-slide-shift, 0px) 0;
-}
-
-#sidebar_edge.panel-sliding #toggle_sidebar_control,
-#map_container.panel-sliding #header_side,
-#map_container.panel-sliding #header_top,
-#map_container.panel-sliding .ol-zoom,
-#map_container.panel-sliding .ol-attribution,
-#map_container.panel-sliding .layer-switcher,
-#map_container.panel-sliding #altitude_chart {
-    transition: translate var(--panel-slide-ms) var(--panel-slide-ease);
-}
-
-#toggle_sidebar_button::before {
-    content: "";
-    display: block;
-    margin: auto;
-    width: calc( 18px * var(--SCALE));
-    height: calc( 18px * var(--SCALE));
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 6l5.5 6-5.5 6'/%3E%3C/svg%3E") center / contain no-repeat;
-}
-
 #toggle_sidebar_button.show_sidebar {
-    transform: rotate(180deg);
+    transform: scaleX(-1);
+    background-image: url("images/hide_sidebar.png");
 }
 
-#toggle_sidebar_button.dragging {
-    cursor: ew-resize;
-    transform: none;
-    transition: none;
+#toggle_sidebar_button.hide_sidebar {
+    background-image: url("images/hide_sidebar.png");
 }
 
-#toggle_sidebar_button.dragging::before {
-    width: calc( 21px * var(--SCALE));
-    height: calc( 21px * var(--SCALE));
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 7l-5 5 5 5M16 7l5 5-5 5M3 12h18'/%3E%3C/svg%3E");
+#shrink_sidebar_button {
+    background-image: url("images/hide_sidebar.png");
 }
 
-#layout_container {
-    position: relative;
+#expand_sidebar_button {
+    transform: scaleX(-1);
+    background-image: url("images/hide_sidebar.png");
 }
 
-#sidebar_container.sidebar-sliding {
-    background-color: var(--BGCOLOR1);
-    position: absolute !important;
-    left: auto !important;
-    top: 0;
-    right: 0;
-    height: 100%;
-    z-index: 101;
-    transition: transform var(--panel-slide-ms) var(--panel-slide-ease);
-}
-
-#sidebar_container.sidebar-offscreen {
-    transform: translateX(100%);
-}
-
-#sidebar_container.sidebar-gliding {
-    transition: width var(--panel-slide-ms) var(--panel-slide-ease);
-}
-
-#layout_container.sidebar-full #toggle_sidebar_control {
-    right: auto;
-    left: 0;
-    border-radius: 0 calc( 10px * var(--SCALE)) calc( 10px * var(--SCALE)) 0;
-    border-left: none;
-    border-right: calc( 1px * var(--SCALE)) solid #555;
-}
-
-#layout_container.sidebar-full #sidebar_canvas {
-    padding-left: calc( 23px * var(--SCALE));
-}
-
-@media (prefers-reduced-motion: reduce) {
-    #toggle_sidebar_button {
-        transition: none;
-    }
-}
 
 #credits {
     display: flex;
@@ -282,21 +176,21 @@ body.has-sticky-footer #layout_container {
 
 #splitter {
     cursor: ew-resize;
-    touch-action: none;
     display: block;
     position: absolute;
     z-index: 99;
-    top: 0;
-    bottom: 0;
-    height: auto;
-    left: calc( -3px * var(--SCALE));
-    width: calc( 6px * var(--SCALE));
-    background-color: transparent;
-    background-image: linear-gradient(#5a5a5a, #5a5a5a);
-    background-size: calc( 2px * var(--SCALE)) 100%;
-    background-position: center;
+    top:  calc( 5px * var(--SCALE));
+    left: calc( 0px * var(--SCALE));
+    float: right;
+    width: calc( 30px * var(--SCALE));
+    height: calc( 30px * var(--SCALE));
+    background-size: calc( 30px * var(--SCALE)) calc( 30px * var(--SCALE));
     background-repeat: no-repeat;
+    background-color: transparent;
     border: none;
+    background-image: url("images/toggle-width.png");
+    background-size: cover;
+    transform: scaleX(-1);
 }
 
 #splitter-infoblock {
@@ -558,7 +452,7 @@ select.error, textarea.error, input.error {
 #header_side {
     position: absolute;
     right: calc( 0px * var(--SCALE));
-    top:  calc( 81px * var(--SCALE));
+    top:  calc( 0px * var(--SCALE));
     width: calc( 38px * var(--SCALE));
     z-index: 9;
 }

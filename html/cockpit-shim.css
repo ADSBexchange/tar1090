@@ -22,11 +22,6 @@
     visibility: hidden;
     pointer-events: none;
     contain: paint;
-    margin-right: calc(-1 * var(--panel-slide-shift, 0px));
-}
-#map_container.panel-sliding > #cockpit_overlay[data-transition].is-open {
-    transition: margin-right var(--panel-slide-ms, 240ms) var(--panel-slide-ease, cubic-bezier(.2, 0, 0, 1)),
-                opacity 760ms cubic-bezier(.2, 0, 0, 1) 520ms, visibility 0s;
 }
 #map_container > #cockpit_overlay.is-open {
     visibility: visible;
@@ -36,7 +31,10 @@
 #map_container.cockpit-open .ol-control {
     visibility: hidden;
 }
-#map_container.cockpit-open > #header_side {
+#layout_container:has(#map_container.cockpit-panel-over-map) #selected_infoblock {
+    display: none !important;
+}
+#map_container.cockpit-open > #header_side .buttonContainer > :not(#toggle_sidebar_control):not(#expand_sidebar_control) {
     display: none;
 }
 #map_container.cockpit-open > #map_canvas {
