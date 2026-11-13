@@ -50,9 +50,10 @@
     const MAP_ID = 'map_container';
     const OVERLAY_ID = 'cockpit_overlay';
     const PANEL_ID = 'selected_infoblock';
-    const RAIL_ID = 'header_side';
+    const PANEL_BUTTON_IDS = ['toggle_sidebar_control', 'expand_sidebar_control'];
     const OPEN_CLASS = 'is-open';
     const MAP_OPEN_CLASS = 'cockpit-open';
+    const PANEL_OVER_MAP_CLASS = 'cockpit-panel-over-map';
     const EXIT_CLASS = 'cockpit-exit';
     const EXIT_LABEL = 'Exit cockpit';
     const INNER_CLASS = 'cockpit-inner';
@@ -164,15 +165,12 @@
 
     function shown(r) { return !!r && r.width > 0 && r.height > 0; }
 
-    function frameInsets(map, panel, rail) {
+    function frameInsets(map, panel) {
         const insets = { left: 0, right: 0 };
         if (!shown(map)) return insets;
         if (shown(panel) && panel.top <= map.top + EDGE_PX && panel.bottom >= map.bottom - EDGE_PX
             && panel.left <= map.left + EDGE_PX && panel.right > map.left) {
             insets.left = Math.round(Math.min(panel.right - map.left, map.width));
-        }
-        if (shown(rail) && rail.left < map.right && rail.right >= map.right - EDGE_PX) {
-            insets.right = Math.round(Math.min(map.right - rail.left, map.width - insets.left));
         }
         return insets;
     }
@@ -193,6 +191,10 @@
         const left = pixel[0] - insets.left, top = pixel[1];
         if (left < 0 || left > width || top < 0 || top > height) return centre;
         return { x: Math.round(left), y: Math.round(top) };
+    }
+
+    function panelOverMap(map, panel) {
+        return shown(map) && shown(panel) && intersects(map, panel) && frameInsets(map, panel).left === 0;
     }
 
     function intersects(a, b) {
@@ -227,7 +229,7 @@
     // Node (tests) gets the pure parts and nothing else; inert in the browser.
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = { PROTO, VERSION, DEFAULTS, snapshot, fieldFrom, flyable, liveMode, isMsg, msg,
-                           frameInsets, closesOn, switchedAway, revealOrigin, exitSpot, exitMs, ownsEntry, onOwnEntry,
+                           frameInsets, panelOverMap, closesOn, switchedAway, revealOrigin, exitSpot, exitMs, ownsEntry, onOwnEntry,
                            TRANSITION, contextFor };
         return;
     }
@@ -335,7 +337,7 @@
     function layout(cockpit) {
         if (!cockpit.map) return;
         const map = cockpit.map.getBoundingClientRect();
-        const insets = frameInsets(map, rectOf(PANEL_ID), rectOf(RAIL_ID));
+        const insets = frameInsets(map, rectOf(PANEL_ID));
         const style = cockpit.overlay.style;
         style.left = insets.left + 'px';
         style.right = insets.right + 'px';
@@ -359,21 +361,30 @@
     function watchLayout(cockpit) {
         if (!cockpit.map || typeof ResizeObserver !== 'function') return;
         cockpit.observer = new ResizeObserver(function () { if (open === cockpit) layout(cockpit); });
-        [cockpit.map, cockpit.overlay, document.getElementById(PANEL_ID), document.getElementById(RAIL_ID)].forEach(function (node) {
+        [cockpit.map, cockpit.overlay, document.getElementById(PANEL_ID)].forEach(function (node) {
             if (node) cockpit.observer.observe(node);
         });
     }
 
     function exitOf(overlay) { return overlay.querySelector('.' + EXIT_CLASS); }
 
+    function panelButtonsReserve(area) {
+        return PANEL_BUTTON_IDS.map(rectOf).filter(shown).reduce(function (reserve, button) {
+            if (button.left >= area.right || button.right <= area.left) return reserve;
+            return Math.max(reserve, Math.round(area.right - button.left));
+        }, 0);
+    }
+
     function placeExit(cockpit, obstacles) {
         const exit = exitOf(cockpit.overlay);
         if (!exit) return;
-        const spot = exitSpot(cockpit.overlay.getBoundingClientRect(),
-                              { width: exit.offsetWidth, height: exit.offsetHeight }, obstacles);
+        const overlay = cockpit.overlay.getBoundingClientRect();
+        const reserve = panelButtonsReserve(overlay);
+        const area = { left: overlay.left, top: overlay.top, width: overlay.width - reserve, height: overlay.height };
+        const spot = exitSpot(area, { width: exit.offsetWidth, height: exit.offsetHeight }, obstacles);
         exit.style.top = spot.top + 'px';
         exit.style.left = spot.side === 'left' ? EXIT_GAP_PX + 'px' : 'auto';
-        exit.style.right = spot.side === 'right' ? EXIT_GAP_PX + 'px' : 'auto';
+        exit.style.right = spot.side === 'right' ? (EXIT_GAP_PX + reserve) + 'px' : 'auto';
     }
 
     function setOrigin(cockpit) {
@@ -528,6 +539,7 @@
             window.addEventListener('message', onMessage);
             iframe.src = preview ? new URL('preview.html', cockpitUrl).href : cockpitUrl.href;
             (map || document.body).appendChild(overlay);
+            if (map && panelOverMap(map.getBoundingClientRect(), rectOf(PANEL_ID))) map.classList.add(PANEL_OVER_MAP_CLASS);
             if (map) map.classList.add(MAP_OPEN_CLASS);
             layout(cockpit);
             watchLayout(cockpit);
@@ -625,7 +637,7 @@
 
     function beginExit(cockpit) {
         cockpit.overlay.classList.remove(OPEN_CLASS);
-        if (cockpit.map) cockpit.map.classList.remove(MAP_OPEN_CLASS);
+        if (cockpit.map) cockpit.map.classList.remove(MAP_OPEN_CLASS, PANEL_OVER_MAP_CLASS);
         setTimeout(function () { finishExit(cockpit.overlay); }, exitMs(reducedMotion()));
     }
 
