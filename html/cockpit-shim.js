@@ -51,6 +51,7 @@
     const OVERLAY_ID = 'cockpit_overlay';
     const PANEL_ID = 'selected_infoblock';
     const RAIL_ID = 'header_side';
+    const EDGE_TAB_ID = 'toggle_sidebar_control';
     const OPEN_CLASS = 'is-open';
     const MAP_OPEN_CLASS = 'cockpit-open';
     const EXIT_CLASS = 'cockpit-exit';
@@ -366,14 +367,21 @@
 
     function exitOf(overlay) { return overlay.querySelector('.' + EXIT_CLASS); }
 
+    function edgeTabReserve(area, tab) {
+        if (!shown(tab) || tab.left >= area.right || tab.right <= area.left) return 0;
+        return Math.round(area.right - tab.left);
+    }
+
     function placeExit(cockpit, obstacles) {
         const exit = exitOf(cockpit.overlay);
         if (!exit) return;
-        const spot = exitSpot(cockpit.overlay.getBoundingClientRect(),
-                              { width: exit.offsetWidth, height: exit.offsetHeight }, obstacles);
+        const overlay = cockpit.overlay.getBoundingClientRect();
+        const reserve = edgeTabReserve(overlay, rectOf(EDGE_TAB_ID));
+        const area = { left: overlay.left, top: overlay.top, width: overlay.width - reserve, height: overlay.height };
+        const spot = exitSpot(area, { width: exit.offsetWidth, height: exit.offsetHeight }, obstacles);
         exit.style.top = spot.top + 'px';
         exit.style.left = spot.side === 'left' ? EXIT_GAP_PX + 'px' : 'auto';
-        exit.style.right = spot.side === 'right' ? EXIT_GAP_PX + 'px' : 'auto';
+        exit.style.right = spot.side === 'right' ? (EXIT_GAP_PX + reserve) + 'px' : 'auto';
     }
 
     function setOrigin(cockpit) {

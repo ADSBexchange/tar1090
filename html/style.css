@@ -138,8 +138,7 @@ body.has-sticky-footer #layout_container {
 #toggle_sidebar_control {
     position: absolute;
     right: 0;
-    top: 50%;
-    transform: translateY(-50%);
+    top: calc( 3px * var(--SCALE));
     width: calc( 27px * var(--SCALE));
     height: calc( 78px * var(--SCALE));
     z-index: 100;
@@ -480,7 +479,7 @@ select.error, textarea.error, input.error {
 
 .layer-switcher {
     top: calc( 3px * var(--SCALE)) !important;
-    right: calc( 75px * var(--SCALE)) !important;
+    right: calc( 44px * var(--SCALE)) !important;
     z-index: 999;
 }
 .layer-switcher button {
@@ -558,15 +557,15 @@ select.error, textarea.error, input.error {
 
 #header_side {
     position: absolute;
-    right: calc( 31px * var(--SCALE));
-    top:  calc( 0px * var(--SCALE));
+    right: calc( 0px * var(--SCALE));
+    top:  calc( 81px * var(--SCALE));
     width: calc( 38px * var(--SCALE));
     z-index: 9;
 }
 #header_top {
     text-align: right;
     position: absolute;
-    right: calc( 125px * var(--SCALE));
+    right: calc( 94px * var(--SCALE));
     top: calc( 0px * var(--SCALE));
     height: calc( 38px * var(--SCALE));
     z-index: 9;
@@ -812,6 +811,10 @@ select.error, textarea.error, input.error {
     cursor: pointer;
     z-index: 9999;
     display: none;
+}
+
+#layout_container:has(#map_container.cockpit-open) #highlighted_infoblock {
+    display: none !important;
 }
 
 .highlightedTitle {

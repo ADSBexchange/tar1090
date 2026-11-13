@@ -4118,9 +4118,11 @@ function refreshHighlighted() {
         return;
 
     let mapSize = OLMap.getSize();
+    let edgeTab = document.getElementById('toggle_sidebar_control');
+    let usableWidth = mapSize[0] - (edgeTab ? edgeTab.offsetWidth : 0);
     let infoBoxLeft = markerPosition[0];
     let infoBoxTop = markerPosition[1];
-    if ((infoBoxLeft + 20 + infoBox.width()) < mapSize[0])
+    if ((infoBoxLeft + 20 + infoBox.width()) < usableWidth)
         infoBoxLeft += 20;
     else if ((infoBoxLeft - 20 - infoBox.width()) > 0)
         infoBoxLeft -= (20 + infoBox.width());
