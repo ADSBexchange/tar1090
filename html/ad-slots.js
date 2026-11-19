@@ -15,6 +15,13 @@ var AdSlots = {
   TRACKING_LEADERBOARD: "adsbexchange_tracking_leaderboard",
 };
 
+const AD_CONTAINERS = [
+  "[data-freestar-ad]",
+  "#tracking_leaderboard_container",
+  '[id^="FreeStarVideoAdContainer"]',
+  "#fs-sticky-footer",
+];
+
 function createAdSlotManager(freestar, isSubscriber) {
   var active = {};
 
@@ -48,6 +55,7 @@ function createAdSlotManager(freestar, isSubscriber) {
 // (is_subscriber is set during page load, before any panel is opened).
 if (typeof window !== "undefined") {
   window.AdSlots = AdSlots;
+  window.AdContainers = AD_CONTAINERS;
   var adSlotManager = createAdSlotManager(window.freestar, function () {
     return typeof is_subscriber !== "undefined" && is_subscriber;
   });
@@ -57,5 +65,5 @@ if (typeof window !== "undefined") {
 
 // Node: exported for unit testing (inert in the browser).
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { AdSlots: AdSlots, createAdSlotManager: createAdSlotManager };
+  module.exports = { AdSlots: AdSlots, AdContainers: AD_CONTAINERS, createAdSlotManager: createAdSlotManager };
 }

@@ -5,6 +5,8 @@ End-to-end tests for the ADSBx tar1090 globe. They guard our differentiators thr
 (Confluence "tar1090 - Functional Testing"). DOM/global-driven — they read tar1090's config globals,
 the OpenLayers layer collection, and network requests; no fixed aircraft required.
 
+Requires Node >=22.17 (the binCraft zstd fixtures use `zlib.zstdCompressSync`).
+
 ## Prerequisite for the LOCAL target: bring the stack up first
 
 The specs run against a served globe. For `localhost:8080` the tar1090 + API V2 Docker recipe must be
@@ -12,13 +14,22 @@ running, pointed at this worktree:
 
 ```powershell
 # in C:\Projects\adsbexchange-docker-recipes\tar1090-api-v2
-#   .env: TAR1090_PATH -> this worktree, TAR1090_DB_PATH -> a local tar1090-db clone (airline/type/reg)
+#   .env: TAR1090_PATH -> this worktree, TAR1090_DB_PATH -> a local tar1090-db clone (airline/type/reg),
+#         COCKPIT_PATH -> an adsbexchange-cockpit checkout (served at /cockpit/, as on dev)
 .\scripts\start.ps1          # Globe UI on http://localhost:8080 ; stop with .\scripts\stop.ps1
 ```
 
-- **VPN to dev** is needed for the live beast feed (aircraft data).
+- **VPN to dev** is needed for the live beast feed (aircraft data). Most specs replace the feed with
+  fixtures (`lib/map-page.js` `routeFeed`), so they pass without it.
+- The recipe renders the feature flags with dev's values, so the Tailvision link and the cockpit button
+  are on, as on dev.
 - The **airline / type / registration** specs need the metadata DB served at `/db-current` (the recipe
   mounts `TAR1090_DB_PATH`).
+- The **cockpit** specs need the cockpit served at `/cockpit/` (the recipe mounts `COCKPIT_PATH`). A
+  signed-out viewer gets the feeder preview. The live-cockpit check runs only with `COCKPIT_LIVE=1`; it
+  signs in through the recipe's local account stand-in at `/dev/login`.
+- On localhost tar1090 runs in aggregator mode, so the harness serves its fixture feed as binCraft +
+  zstd.
 - The **`-Dev` target** needs no local stack — it hits the deployed dev globe (VPN required) and is the
   only way to run the **historical-replay** specs (they self-skip on local, since local history is
   ephemeral).

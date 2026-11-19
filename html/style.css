@@ -707,6 +707,10 @@ select.error, textarea.error, input.error {
     display: none;
 }
 
+#layout_container:has(#map_container.cockpit-open) #highlighted_infoblock {
+    display: none !important;
+}
+
 .highlightedTitle {
     border-bottom: calc( 1px * var(--SCALE)) solid #67b6c3;
     display: inline-block;
