@@ -11,4 +11,4 @@ Allow: /index.html
 Allow: /details.html
 Allow: /leaderboard/index.html
 
-Sitemap: https://globe.adsbexchange.com/airport/sitemap.xml
+Sitemap: https://globe.adsbexchange.com/airports/sitemap.xml
