@@ -1318,6 +1318,43 @@
       gtag('js', new Date());
       gtag('config', 'G-WMZZXH53QH');
     </script>
+    <!-- WebGL support check -->
+    <script>
+      (function () {
+        // Once per visit.
+        try {
+          if (sessionStorage.getItem('webgl_check_sent')) return;
+          sessionStorage.setItem('webgl_check_sent', '1');
+        } catch (e) {}
+
+        // Whether a drawing context of this kind starts; it is closed at once.
+        function starts(kind, attributes) {
+          try {
+            var gl = document.createElement('canvas').getContext(kind, attributes);
+            if (!gl) return false;
+            var lose = gl.getExtension('WEBGL_lose_context');
+            if (lose) lose.loseContext();
+            return true;
+          } catch (e) {
+            return false;
+          }
+        }
+
+        var webgl = 'none';
+        if (starts('webgl2', { failIfMajorPerformanceCaveat: true })) webgl = 'webgl2';
+        else if (starts('webgl2')) webgl = 'webgl2-software';
+        else if (starts('webgl') || starts('experimental-webgl')) webgl = 'webgl1';
+
+        // tar1090 saves its "WebGL" box as localStorage.webgl, "false" when it is off.
+        var tar1090Webgl = 'on';
+        try {
+          if (localStorage.getItem('webgl') === 'false') tar1090Webgl = 'off';
+        } catch (e) {}
+
+        // The page's own GA4 tag, defined just above.
+        if (typeof gtag === 'function') gtag('event', 'webgl_check', { webgl: webgl, tar1090_webgl: tar1090Webgl });
+      })();
+    </script>
   </body>
   <footer>
     <button id="pmLink">Privacy Manager</button>
