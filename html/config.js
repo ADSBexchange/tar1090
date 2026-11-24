@@ -380,6 +380,7 @@ HideCols = [
 //
 //jaeroTimeout = 35 * 60; // in seconds
 //jaeroLabel = "ADS-C"; // relabel the ADS-C data if used for other purposes (i.e. HFDL / acars2pos)
+//sateLabel = "SATE"; // label for aircraft of type sate
 
 // seenTimeout = 45; // in seconds
 // seenTimeoutMlat = 60; // in seconds

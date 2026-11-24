@@ -388,6 +388,7 @@ let filterMaxRange = 1e8; // 100 000 km should include all planes on earth ;)
 
 let jaeroTimeout = 35 * 60; // in seconds
 let jaeroLabel = "ADS-C"; // relabel the ADS-C data if used for other purposes (i.e. HFDL / acars2pos)
+let sateLabel = "SATE"; // label for aircraft of type sate
 
 let seenTimeout = 45; // in seconds
 let seenTimeoutMlat = 60; // in seconds
@@ -422,6 +423,7 @@ let tableColors = {
         uat:       "#C4FFDC",
         adsr:      "#C4FFDC",
         adsc:      "#9efa9e",
+        sate:      "#9efa9e",
         modeS:     "#d8d8ff",
         tisb:      "#ffd8e6",
         unknown:   "#dcdcdc",
@@ -434,6 +436,7 @@ let tableColors = {
         uat:       "#66FFA6",
         adsr:      "#66FFA6",
         adsc:      "#75f075",
+        sate:      "#75f075",
         modeS:     "#BEBEFF",
         tisb:      "#FFC1D8",
         unknown:   "#bcbcbc",

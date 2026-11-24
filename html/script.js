@@ -87,7 +87,7 @@ let firstFetch = true;
 let debugCounter = 0;
 let pathName = window.location.pathname.replace(/\/+/, '/') || "/";
 let sourcesFilter = null;
-let sources = ['adsb', ['uat', 'adsr'], 'mlat', 'tisb', 'modeS', 'other', 'adsc', 'ais'];
+let sources = ['adsb', ['uat', 'adsr'], 'mlat', 'tisb', 'modeS', 'other', 'adsc', 'sate', 'ais'];
 let flagFilter = null;
 let flagFilterValues = ['military', 'pia', 'ladd', 'uav'];
 let showTrace = false;
@@ -201,7 +201,7 @@ function processAircraft(ac, init, uat) {
     }
 
     const type = isArray ? ac[7] : ac.type;
-    if (g.historyKeep && !g.historyKeep[hex] && type != 'adsc') {
+    if (g.historyKeep && !g.historyKeep[hex] && type != 'adsc' && type != 'sate') {
         return;
     }
 
@@ -214,7 +214,7 @@ function processAircraft(ac, init, uat) {
     // If not make it.
     let plane = g.planes[hex]
 
-    if (!noVanish && plane && g.historyKeep && g.historyKeep[hex] && type != 'adsc') {
+    if (!noVanish && plane && g.historyKeep && g.historyKeep[hex] && type != 'adsc' && type != 'sate') {
         if (now - plane.last_info_server > reapTimeout) {
 
             //console.log(`deleting ${hex} at ${now}`);
@@ -1968,6 +1968,7 @@ function initLegend(colors) {
     if (aiscatcher_server)
         html += '<div class="legendTitle" style="background-color:' + colors['ais'] + ';">AIS</div>';
     html += '<div class="legendTitle" style="background-color:' + colors['adsc'] + `;">${jaeroLabel}</div>`;
+    html += '<div class="legendTitle" style="background-color:' + colors['sate'] + `;">${sateLabel}</div>`;
 
     document.getElementById('legend').innerHTML = html;
 }
@@ -1986,9 +1987,10 @@ function initSourceFilter(colors) {
     html += createFilter(colors['modeS'], 'Mode-S', sources[4]);
     html += createFilter(colors['other'], 'Other', sources[5]);
     html += createFilter(colors['adsc'], jaeroLabel, sources[6]);
+    html += createFilter(colors['sate'], sateLabel, sources[7]);
 
     if (aiscatcher_server) {
-        html += createFilter(colors['ais'], 'AIS', sources[7]);
+        html += createFilter(colors['ais'], 'AIS', sources[8]);
     }
 
     document.getElementById('sourceFilter').innerHTML = html;
@@ -3486,7 +3488,7 @@ function reaper(all) {
             (
                 (!plane.selected)
                 && plane.seen > reapTimeout
-                && (plane.dataSource != 'adsc' || plane.seen > jaeroTimeout)
+                && ((plane.dataSource != 'adsc' && plane.dataSource != 'sate') || plane.seen > jaeroTimeout)
                 && (plane.dataSource != 'ais' || plane.seen > aisTimeout)
             )
         ) {
@@ -8122,6 +8124,7 @@ function drawHeatmap() {
                         case  9: dataSource = 'adsr';     break;
                         case 10: dataSource = 'tisb';     break;
                         case 11: dataSource = 'tisb';     break;
+                        case 14: dataSource = 'sate';     break;
                         default: dataSource = 'unknown';
                     }
                     let hex = (pointsU[i] & 0xFFFFFF).toString(16).padStart(6, '0');
@@ -8588,6 +8591,7 @@ function replayStep(arg) {
             case 10: type = 'tisb_trackfile';   break;
             case 11: type = 'tisb_other';       break;
             case 12: type = 'mode_ac';          break;
+            case 14: type = 'sate';             break;
             default: type = 'unknown';
         }
         let hex = (pointsU[i] & 0xFFFFFF).toString(16).padStart(6, '0');

@@ -325,6 +325,8 @@ function format_data_source(source) {
 			return "Mode A/C";
         case 'adsc':
             return jaeroLabel;
+        case 'sate':
+            return sateLabel;
         case 'other':
             return "Other";
 	}
@@ -650,6 +652,7 @@ function wqi(data) {
             case 11: ac.type = 'tisb_other';       break;
             case 12: ac.type = 'mode_ac';          break;
             case 13: ac.type = 'adsb_other';       break;
+            case 14: ac.type = 'sate';             break;
             default: ac.type = 'unknown';
         }
         // Set hex prefix: UAV gets $, other non-ICAO gets ~

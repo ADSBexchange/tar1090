@@ -525,7 +525,7 @@ PlaneObject.prototype.updateTrack = function(now, last, serverTrack, stale) {
     if (pTracks && !serverTrack) {
         stale = false;
         stale_timeout = 120;
-        if (this.dataSource == "adsc")
+        if (this.dataSource == "adsc" || this.dataSource == "sate")
             stale_timeout = jaeroTimeout;
     }
 
@@ -691,7 +691,7 @@ PlaneObject.prototype.updateTrack = function(now, last, serverTrack, stale) {
 PlaneObject.prototype.getDataSourceNumber = function() {
     if (this.dataSource == "modeS")
         return 5;
-    if (this.dataSource == "adsc")
+    if (this.dataSource == "adsc" || this.dataSource == "sate")
         return 6;
     if (this.dataSource == "mlat")
         return 3;
@@ -733,8 +733,9 @@ PlaneObject.prototype.getMarkerColor = function(options) {
     l = colorArr[2];
 
     // If we have not seen a recent position update, change color
-    if ((this.dataSource == 'adsc' && this.seen_pos > 20 * 60)
-        || (!globeIndex && this.dataSource != 'adsc' && this.seen_pos > 15))  {
+    const satellite = (this.dataSource == 'adsc' || this.dataSource == 'sate');
+    if ((satellite && this.seen_pos > 20 * 60)
+        || (!globeIndex && !satellite && this.seen_pos > 15))  {
         h += ColorByAlt.stale.h;
         s += ColorByAlt.stale.s;
         l += ColorByAlt.stale.l;
@@ -1531,6 +1532,8 @@ PlaneObject.prototype.updateData = function(now, last, data, init) {
         this.dataSource = "adsb";
     } else if (type == 'adsc') {
         this.dataSource = "adsc";
+    } else if (type == 'sate') {
+        this.dataSource = "sate";
     } else if (type == 'mode_s') {
         this.dataSource = "modeS";
     } else if (type == 'other') {
@@ -2656,6 +2659,8 @@ PlaneObject.prototype.updateTraceData = function(state, _now) {
         this.dataSource = "tisb";
     } else if (this.addrtype == 'adsc') {
         this.dataSource = "adsc";
+    } else if (this.addrtype == 'sate') {
+        this.dataSource = "sate";
     } else if (this.addrtype == 'other') {
         this.dataSource = "other";
     } else if (this.addrtype == 'unknown') {
@@ -2835,7 +2840,7 @@ PlaneObject.prototype.checkVisible = function() {
 
     let timeout = seenTimeout;
     if (this.dataSource == "mlat") { timeout = seenTimeoutMlat; }
-    else if (this.dataSource == "adsc") { timeout = jaeroTimeout; }
+    else if (this.dataSource == "adsc" || this.dataSource == "sate") { timeout = jaeroTimeout; }
     else if (this.dataSource == 'ais') { timeout = aisTimeout; }
 
     timeout += modeSTime - tisbReduction + refresh;
